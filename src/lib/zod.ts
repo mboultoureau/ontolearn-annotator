@@ -1,4 +1,4 @@
-import { icons } from "@/utils/icons";
+import { icons } from "@/lib/icons";
 import { z } from "zod";
 
 const iconsValues = icons.map(icon => icon.value);

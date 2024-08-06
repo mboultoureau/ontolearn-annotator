@@ -110,19 +110,20 @@ model Category {
 }
 
 model Project {
-  id             String           @id @default(cuid())
-  name           String
-  slug           String           @unique
-  description    String
-  image          String?
-  visibility     Visibility       @default(PRIVATE)
-  categories     Category[]
-  data           Data[]
-  members        ProjectMember[]
-  sources        Source[]
-  sourceTypes    SourceType[]
-  statistics     Statistics[]
-  PlaygroundTask PlaygroundTask[]
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique
+  description     String
+  image           String?
+  visibility      Visibility       @default(PRIVATE)
+  categories      Category[]
+  data            Data[]
+  members         ProjectMember[]
+  sources         Source[]
+  sourceTypes     SourceType[]
+  statistics      Statistics[]
+  playgroundTasks PlaygroundTask[]
+  tasks           Task[]
 }
 
 enum Visibility {
@@ -252,4 +253,23 @@ model PlaygroundTask {
   updatedAt   DateTime             @updatedAt
   input       Json
   output      Json?
+}
+
+enum TaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Task {
+  id        String     @id @default(cuid())
+  project   Project    @relation(fields: [projectId], references: [id])
+  projectId String
+  type      String
+  input     Json
+  output    Json?
+  status    TaskStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }

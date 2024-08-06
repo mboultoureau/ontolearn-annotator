@@ -35,6 +35,9 @@ export default async function Layout({
                     <SettingLink href={`/projects/${project.slug}/settings`}>
                         {t('general')}
                     </SettingLink>
+                    <SettingLink href={`/projects/${project.slug}/settings/integrations`}>
+                        {t('integrations')}
+                    </SettingLink>
                     <SettingLink href={`/projects/${project.slug}/settings/source-types`}>
                         {t('sourceTypes')}
                     </SettingLink>

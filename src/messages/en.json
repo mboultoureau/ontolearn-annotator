@@ -172,10 +172,16 @@
             "empty": "No projects available."
         },
         "Settings": {
+            "copy": "Copy",
+            "copied": "Copied!",
             "general": "General",
+            "integrationApi": "API Integration",
+            "integrations": "Integrations",
+            "projectId": "Project ID",
             "sourceTypes": "Source Types",
             "tasks": "Tasks",
             "title": "Project Settings",
+            "useHeadwork": "Use Headwork",
             "users": "Users"
         },
         "Statistics": {
