@@ -1,0 +1,253 @@
+{
+    "Account": {
+        "Login": {
+            "loginWith": "Se connecter avec {provider}",
+            "title": "Se connecter"
+        },
+        "Menu": {
+            "logout": "Se déconnecter",
+            "settings": "Paramètres",
+            "toggleUserMenu": "Afficher/Masquer le menu utilisateur"
+        },
+        "Settings": {
+            "appearance": "Apparence",
+            "dark": "Sombre",
+            "english": "English",
+            "emptyLanguage": "Aucune langue disponible.",
+            "french": "Français",
+            "general": "Général",
+            "japanese": "日本語",
+            "language": "Langue",
+            "light": "Clair",
+            "preferredLanguage": "Langue préférée",
+            "searchLanguage": "Rechercher une langue",
+            "submit": "Enregistrer",
+            "submitting": "Enregistrement...",
+            "system": "Système",
+            "theme": "Thème",
+            "themeDescription": "Sélectionnez le thème de l'interface.",
+            "themeUpdated": "Thème mis à jour !",
+            "themeUpdatedDescription": "Le thème a été mis à jour vers : {theme}",
+            "title": "Paramètres du compte"
+        }
+    },
+    "Category": {
+        "Create": {
+            "callToAction": "Créer une nouvelle catégorie",
+            "description": "Les catégories sont visibles par tous les utilisateurs.",
+            "title": "Créer une catégorie"
+        },
+        "Form": {
+            "description": "Description",
+            "descriptionPlaceholder": "Cette catégorie concerne les projets liés à la santé.",
+            "icon": "Icône",
+            "name": "Nom",
+            "namePlaceholder": "Santé",
+            "slug": "Slug",
+            "slugPlaceholder": "sante",
+            "submit": "Soumettre"
+        },
+        "Select": {
+            "clear": "Effacer",
+            "close": "Fermer",
+            "placeholder": "Sélectionner une catégorie",
+            "searchPlaceholder": "Rechercher des catégories...",
+            "selectAll": "Tout sélectionner"
+        }
+    },
+    "Data": {
+        "Form": {
+            "dataUploaded": "Données téléversées avec succès.",
+            "sourceType": "Type de source",
+            "submit": "Téléverser",
+            "title": "Téléverser des données"
+        },
+        "List": {
+            "data": "Données",
+            "sources": "Sources",
+            "title": "Données",
+            "upload": "Téléverser des données"
+        },
+        "Table": {
+            "actions": "Actions",
+            "empty": "Aucune donnée disponible.",
+            "name": "Nom",
+            "recentData": "Données récentes",
+            "uploadedAt": "Date de mise en ligne"
+        }
+    },
+    "Home": {
+        "copyright": "© 2024 NI (Institut national d'informatique). Tous droits réservés.",
+        "getStarted": "Commencer",
+        "subtitle": "Améliorer les annotations d'images grâce au crowdsourcing et à l'IA générative",
+        "title": "OntoLearn Annotator",
+        "viewSource": "Voir le code source"
+    },
+    "Icons": {
+        "Icons": {
+            "arts": "Arts",
+            "business": "Affaires",
+            "croissant": "Croissant",
+            "education": "Éducation",
+            "environment": "Environnement",
+            "file": "Fichier",
+            "fileArchive": "Archive de fichiers",
+            "health": "Santé",
+            "other": "Autre",
+            "politics": "Politique",
+            "science": "Science",
+            "social": "Social",
+            "sports": "Sports",
+            "technology": "Technologie",
+            "text": "Texte"
+        },
+        "Select": {
+            "searchPlaceholder": "Rechercher des icônes...",
+            "selectPlaceholder": "Sélectionnez une icône",
+            "title": "Sélectionnez une icône"
+        }
+    },
+    "Project": {
+        "Create": {
+            "title": "Créer un projet"
+        },
+        "Form": {
+            "categories": "Catégories",
+            "categoriesDescription": "Sélectionnez au moins une catégorie pour ce projet. Vous ne trouvez pas de catégorie qui correspond ? ",
+            "description": "Description",
+            "descriptionPlaceholder": "Ce projet vise à classer les cristaux d'eau à l'aide de modèles d'apprentissage profond.",
+            "edit": "Modifier le projet",
+            "name": "Nom",
+            "namePlaceholder": "Classification des cristaux d'eau basée sur l'apprentissage profond",
+            "slug": "Slug",
+            "slugPlaceholder": "classification-des-cristaux-d-eau-basee-sur-l-apprentissage-profond",
+            "submit": "Enregistrer",
+            "visibility": "Visibilité",
+            "visibilityDescription": "Les projets publics sont visibles par tous, mais seuls les membres sont autorisés à annoter les données. Les projets privés ne sont visibles que par les membres du projet.",
+            "visibilityPrivate": "Privé",
+            "visibilityPublic": "Public"
+        },
+        "Header": {
+            "dashboard": "Tableau de bord",
+            "data": "Données",
+            "playground": "Terrain de jeu",
+            "settings": "Paramètres",
+            "tasks": "Tâches",
+            "title": "OntoLearn Annotator",
+            "toggleNavigation": "Afficher/Masquer la navigation"
+        },
+        "Image": {
+            "current": "Image actuelle",
+            "image": "Image",
+            "imageDescription": "L'image actuelle sera supprimée.",
+            "imageUpload": "Téléverser une image",
+            "submit": "Enregistrer"
+        },
+        "List": {
+            "create": "Créer un projet",
+            "title": "Projets"
+        },
+        "Settings": {
+            "general": "Général",
+            "sourceTypes": "Types de sources",
+            "tasks": "Tâches",
+            "title": "Paramètres du projet",
+            "users": "Utilisateurs"
+        },
+        "Statistics": {
+            "accuracy": "Précision",
+            "accuracyValue": "{value}%",
+            "annotatedData": "Données annotées",
+            "annotatedDataValue": "{value}",
+            "data": "Données",
+            "dataValue": "{value}",
+            "empty": "Aucune statistique disponible.",
+            "loss": "Perte",
+            "title": "Statistiques",
+            "users": "Utilisateurs",
+            "usersValue": "{value}"
+        },
+        "Users": {
+            "title": "Utilisateurs"
+        }
+    },
+    "Source": {
+        "Table": {
+            "name": "Nom",
+            "status": "Statut",
+            "uploadedAt": "Téléverser le"
+        }
+    },
+    "SourceType": {
+        "Create": {
+            "submit": "Créer",
+            "title": "Créer un type de source"
+        },
+        "Form": {
+            "addField": "Ajouter un champ",
+            "fieldLabel": "Étiquette",
+            "fieldName": "Nom",
+            "fieldNumber": "Champ {number}",
+            "fieldType": "Type",
+            "fieldTypeFile": "Fichier",
+            "fieldTypeString": "Texte",
+            "icon": "Icône",
+            "label": "Étiquette",
+            "labelDescription": "L'étiquette est le nom visible par les utilisateurs.",
+            "labelPlaceholder": "Format de fichier IDX",
+            "name": "Nom",
+            "nameDescription": "Le nom doit être utilisé dans votre application pour traiter les données.",
+            "namePlaceholder": "format-de-fichier-idx"
+        },
+        "List": {
+            "create": "Créer un type de source",
+            "description": "Les types de sources sont utilisés dans le formulaire de téléversement de données.",
+            "title": "Types de sources"
+        },
+        "Select": {
+            "selectPlaceholder": "Sélectionnez un type de source",
+            "source": "Source"
+        },
+        "Table": {
+            "actions": "Actions",
+            "empty": "Aucun type de source disponible.",
+            "label": "Étiquette",
+            "name": "Nom"
+        }
+    },
+    "Task": {
+        "Flow": {
+            "completedDescription": "Vous avez terminé toutes les tâches pour ce projet. Merci de votre contribution !",
+            "completedTitle": "Tâches terminées !",
+            "doesNotContain": "Ne contient pas",
+            "iDoNotKnow": "Je ne sais pas",
+            "title": "Flux de tâches"
+        },
+        "ImageSegmentation": {
+            "fitView": "Adapter à la vue",
+            "fullscreen": "Plein écran",
+            "mouse": "Souris",
+            "polygon": "Polygone",
+            "rectangle": "Rectangle",
+            "zoomIn": "Zoomer",
+            "zoomOut": "Dézommer"
+        },
+        "List": {
+            "all": "Tout",
+            "assignedToMe": "Assigné à moi",
+            "start": "Commencer les tâches",
+            "title": "Tâches"
+        },
+        "Table": {
+            "name": "Nom"
+        }
+    },
+    "User": {
+        "Table": {
+            "actions": "Actions",
+            "email": "Adresse e-mail",
+            "fullName": "Nom complet",
+            "role": "Rôle"
+        }
+    }
+}

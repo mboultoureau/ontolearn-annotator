@@ -1,0 +1,11 @@
+.task-node {
+    /* height: 200px; */
+    border: 1px solid #eee;
+    border-radius: 5px;
+}
+
+.task-node label {
+    display: block;
+    color: #777;
+    font-size: 12px;
+}

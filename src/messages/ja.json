@@ -1,0 +1,266 @@
+{
+    "Account": {
+        "Login": {
+            "loginWith": "{provider}でログイン",
+            "title": "ログイン"
+        },
+        "Menu": {
+            "logout": "サインアウト",
+            "settings": "設定",
+            "toggleUserMenu": "ユーザーメニューの切り替え"
+        },
+        "Settings": {
+            "appearance": "外観",
+            "dark": "暗い",
+            "emptyLanguage": "利用可能な言語はありません。",
+            "english": "英語",
+            "french": "フランス語",
+            "general": "一般",
+            "japanese": "日本語",
+            "language": "言語",
+            "light": "ライト",
+            "preferredLanguage": "優先言語",
+            "searchLanguage": "検索言語",
+            "submit": "保存",
+            "submitting": "保存...",
+            "system": "システム",
+            "theme": "テーマ",
+            "themeDescription": "ンターフェースのテーマを選択する",
+            "themeUpdated": "テーマが更新されました！",
+            "themeUpdatedDescription": "テーマが{theme}に更新された。",
+            "title": "アカウント設定"
+        }
+    },
+    "App": {
+        "description": "クラウドソーシングと生成AIによる画像アノテーションの強化",
+        "title": "OntoLearn Annotator"
+    },
+    "Category": {
+        "Create": {
+            "callToAction": "新規作成",
+            "description": "カテゴリーはすべてのユーザーに表示されます。",
+            "title": "カテゴリーの作成"
+        },
+        "Form": {
+            "description": "説明",
+            "descriptionPlaceholder": "このカテゴリは健康関連のプロジェクト用です",
+            "icon": "アイコン",
+            "name": "名",
+            "namePlaceholder": "健康",
+            "slug": "スラッグ",
+            "slugPlaceholder": "健康",
+            "submit": "送信"
+        },
+        "Select": {
+            "clear": "クリア",
+            "close": "閉じる",
+            "placeholder": "カテゴリーを選択",
+            "searchPlaceholder": "検索カテゴリ...",
+            "selectAll": "すべてを選択"
+        }
+    },
+    "Data": {
+        "Form": {
+            "dataUploaded": "データは正常にアップロードされました。",
+            "sourceType": "ソースタイプ",
+            "submit": "アップロード",
+            "title": "データのアップロード"
+        },
+        "List": {
+            "data": "データ",
+            "sources": "ソース",
+            "title": "データ",
+            "upload": "データのアップロード"
+        },
+        "Table": {
+            "actions": "アクション",
+            "empty": "データがありません。",
+            "name": "名",
+            "recentData": "最近のデータ",
+            "uploadedAt": "オンライン公開日"
+        }
+    },
+    "Home": {
+        "activeLearning": "アクティブラーニング",
+        "activeLearningDescription": "能動学習で必要な注釈の数を減らす。",
+        "copyright": "© 2024 NII (National Institute of Informatics). All rights reserved.",
+        "getStarted": "始める",
+        "learnMore": "もっと学ぶ",
+        "multilingual": "多言語",
+        "multilingualDescription": "英語、フランス語、日本語に対応",
+        "multimodal": "マルチモーダル",
+        "multimodalDescription": "サウンド、ビデオ、テキスト、3Dファイルなど、すべてのファイルタイプをサポートします。",
+        "subtitle": "クラウドソーシングとジェネレーティブAIによる画像注釈の強化。",
+        "time": "あなたのペースに合わせま",
+        "timeDescription": "タスクは、アノテーターの稼働状況に応じて自動的に割り当てられります。",
+        "title": "クラウドラベルジェン",
+        "viewSource": "ソースコードを見"
+    },
+    "Icons": {
+        "Icons": {
+            "arts": "芸術",
+            "business": "ビジネス",
+            "croissant": "クロワッサン",
+            "education": "教育",
+            "environment": "環境",
+            "file": "ファイル",
+            "fileArchive": "ファイルアーカイブ",
+            "health": "健康",
+            "other": "その他",
+            "politics": "政治",
+            "science": "科学",
+            "social": "社会",
+            "sports": "スポーツ",
+            "technology": "テクノロジー",
+            "text": "テキスト"
+        },
+        "Select": {
+            "searchPlaceholder": "アイコンの検索　",
+            "selectPlaceholder": "アイコンを選択",
+            "title": "アイコンを選択"
+        }
+    },
+    "Project": {
+        "Create": {
+            "title": "プロジェクトの作成"
+        },
+        "Form": {
+            "categories": "カテゴリ",
+            "categoriesDescription": "このプロジェクトのカテゴリーを少なくとも1つ選択してください。該当するカテゴリーが見つかりませんか？",
+            "description": "説明",
+            "descriptionPlaceholder": "このプロジェクトは、ディープラーニングモデルを使って水の結晶を分類することを目的としています。",
+            "edit": "編集プロジェクト",
+            "name": "名",
+            "namePlaceholder": "Deep Learning-Based Water Crystal Classification",
+            "slug": "スラッグ",
+            "slugPlaceholder": "deep-learning-based-water-crystal-classification",
+            "submit": "保存",
+            "visibility": "表示",
+            "visibilityDescription": "公開プロジェクトは誰でも見ることができますが、メンバーだけがデータに注釈をつけることができます。非公開プロジェクトは、プロジェクトのメンバーだけが見ることができます。",
+            "visibilityPrivate": "非公開",
+            "visibilityPublic": "パブリック"
+        },
+        "Header": {
+            "dashboard": "ダッシュボード",
+            "data": "データ",
+            "playground": "プレイグラウンド",
+            "settings": "設定",
+            "tasks": "タスク",
+            "title": "クラウド・レーベル・ジェン",
+            "toggleNavigation": "ナビゲーションの切り替え"
+        },
+        "Image": {
+            "current": "現在の画像",
+            "image": "画像",
+            "imageDescription": "現在の画像は削除されます。",
+            "imageUpload": "画像アップロード",
+            "submit": "保存"
+        },
+        "List": {
+            "create": "プロジェクトの作成",
+            "title": "プロジェクト"
+        },
+        "Settings": {
+            "general": "一般",
+            "sourceTypes": "ソースタイプ",
+            "tasks": "タスク",
+            "title": "プロジェクト設定",
+            "users": "ユーザー"
+        },
+        "Statistics": {
+            "accuracy": "注釈データ",
+            "accuracyValue": "{value}%",
+            "annotatedData": "注釈付きデータ",
+            "annotatedDataValue": "{value}",
+            "data": "データ",
+            "dataValue": "{value}",
+            "empty": "統計はありません。",
+            "loss": "損失",
+            "title": "統計",
+            "users": "ユーザー",
+            "usersValue": "{value}"
+        },
+        "Users": {
+            "title": "ユーザー"
+        }
+    },
+    "Source": {
+        "Table": {
+            "name": "名",
+            "status": "ステータス",
+            "uploadedAt": "オンライン公開日"
+        }
+    },
+    "SourceType": {
+        "Create": {
+            "submit": "作成",
+            "title": "ソース・タイプを作成"
+        },
+        "Form": {
+            "addField": "フィールドを追加",
+            "fieldLabel": "ラベル",
+            "fieldName": "名",
+            "fieldNumber": "フィールド{number}",
+            "fieldType": "タイプ",
+            "fieldTypeFile": "ファイル",
+            "fieldTypeString": "テキスト",
+            "icon": "アイコン",
+            "label": "ラベル",
+            "labelDescription": "ラベルはユーザーから見える名前です。",
+            "labelPlaceholder": "IDX ファイルフォーマット",
+            "name": "名",
+            "nameDescription": "この名前は、データを処理するアプリケーションで使用する必要があります。",
+            "namePlaceholder": "idx-file-format"
+        },
+        "List": {
+            "create": "ソース・タイプの作成",
+            "description": "ソースタイプは、データアップロードフォームで使用されます。",
+            "title": " ソースタイプ"
+        },
+        "Select": {
+            "selectPlaceholder": "ソースの種類を選択してください。",
+            "source": "ソース"
+        },
+        "Table": {
+            "actions": "アクション",
+            "empty": "利用可能なソース・タイプはありません。",
+            "label": "ラベル",
+            "name": "名前"
+        }
+    },
+    "Task": {
+        "Flow": {
+            "completedDescription": "あなたはこのプロジェクトのすべてのタスクを完了しました。ご協力ありがとうございました！",
+            "completedTitle": "タスク完!",
+            "doesNotContain": "含まれていませ",
+            "iDoNotKnow": "知らない",
+            "title": "タスクフロー"
+        },
+        "ImageSegmentation": {
+            "fitView": "フィットビュー",
+            "fullscreen": "フルスクリーン",
+            "mouse": "マウス",
+            "polygon": "ポリゴン",
+            "rectangle": "矩形",
+            "zoomIn": "ズームイン",
+            "zoomOut": "ズームアウト"
+        },
+        "List": {
+            "all": "すべて",
+            "assignedToMe": "私に割り当てられた",
+            "start": "タスク開始",
+            "title": "タスク"
+        },
+        "Table": {
+            "name": "名"
+        }
+    },
+    "User": {
+        "Table": {
+            "actions": "アクション",
+            "email": "Eメール",
+            "fullName": "フル名前",
+            "role": "役割"
+        }
+    }
+}

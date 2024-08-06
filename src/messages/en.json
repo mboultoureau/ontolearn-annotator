@@ -1,0 +1,277 @@
+{
+    "Account": {
+        "Login": {
+            "loginWith": "Login with {provider}",
+            "title": "Login"
+        },
+        "Menu": {
+            "logout": "Sign out",
+            "settings": "Settings",
+            "toggleUserMenu": "Toggle user menu"
+        },
+        "Settings": {
+            "appearance": "Appearance",
+            "dark": "Dark",
+            "emptyLanguage": "No language available.",
+            "english": "English",
+            "french": "Français",
+            "general": "General",
+            "japanese": "日本語",
+            "language": "Language",
+            "light": "Light",
+            "preferredLanguage": "Preferred Language",
+            "searchLanguage": "Search Language",
+            "submit": "Save",
+            "submitting": "Saving...",
+            "system": "System",
+            "theme": "Theme",
+            "themeDescription": "Select the theme for the interface.",
+            "themeUpdated": "Theme updated!",
+            "themeUpdatedDescription": "The theme has been updated to: {theme}",
+            "title": "Account Settings"
+        }
+    },
+    "App": {
+        "description": "Enhancing Image Annotations through Crowdsourcing and Generative AI",
+        "title": "OntoLearn Annotator"
+    },
+    "Category": {
+        "Create": {
+            "callToAction": "Create a new one",
+            "description": "Categories are visible to all users.",
+            "title": "Create a category"
+        },
+        "Form": {
+            "description": "Description",
+            "descriptionPlaceholder": "This category is for health-related projects.",
+            "icon": "Icon",
+            "name": "Name",
+            "namePlaceholder": "Health",
+            "slug": "Slug",
+            "slugPlaceholder": "health",
+            "submit": "Submit"
+        },
+        "Select": {
+            "clear": "Clear",
+            "close": "Close",
+            "placeholder": "Select a category",
+            "searchPlaceholder": "Search categories...",
+            "selectAll": "Select all"
+        }
+    },
+    "Data": {
+        "Form": {
+            "dataUploaded": "Data uploaded successfully.",
+            "sourceType": "Source Type",
+            "submit": "Upload",
+            "title": "Upload Data"
+        },
+        "List": {
+            "data": "Data",
+            "sources": "Sources",
+            "title": "Data",
+            "upload": "Upload Data"
+        },
+        "Table": {
+            "actions": "Actions",
+            "empty": "No data available.",
+            "name": "Name",
+            "recentData": "Recent Data",
+            "uploadedAt": "Uploaded At"
+        }
+    },
+    "Home": {
+        "activeLearning": "Active learning",
+        "activeLearningDescription": "Reduce the number of annotations required with active learning",
+        "copyright": "© 2024 NII (National Institute of Informatics). All rights reserved.",
+        "getStarted": "Get Started",
+        "learnMore": "Learn more",
+        "multilingual": "Multilingual",
+        "multilingualDescription": "Supports English, French and Japanese.",
+        "multimodal": "Multimodal",
+        "multimodalDescription": "Supports all file types: images, sound, video, text, 3D files and more.",
+        "subtitle": "Enhancing Image Annotations through Crowdsourcing and Generative AI",
+        "time": "Tailored to your pace",
+        "timeDescription": "Tasks are automatically assigned according to annotators' availability.",
+        "title": "OntoLearn Annotator",
+        "viewSource": "View Source Code"
+    },
+    "Icons": {
+        "Icons": {
+            "arts": "Arts",
+            "business": "Business",
+            "croissant": "Croissant",
+            "education": "Education",
+            "environment": "Environment",
+            "file": "File",
+            "fileArchive": "File Archive",
+            "health": "Health",
+            "other": "Other",
+            "politics": "Politics",
+            "science": "Science",
+            "social": "Social",
+            "sports": "Sports",
+            "technology": "Technology",
+            "text": "Text"
+        },
+        "Select": {
+            "searchPlaceholder": "Search icons...",
+            "selectPlaceholder": "Select an icon",
+            "title": "Select an icon"
+        }
+    },
+    "Playground": {
+        "Index": {
+            "title": "Playground",
+            "submit": "Submit",
+            "file": "File"
+        }
+    },
+    "Project": {
+        "Create": {
+            "title": "Create a project"
+        },
+        "Form": {
+            "categories": "Categories",
+            "categoriesDescription": "Select at least one category for this project. Can't find a category that fits? ",
+            "description": "Description",
+            "descriptionPlaceholder": "This project aims to classify water crystals using deep learning models.",
+            "edit": "Edit Project",
+            "name": "Name",
+            "namePlaceholder": "Deep Learning-Based Water Crystal Classification",
+            "slug": "Slug",
+            "slugPlaceholder": "deep-learning-based-water-crystal-classification",
+            "submit": "Save",
+            "visibility": "Visibility",
+            "visibilityDescription": "Public projects are visible to everyone but only members are allowed to annotate data. Private projects are only visible to project members.",
+            "visibilityPrivate": "Private",
+            "visibilityPublic": "Public",
+            "projectCreated": "Project created!",
+            "projectCreatedDescription": "The project called {name} has been created."
+        },
+        "Header": {
+            "dashboard": "Dashboard",
+            "data": "Data",
+            "playground": "Playground",
+            "settings": "Settings",
+            "tasks": "Tasks",
+            "title": "OntoLearn Annotator",
+            "toggleNavigation": "Toggle navigation"
+        },
+        "Image": {
+            "current": "Current Image",
+            "image": "Image",
+            "imageDescription": "The current image will be deleted.",
+            "imageUpload": "Image Upload",
+            "submit": "Save"
+        },
+        "List": {
+            "create": "Create Project",
+            "title": "Projects",
+            "emptyCallToAction": "To get started, create a new project.",
+            "empty": "No projects available."
+        },
+        "Settings": {
+            "general": "General",
+            "sourceTypes": "Source Types",
+            "tasks": "Tasks",
+            "title": "Project Settings",
+            "users": "Users"
+        },
+        "Statistics": {
+            "accuracy": "Accuracy",
+            "accuracyValue": "{value}%",
+            "annotatedData": "Annotated Data",
+            "annotatedDataValue": "{value}",
+            "data": "Data",
+            "dataValue": "{value}",
+            "empty": "No statistics available.",
+            "loss": "Loss",
+            "title": "Statistics",
+            "users": "Users",
+            "usersValue": "{value}"
+        },
+        "Users": {
+            "title": "Users"
+        }
+    },
+    "Source": {
+        "Table": {
+            "name": "Name",
+            "status": "Status",
+            "uploadedAt": "Uploaded At"
+        }
+    },
+    "SourceType": {
+        "Create": {
+            "submit": "Create",
+            "title": "Create a source type"
+        },
+        "Form": {
+            "addField": "Add Field",
+            "fieldLabel": "Label",
+            "fieldName": "Name",
+            "fieldNumber": "Field {number}",
+            "fieldType": "Type",
+            "fieldTypeFile": "File",
+            "fieldTypeString": "Text",
+            "icon": "Icon",
+            "label": "Label",
+            "labelDescription": "The label is the name visible to users.",
+            "labelPlaceholder": "IDX file format",
+            "name": "Name",
+            "nameDescription": "The name must be used in your application to process the data.",
+            "namePlaceholder": "idx-file-format"
+        },
+        "List": {
+            "create": "Create Source Type",
+            "description": "Source types are used in the data upload form.",
+            "title": "Source Types"
+        },
+        "Select": {
+            "selectPlaceholder": "Select a source type",
+            "source": "Source"
+        },
+        "Table": {
+            "actions": "Actions",
+            "empty": "No source types available.",
+            "label": "Label",
+            "name": "Name"
+        }
+    },
+    "Task": {
+        "Flow": {
+            "completedDescription": "You have completed all tasks for this project. Thank you for your contribution!",
+            "completedTitle": "Tasks completed!",
+            "doesNotContain": "Does not contain",
+            "iDoNotKnow": "I do not know",
+            "title": "Task Flow"
+        },
+        "ImageSegmentation": {
+            "fitView": "Fit view",
+            "fullscreen": "Fullscreen",
+            "mouse": "Mouse",
+            "polygon": "Polygon",
+            "rectangle": "Rectangle",
+            "zoomIn": "Zoom in",
+            "zoomOut": "Zoom out"
+        },
+        "List": {
+            "all": "All",
+            "assignedToMe": "Assigned to me",
+            "start": "Start tasks",
+            "title": "Tasks"
+        },
+        "Table": {
+            "name": "Name"
+        }
+    },
+    "User": {
+        "Table": {
+            "actions": "Actions",
+            "email": "Email",
+            "fullName": "Full Name",
+            "role": "Role"
+        }
+    }
+}
