@@ -203,6 +203,7 @@
     },
     "Source": {
         "Table": {
+            "empty": "No sources available.",
             "name": "Name",
             "status": "Status",
             "uploadedAt": "Uploaded At"

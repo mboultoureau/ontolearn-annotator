@@ -1,5 +1,6 @@
 import { TaskStatus } from "@prisma/client";
 import { z } from "zod";
+import prisma from "@/lib/prisma";
 
 type Props = {
   params: {
@@ -9,7 +10,7 @@ type Props = {
 
 export async function POST(request: Request, { params }: Props) {
   const schema = z.object({
-    input: z.string(),
+    input: z.any(),
     type: z.string(),
   });
 
@@ -48,7 +49,7 @@ export async function POST(request: Request, { params }: Props) {
     data: {
       ...data.data,
       projectId: params.projectId,
-      status: TaskStatus.PENDING
+      status: TaskStatus.PENDING,
     },
   });
 
