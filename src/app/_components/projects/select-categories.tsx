@@ -1,4 +1,4 @@
-import { icons } from "@/utils/icons";
+import { icons } from "@/lib/icons";
 import { Category } from "@prisma/client";
 import { LucideProps } from "lucide-react";
 import { useTranslations } from "next-intl";

@@ -1,6 +1,6 @@
 import { Button } from "@/app/_components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/app/_components/ui/dropdown-menu";
-import { icons } from "@/utils/icons";
+import { icons } from "@/lib/icons";
 import { DataType } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";

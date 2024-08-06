@@ -8,7 +8,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/app/_components/ui/select";
-import { icons } from "@/utils/icons";
+import { icons } from "@/lib/icons";
 import { useTranslations } from "next-intl";
 
 export type Props = {

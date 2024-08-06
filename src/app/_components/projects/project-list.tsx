@@ -1,4 +1,4 @@
-import { icons } from "@/utils/icons";
+import { icons } from "@/lib/icons";
 import { Prisma } from "@prisma/client";
 import { ProjectItem } from "../project-item";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";

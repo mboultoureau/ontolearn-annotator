@@ -1,4 +1,4 @@
-import { icons } from "@/utils/icons";
+import { icons } from "@/lib/icons";
 import { DataType } from "@prisma/client";
 import { useTranslations } from "next-intl";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/select";
