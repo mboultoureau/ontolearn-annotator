@@ -23,7 +23,7 @@ export default async function IntegrationsPage({ params }: Props) {
   return (
     <>
       <IntegrationApi projectId={project.id} />
-      <IntegrationHeadwork />
+      <IntegrationHeadwork projectId={project.id} useHeadwork={project.useHeadwork} />
     </>
   );
 }

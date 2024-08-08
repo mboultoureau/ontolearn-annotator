@@ -37,4 +37,5 @@ next-env.d.ts
 
 /public/uploads
 /public/datasets
+/public/img/projects
 /data

@@ -1,4 +1,7 @@
-import { createProjectInputSchema } from "@/lib/validation-schemas/project";
+import {
+  createProjectInputSchema,
+  updateUseHeadworkInputSchema,
+} from "@/lib/validation-schemas/project";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const projectRouter = createTRPCRouter({
@@ -39,5 +42,29 @@ export const projectRouter = createTRPCRouter({
       });
 
       return project;
+    }),
+
+  updateUseHeadwork: protectedProcedure
+    .input(updateUseHeadworkInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if the project exists
+      const project = await ctx.db.project.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+
+      if (!project) {
+        throw new Error("Project not found");
+      }
+
+      return ctx.db.project.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          useHeadwork: input.useHeadwork,
+        },
+      });
     }),
 });

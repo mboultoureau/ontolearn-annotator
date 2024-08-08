@@ -115,6 +115,7 @@ model Project {
   slug            String           @unique
   description     String
   image           String?
+  useHeadwork     Boolean          @default(false)
   visibility      Visibility       @default(PRIVATE)
   categories      Category[]
   data            Data[]

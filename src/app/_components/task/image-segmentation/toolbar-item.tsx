@@ -1,6 +1,6 @@
+import { LucideIcon } from "lucide-react";
 import { Button } from "@/app/_components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/_components/ui/tooltip";
-import { LucideIcon } from "lucide-react";
 
 type Props = {
     icon: LucideIcon,

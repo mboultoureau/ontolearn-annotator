@@ -174,7 +174,13 @@
         "Settings": {
             "copy": "Copy",
             "copied": "Copied!",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
             "general": "General",
+            "headworkError": "Unable to toggle Headwork.",
+            "headworkErrorDescription": "An error occurred while toggling Headwork. Please try again.",
+            "headworkUpdated": "Headwork updated!",
+            "headworkUpdatedDescription": "Headwork has been updated to: {value}",
             "integrationApi": "API Integration",
             "integrations": "Integrations",
             "projectId": "Project ID",
@@ -270,7 +276,8 @@
             "title": "Tasks"
         },
         "Table": {
-            "name": "Name"
+            "createdAt": "Created At",
+            "type": "Type"
         }
     },
     "User": {

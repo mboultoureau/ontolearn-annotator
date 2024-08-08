@@ -18,7 +18,7 @@ export default function Overlay({
     onCancel,
     onValidate,
     onDelete,
-    currentSelection
+    currentSelection,
 }: Props) {
 
     return (

@@ -1,0 +1,121 @@
+"use client";
+
+import { Card, CardContent } from "@/app/_components/ui/card";
+import { cn } from "@/lib/utils";
+import React, { forwardRef, useRef, useState } from "react";
+
+// Define the props expected by the Dropzone component
+interface DropzoneProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  // onChange: React.Dispatch<React.SetStateAction<string[]>>;
+  className?: string;
+  fileExtension?: string;
+}
+
+interface DropzoneHandle {
+  click: () => void;
+  getFiles: () => FileList | null;
+}
+
+const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
+  { onChange, className, fileExtension, ...props },
+  ref
+) {
+  // Initialize state variables using the useState hook
+  const fileInputRef = useRef<HTMLInputElement | null>(null); // Reference to file input element
+  const [fileInfo, setFileInfo] = useState<string | null>(null); // Information about the uploaded file
+  const [filePreview, setFilePreview] = useState<string | null>(null); // File preview state
+  const [error, setError] = useState<string | null>(null); // Error message state
+
+  // Function to handle drag over event
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // Function to handle drop event
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const { files } = e.dataTransfer;
+    handleFiles(files);
+  };
+
+  // Function to handle file input change event
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { files } = e.target;
+    if (files) {
+      handleFiles(files);
+    }
+  };
+
+  // Function to handle processing of uploaded files
+  const handleFiles = (files: FileList) => {
+    const uploadedFile = files[0];
+
+    // Check file extension
+    if (fileExtension && !uploadedFile.name.endsWith(`.${fileExtension}`)) {
+      setError(`Invalid file type. Expected: .${fileExtension}`);
+      return;
+    }
+
+    const fileSizeInKB = Math.round(uploadedFile.size / 1024); // Convert to KB
+
+    const fileList = Array.from(files).map((file) => URL.createObjectURL(file));
+    // onChange((prevFiles) => [...prevFiles, ...fileList]);
+
+    // Display file information
+    setFileInfo(`Uploaded file: ${uploadedFile.name} (${fileSizeInKB} KB)`);
+    setFilePreview(URL.createObjectURL(uploadedFile));
+    setError(null); // Reset error state
+  };
+
+  // Function to simulate a click on the file input element
+  const handleButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  return (
+    <Card
+      className={cn(
+        filePreview
+          ? `h-96 border-2 bg-muted hover:border-muted-foreground/50`
+          : `h-96 border-2 border-dashed bg-muted hover:cursor-pointer hover:border-muted-foreground/50}`,
+        className
+      )}
+    >
+      {filePreview ? (
+        <CardContent className="flex flex-col items-center justify-center h-full space-y-2 px-2 py-4 text-xs">
+          <img src={filePreview} alt="Preview" className="w-full shimmer" />
+        </CardContent>
+      ) : (
+        <CardContent
+          className="flex flex-col items-center justify-center h-full space-y-2 px-2 py-4 text-xs"
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={handleButtonClick}
+        >
+          <div className="flex items-center justify-center text-muted-foreground">
+            <span className="font-medium">
+              Drag Files to Upload or click here
+            </span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={`.${fileExtension}`} // Set accepted file type
+              onChange={handleFileInputChange}
+              className="hidden"
+              multiple
+              {...props}
+            />
+          </div>
+          {fileInfo && <p className="text-muted-foreground">{fileInfo}</p>}
+          {error && <span className="text-red-500">{error}</span>}
+        </CardContent>
+      )}
+    </Card>
+  );
+});
+
+export { Dropzone };

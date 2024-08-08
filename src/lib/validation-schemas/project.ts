@@ -26,3 +26,8 @@ export const createProjectInputSchema = z.object({
   }),
   categories: z.array(z.string()).min(1),
 });
+
+export const updateUseHeadworkInputSchema = z.object({
+  id: z.string(),
+  useHeadwork: z.boolean()
+});
