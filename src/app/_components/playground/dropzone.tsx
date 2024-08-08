@@ -2,13 +2,19 @@
 
 import { Card, CardContent } from "@/app/_components/ui/card";
 import { cn } from "@/lib/utils";
+import { uploadPlayground } from "@/server/actions/playground";
 import React, { forwardRef, useRef, useState } from "react";
+import { useServerAction } from "zsa-react";
+import { useToast } from "../ui/use-toast";
+import { useTranslations } from "next-intl";
+import { PlaygroundTask, PlaygroundTaskStatus } from "@prisma/client";
 
-// Define the props expected by the Dropzone component
 interface DropzoneProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  // onChange: React.Dispatch<React.SetStateAction<string[]>>;
+  projectId: string;
   className?: string;
   fileExtension?: string;
+  status?: PlaygroundTaskStatus;
+  onUploaded: (playgroundTask: PlaygroundTask) => void;
 }
 
 interface DropzoneHandle {
@@ -17,7 +23,7 @@ interface DropzoneHandle {
 }
 
 const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
-  { onChange, className, fileExtension, ...props },
+  { onUploaded, projectId, status, className, fileExtension, ...props },
   ref
 ) {
   // Initialize state variables using the useState hook
@@ -25,6 +31,24 @@ const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
   const [fileInfo, setFileInfo] = useState<string | null>(null); // Information about the uploaded file
   const [filePreview, setFilePreview] = useState<string | null>(null); // File preview state
   const [error, setError] = useState<string | null>(null); // Error message state
+  const { toast } = useToast();
+  const t = useTranslations("Playground.Index");
+
+  const { execute, isPending } = useServerAction(uploadPlayground, {
+    onSuccess: (result) => {
+      onUploaded(result.data);
+    },
+    onError: (error) => {
+      toast({
+        title: t("errorUpload"),
+        description: t("errorUploadDescription"),
+        variant: "destructive"
+      });
+      setError(t("errorUpload"));
+      setFileInfo(null);
+      setFilePreview(null);
+    }
+  });
 
   // Function to handle drag over event
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -67,6 +91,12 @@ const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
     setFileInfo(`Uploaded file: ${uploadedFile.name} (${fileSizeInKB} KB)`);
     setFilePreview(URL.createObjectURL(uploadedFile));
     setError(null); // Reset error state
+
+    // Execute server action
+    const formData = new FormData();
+    formData.append("file", uploadedFile);
+    formData.append("projectId", projectId);
+    execute(formData);
   };
 
   // Function to simulate a click on the file input element
@@ -87,7 +117,7 @@ const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
     >
       {filePreview ? (
         <CardContent className="flex flex-col items-center justify-center h-full space-y-2 px-2 py-4 text-xs">
-          <img src={filePreview} alt="Preview" className="w-full shimmer" />
+          <img src={filePreview} alt="Preview" className={cn("h-full w-auto", (status === "PROCESSING" || status === "PENDING") && "shimmer")} />
         </CardContent>
       ) : (
         <CardContent

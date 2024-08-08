@@ -7,6 +7,33 @@ type Props = {
     };
 };
 
+export async function GET(
+    request: Request,
+    { params } : Props
+) {
+    const playground = await prisma.playgroundTask.findUnique({
+        where: {
+            id: params.id,
+            projectId: params.projectId,
+        },
+    });
+
+    if (!playground) {
+        return new Response(JSON.stringify({ error: "Playground not found" }), {
+            status: 404,
+            headers: {
+                "content-type": "application/json",
+            },
+        });
+    }
+
+    return new Response(JSON.stringify(playground), {
+        headers: {
+            "content-type": "application/json",
+        },
+    });
+}
+
 export async function PATCH(
     request: Request,
     { params } : Props

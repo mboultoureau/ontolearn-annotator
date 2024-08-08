@@ -67,11 +67,31 @@ const config = {
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
-        }
+        },
+        "hide-flip": {
+          from: { height: "100%" },
+          to: { height: "0" },
+        },
+        "flip-words-0": {
+          "40%": { transform: "translateY(-12%)" },
+          "100%": { transform: "translateY(0%)" },
+        },
+        "flip-words-1": {
+          "40%": { transform: "translateY(-112%)" },
+          "100%": { transform: "translateY(-100%)" },
+        },
+        "flip-words-2": {
+          "40%": { transform: "translateY(-212%)" },
+          "100%": { transform: "translateY(-200%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "flip-words-0": "flip-words-0 1s forwards",
+        "flip-words-1": "flip-words-1 1s forwards",
+        "flip-words-2": "flip-words-2 1s forwards",
+        "hide-flip": "hide-flip 0.2s forwards",
       },
       fontFamily: {
         sans: ["var(--font-sans)", ...fontFamily.sans],

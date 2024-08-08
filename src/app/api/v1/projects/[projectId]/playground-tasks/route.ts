@@ -1,12 +1,15 @@
 import prisma from "@/lib/prisma";
+import { PlaygroundTaskStatus } from "@prisma/client";
+import { NextRequest } from "next/server";
 
 type Props = {
     params: {
         projectId: string;
-    };
+    },
 };
 
-export async function GET(request: Request, { params } : Props) {
+export async function GET(request: NextRequest, { params } : Props) {
+
     // Check if the project exists
     const project = await prisma.project.findUnique({
         where: {
@@ -23,14 +26,26 @@ export async function GET(request: Request, { params } : Props) {
         });
     }
 
-    const sources = await prisma.playgroundTask.findMany({
-        where: {
-            projectId: params.projectId,
-            status: "PENDING"
-        }
+    const status = request.nextUrl.searchParams.get('status');
+    let where: {
+        projectId: string;
+        status?: PlaygroundTaskStatus;
+    } = {
+        projectId: params.projectId
+    };
+
+    if (status && status in PlaygroundTaskStatus) {
+        where = {
+            ...where,
+            status: status as PlaygroundTaskStatus
+        };
+    }
+
+    const tasks = await prisma.playgroundTask.findMany({
+        where: where
     });
 
-    return new Response(JSON.stringify(sources), {
+    return new Response(JSON.stringify(tasks), {
         headers: {
             "content-type": "application/json",
         },
