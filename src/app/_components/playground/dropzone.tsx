@@ -128,7 +128,7 @@ const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
         >
           <div className="flex items-center justify-center text-muted-foreground">
             <span className="font-medium">
-              Drag Files to Upload or click here
+              {t('dragOrUpload')}
             </span>
             <input
               ref={fileInputRef}
