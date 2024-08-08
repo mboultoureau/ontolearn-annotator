@@ -23,9 +23,18 @@ export default function Playground({ projectId }: Props) {
         const interval = setInterval(async () => {
             const response = await fetch(`/api/v1/projects/${projectId}/playground-tasks/${playgroundTask.id}`);
             const data = await response.json();
-            setPlaygroundTask(data);
 
             if (data.status === "COMPLETED") {
+                const prediction = data.output?.prediction.map((p) => {
+                    return {
+                        name: p.name,
+                        value: parseFloat(p.value),
+                    };
+                })
+
+                data.output.prediction = prediction;
+
+                setPlaygroundTask(data);
                 clearInterval(interval);
             }
         }, 1000);
