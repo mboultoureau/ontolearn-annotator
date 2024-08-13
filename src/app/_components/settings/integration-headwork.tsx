@@ -33,7 +33,7 @@ export default function IntegrationHeadwork({ projectId, useHeadwork }: Props) {
         toast({
           title: t("headworkUpdated"),
           description: t("headworkUpdatedDescription", {
-            status: checked ? t("enabled") : t("disabled"),
+            value: checked ? t("enabled") : t("disabled"),
           }),
         });
       })

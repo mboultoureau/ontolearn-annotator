@@ -28,7 +28,7 @@ export default function ImageSegmentation({ image, annotations }: Props) {
     const [selection, setSelection] = useState<any>(null);
     const [edition, setEdition] = useState(null);
     const { toast } = useToast();
-    const t = useTranslations();
+    const t = useTranslations("Task.ImageSegmentation");
 
     useEffect(() => {
         setSelection({
@@ -218,8 +218,8 @@ export default function ImageSegmentation({ image, annotations }: Props) {
     return (
         <>
             <div className="mx-auto flex justify-between w-full max-w-6xl gap-2">
-                <h1 className="text-3xl font-semibold">{t('image_segmentation')}</h1>
-                <Button onClick={onNextTask}>{t('next_task')}</Button>
+                <h1 className="text-3xl font-semibold">{t('imageSegmentation')}</h1>
+                <Button onClick={onNextTask}>{t('nextTask')}</Button>
             </div>
             <div className="relative h-full w-full my-8">
                 <Overlay

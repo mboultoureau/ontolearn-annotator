@@ -20,7 +20,7 @@ export default function PopupSlider({
   onValueChange,
 }: Props) {
   const [value, setValue] = useState<number>(defaultValue);
-  const t = useTranslations();
+  const t = useTranslations("Task.ImageSegmentation");
 
   return (
     <div className="flex flex-col space-y-1.5">

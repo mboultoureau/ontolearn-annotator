@@ -29,7 +29,6 @@ export default async function MyCustomViewer({ params }: { params: { slug: strin
 
   return (
     <HydrateClient>
-      {JSON.stringify(task)}
       <ImageSegmentation image={image} annotations={[]} />
     </HydrateClient>
   );

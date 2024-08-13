@@ -15,7 +15,7 @@ export default function PopupTextarea({
   defaultValue,
   onValueChange,
 }: Props) {
-  const t = useTranslations();
+  const t = useTranslations("Task.ImageSegmentation");
 
   return (
     <div className="flex flex-col space-y-1.5">

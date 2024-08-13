@@ -1,4 +1,4 @@
-import { MousePointer2, PenTool, RectangleHorizontal, View, ZoomIn, ZoomOut } from "lucide-react";
+import { Maximize, MousePointer2, PenTool, RectangleHorizontal, View, ZoomIn, ZoomOut } from "lucide-react";
 import { Separator } from "@/app/_components/ui/separator";
 import ToolbarItem from "./toolbar-item";
 import { useTranslations } from "next-intl";
@@ -10,7 +10,7 @@ type Props = {
 
 export default function Toolbar({ selectedTool, onButtonClicked }: Props) {
 
-    const t = useTranslations();
+    const t = useTranslations("Task.ImageSegmentation");
 
     const drawingTools = [
         {
@@ -33,28 +33,28 @@ export default function Toolbar({ selectedTool, onButtonClicked }: Props) {
     const buttons = [
         {
             value: 'zoom-in',
-            label: t('zoom_in'),
+            label: t('zoomIn'),
             icon: ZoomIn
         },
         {
             value: 'zoom-out',
-            label: t('zoom_out'),
+            label: t('zoomOut'),
             icon: ZoomOut
         },
         {
             value: 'fit-view',
-            label: t('fit_view'),
+            label: t('fitView'),
             icon: View
         },
-        // {
-        //     value: 'fullscreen',
-        //     label: 'Fullscreen',
-        //     icon: Maximize
-        // }
+        {
+            value: 'fullscreen',
+            label: t('fullscreen'),
+            icon: Maximize
+        }
     ]
 
     return (
-        <div className="flex items-center gap-2 absolute bg-background rounded-lg bottom-2 left-0 right-0 mx-auto z-[1] p-2 w-[313px]">
+        <div className="flex items-center gap-2 absolute bg-background rounded-lg bottom-2 left-0 right-0 mx-auto z-[1] p-2 w-[363px]">
             {drawingTools.map((tool) => (
                 <ToolbarItem
                     selected={selectedTool === tool.value}

@@ -26,7 +26,7 @@ export default function Popup({
   onDelete,
   currentSelection,
 }: Props) {
-  const t = useTranslations();
+  const t = useTranslations("Task.ImageSegmentation");
   const [error, setError] = useState<string | null>(null);
 
   const getInitialData = () => {

@@ -28,7 +28,7 @@ export default function PopupSelectList({
   useParentAsGroup,
   level = 0,
 }: Props) {
-  const t = useTranslations();
+  const t = useTranslations("Task.ImageSegmentation");
 
   return (
     <>

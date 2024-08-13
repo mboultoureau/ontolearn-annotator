@@ -30,7 +30,7 @@ export default function PopupSelect({
 }: Props) {
   const [open, setOpen] = useState<boolean>(false);
   const [value, setValue] = useState<string | undefined>(defaultValue);
-  const t = useTranslations();
+  const t = useTranslations("Task.ImageSegmentation");
 
   const getLabel = (value: string | undefined): string => {
     console.log(value)
