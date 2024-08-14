@@ -5,10 +5,9 @@ import {
     CardHeader,
     CardTitle
 } from "@/app/_components/ui/card"
-import { providerMap, signIn } from "@/server/auth"
+import { auth, providerMap, signIn } from "@/server/auth"
 import { Metadata } from "next"
 import { AuthError } from "next-auth"
-import { useTranslations } from "next-intl"
 import { getTranslations } from "next-intl/server"
 import Image from "next/image"
 import { redirect } from "next/navigation"
@@ -22,9 +21,14 @@ export async function generateMetadata(): Promise<Metadata> {
   }
   
 
-export default function LoginForm() {
+export default async function LoginForm() {
     const SIGNIN_ERROR_URL = "/api/auth/error"
-    const t = useTranslations('Account.Login');
+    const t = await getTranslations('Account.Login');
+    const session = await auth();
+
+    if (session) {
+        redirect("/projects")
+    }
 
     return (
         <Card className="mx-auto max-w-sm my-8">

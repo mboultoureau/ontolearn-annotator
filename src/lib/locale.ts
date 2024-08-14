@@ -6,7 +6,8 @@ import { cookies, headers } from 'next/headers';
 
 export async function getUserLocale() {
     if (cookies().has(LOCALE_COOKIE_NAME)) {
-        return cookies().get(LOCALE_COOKIE_NAME)?.value;
+        const locale = cookies().get(LOCALE_COOKIE_NAME)?.value;
+        return locales.includes(locale as Locale) ? locale : defaultLocale;
     }
 
     const acceptedLanguages = headers().get("accept-language")?.split(",");
