@@ -89,7 +89,7 @@ export const createData = authedProcedure
                 const buffer = new Uint8Array(arrayBuffer);
 
                 writeFileSync(path, buffer);
-                input[`fields[${field.id}]`] = path;
+                input[`fields[${field.id}]`] = `/uploads/${fileName}`;
             }
         }
 
