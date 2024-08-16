@@ -1,6 +1,7 @@
 
 
 
+import ProjectBreadcrumb from "@/app/_components/common/project-breadcrumb";
 import { columns } from "@/app/_components/data/columns";
 import { DataTable } from "@/app/_components/data/data-table";
 import { sourceColumns } from "@/app/_components/source/columns";
@@ -49,6 +50,7 @@ export default async function DataPage({ params }: { params: { slug: string } })
                     </Button>
                 )}
             </div>
+            <ProjectBreadcrumb project={project} page={t('title')} />
             <div className="mx-auto grid w-full max-w-6xl gap-2">
 
                 <Tabs defaultValue="data">

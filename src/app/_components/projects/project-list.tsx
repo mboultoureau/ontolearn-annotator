@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { ProjectItem } from "../project-item";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { Separator } from "../ui/separator";
+import { truncate } from "@/lib/utils";
 
 const categoriesWithProjects = Prisma.validator<Prisma.CategoryDefaultArgs>()({
     include: { projects: true },
@@ -31,7 +32,7 @@ export default function ProjectList({ categories }: Props) {
                         <category.icon className="mr-2 inline-block" /> {category.name}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                        {category.description}
+                        {truncate(category.description ?? "", 250)}
                     </p>
                 </div >
                 <Separator className="my-4" />

@@ -1,4 +1,5 @@
 
+import ProjectBreadcrumb from "@/app/_components/common/project-breadcrumb";
 import SettingLink from "@/app/_components/settings/setting-link";
 import { fetchProject } from "@/services/projects";
 import { getTranslations } from "next-intl/server";
@@ -28,6 +29,7 @@ export default async function Layout({
             <div className="mx-auto grid w-full max-w-6xl gap-2">
                 <h1 className="text-3xl font-semibold">{t('title')}</h1>
             </div>
+            <ProjectBreadcrumb project={project} page={t("title")} />
             <div className="mx-auto grid w-full max-w-6xl items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr]">
                 <nav
                     className="grid gap-4 text-sm text-muted-foreground" x-chunk="dashboard-04-chunk-0"

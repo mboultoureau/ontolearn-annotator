@@ -21,6 +21,6 @@ export default async function Playground({
   }
 
   return (
-    <PlaygroundComponent projectId={project.id} />
+    <PlaygroundComponent project={project} />
   );
 }
