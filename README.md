@@ -2,7 +2,7 @@
 
 OntoLearn Annotator is a free, open-source crowdsourcing platform compatible with active learning and based on a graph system.
 
-![Preview of graph system](docs/img/screenshot.png)
+![Preview of graph system](docs/static/img/screenshot.png)
 
 ## Features
 

@@ -329,7 +329,8 @@
     "Table": {
       "createdAt": "Created At",
       "name": "Nom",
-      "type": "Type"
+      "type": "Type",
+      "empty": "No tasks available."
     }
   },
   "User": {
