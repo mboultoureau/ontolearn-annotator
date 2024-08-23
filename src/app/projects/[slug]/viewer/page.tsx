@@ -25,11 +25,18 @@ export default async function MyCustomViewer({ params }: { params: { slug: strin
     projectId: project.id ?? "",
   });
 
-  const image = task?.input!.image;
+  // const image = task?.input!.image;
+
+  const images = [
+    "201310020957.dzi.dzi",
+    "201310025371.dzi.dzi",
+    "201310111661.dzi.dzi",
+    "201310153320.dzi.dzi"
+  ]
 
   return (
     <HydrateClient>
-      <ImageSegmentation image={image} annotations={[]} />
+      <ImageSegmentation annotations={[]} />
     </HydrateClient>
   );
 };

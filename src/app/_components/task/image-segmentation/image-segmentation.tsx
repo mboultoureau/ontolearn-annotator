@@ -16,11 +16,11 @@ import Overlay from './overlay';
 import { useTranslations } from 'next-intl';
 
 type Props = {
-    image: string;
+    // image: string;
     annotations: any;
 }
 
-export default function ImageSegmentation({ image, annotations }: Props) {
+export default function ImageSegmentation({ annotations }: Props) {
     const [selectedTool, setSelectedTool] = useState<string>("mouse")
     const [viewer, setViewer] = useState<OpenSeadragon.Viewer | null>(null)
     let [annotate, setAnnotate]: [any, any] = useState(null);
@@ -29,6 +29,19 @@ export default function ImageSegmentation({ image, annotations }: Props) {
     const [edition, setEdition] = useState(null);
     const { toast } = useToast();
     const t = useTranslations("Task.ImageSegmentation");
+
+
+    const images = [
+        "201310020957.dzi.dzi",
+        "201310025371.dzi.dzi",
+        "201310111661.dzi.dzi",
+        "201310153320.dzi.dzi"
+    ]
+
+    const rawIndex = new URLSearchParams(window.location.search).get("index");
+    const realIndex = rawIndex ? parseInt(rawIndex) : 0;
+    const [index, setIndex] = useState<number>(realIndex);
+    const image = "/datasets/dzi/" + images[realIndex];
 
     useEffect(() => {
         setSelection({
@@ -205,14 +218,20 @@ export default function ImageSegmentation({ image, annotations }: Props) {
             "data": annotations
         }
 
-        toast({
-            title: "You submitted the following values:",
-            description: (
-                <pre className="mt-2 w-[340px] max-h-[500px] rounded-md bg-slate-950 p-4 overflow-scroll select-text">
-                    <code className="text-white">{JSON.stringify(result, null, 2)}</code>
-                </pre>
-            ),
-        });
+        // toast({
+        //     title: "You submitted the following values:",
+        //     description: (
+        //         <pre className="mt-2 w-[340px] max-h-[500px] rounded-md bg-slate-950 p-4 overflow-scroll select-text">
+        //             <code className="text-white">{JSON.stringify(result, null, 2)}</code>
+        //         </pre>
+        //     ),
+        // });
+
+        // setIndex(index + 1);
+        const url = new URL(window.location.href);
+        url.searchParams.set("index", String(index + 1));
+        window.location.href = url.toString();
+        // window.location.reload();
     }
 
     return (

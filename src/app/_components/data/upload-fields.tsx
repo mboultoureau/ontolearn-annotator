@@ -1,5 +1,5 @@
 import { createDataInputSchema } from "@/lib/validation-schemas/data";
-import { DataTypeField } from "@prisma/client";
+import { SourceTypeField } from "@prisma/client";
 import { FieldArrayWithId, useForm } from "react-hook-form";
 import { z } from "zod";
 import { FormControl, FormField, FormItem, FormLabel } from "../ui/form";
@@ -13,7 +13,7 @@ export type Props = {
             value: string | FileList;
         }[];
     }, "fields", "id">[],
-    fields: DataTypeField[],
+    fields: SourceTypeField[],
     form: ReturnType<typeof useForm<z.infer<typeof createDataInputSchema>>>
 }
 

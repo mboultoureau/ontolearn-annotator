@@ -19,7 +19,7 @@ export default async function Home() {
         <Hero isLogged={session !== null} />
         <Features />
       </div>
-      <div className="flex h-20 w-full items-center justify-center border-t text-gray-600 dark:border-gray-800 dark:text-gray-300">
+      <div className="flex h-20 w-full items-center justify-center border-t text-gray-600 dark:border-gray-800 dark:text-gray-300 px-6">
         <p>{t("copyright")}</p>
       </div>
     </div>

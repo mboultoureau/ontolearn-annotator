@@ -5,7 +5,7 @@ import { getUserLocale } from './lib/locale';
 export type Locale = (typeof locales)[number];
 
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
-export const locales: string[] = ['en', 'fr', 'jp'];
+export const locales: string[] = ['en', 'fr', 'ja'];
 export const defaultLocale: Locale = 'en';
 
 export default getRequestConfig(async () => {

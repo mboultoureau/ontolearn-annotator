@@ -3,7 +3,7 @@
 import { createData } from "@/actions/data";
 import { createDataInputSchema } from "@/lib/validation-schemas/data";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Project, SourceType } from "@prisma/client";
+import { Prisma, Project } from "@prisma/client";
 import { AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { redirect } from "next/navigation";
@@ -17,7 +17,11 @@ import { useToast } from "../ui/use-toast";
 import SelectDataType from "./select-data-type";
 import UploadFields from "./upload-fields";
 
-export type SourceTypeWithFields = SourceType & { fields: SourceTypeField[] };
+export type SourceTypeWithFields = Prisma.SourceTypeGetPayload<{
+    include: {
+        fields: true
+    }
+}>
 
 export type Props = {
     project: Project;

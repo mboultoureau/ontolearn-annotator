@@ -6,6 +6,7 @@ import { DefaultSession, default as NextAuth, NextAuthConfig } from "next-auth";
 import type { Provider } from "next-auth/providers";
 import GitHub from "next-auth/providers/github";
 import { cookies } from "next/headers";
+import EmailProvider from "next-auth/providers/nodemailer";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -34,14 +35,18 @@ const providers: Provider[] = [
     clientId: env.GITHUB_CLIENT_ID,
     clientSecret: env.GITHUB_CLIENT_SECRET,
   }),
+  EmailProvider({
+    server: process.env.EMAIL_SERVER,
+    from: process.env.EMAIL_FROM
+  })
 ];
 
 export const providerMap = providers.map((provider) => {
   if (typeof provider === "function") {
     const providerData = provider();
-    return { id: providerData.id, name: providerData.name };
+    return { id: providerData.id, name: providerData.name, type: providerData.type };
   } else {
-    return { id: provider.id, name: provider.name };
+    return { id: provider.id, name: provider.name, type: provider.type };
   }
 });
 

@@ -1,4 +1,5 @@
 import { Statistics } from "@/app/_components/playground/statistics";
+import { JsonObject } from "@prisma/client/runtime/library";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
@@ -28,10 +29,10 @@ export default async function Playground({
     );
   }
 
-  const prediction = playgroundTask.output["prediction"].map((item) => ({
+  const prediction = (playgroundTask?.output as { prediction: any[] })?.prediction.map((item) => ({
     name: item["name"],
     value: (parseFloat(item["value"]) * 100).toFixed(3),
-  }));
+  })) || [];
 
   return (
     <>
@@ -39,7 +40,7 @@ export default async function Playground({
         <h1 className="text-3xl font-semibold">{t("title")}</h1>
       </div>
       <div className="mx-auto grid w-full max-w-6xl gap-2">
-        <Image src={playgroundTask.input["file"]} width={500} height={300} alt="Input" />
+        <Image src={((playgroundTask.input as JsonObject)?.file ?? "").toString()} width={500} height={300} alt="Input" />
         <Statistics data={prediction} />
       </div>
     </>

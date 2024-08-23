@@ -6,12 +6,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/_components/ui/card";
-import { Project } from "@prisma/client";
+import { Prisma, Project } from "@prisma/client";
 import { useTranslations } from "next-intl";
 import ProjectForm from "./form";
 
 type Props = {
-  project: Project;
+  project: Prisma.ProjectGetPayload<{
+    include: {
+      categories: true
+    }
+  }>;
 };
 
 export default function ProjectCard({ project }: Props) {

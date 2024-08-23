@@ -104,4 +104,5 @@ const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
   );
 });
 
+Dropzone.displayName = "Dropzone";
 export { Dropzone };

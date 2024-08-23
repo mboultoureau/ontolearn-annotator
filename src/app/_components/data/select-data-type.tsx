@@ -1,10 +1,10 @@
 import { icons } from "@/lib/icons";
-import { DataType } from "@prisma/client";
+import { SourceType } from "@prisma/client";
 import { useTranslations } from "next-intl";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/select";
 
 export type Props = {
-    dataTypes: DataType[];
+    dataTypes: SourceType[];
     value: string;
     onValueChange: (newValue: string) => void;
 }

@@ -19,7 +19,7 @@ export const projectSchema = z.object({
     .string({ required_error: "Description is required" })
     .min(10, "Description must be at least 10 characters")
     .max(10000, "Description must be less than 10000 characters"),
-  visibility: z.enum(["public", "private"], { required_error: "Visibility is required" }),
+  visibility: z.enum(["PUBLIC", "PRIVATE"], { required_error: "Visibility is required" }),
   categories: z.array(z.string()).min(1)
 });
 
@@ -46,7 +46,7 @@ export const dataTypeSchema = z.object({
       label: z.string({ required_error: "Label is required" })
         .min(4, "Label must be at least 4 characters")
         .max(100, "Label must be less than 100 characters"),
-      type: z.enum(["STRING", "FILE"], { required_error: "Type is required" }),
+      type: z.string(),
       required: z.boolean(),
     })
   ).min(1)

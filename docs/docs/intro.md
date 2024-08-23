@@ -2,46 +2,49 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# Getting Started
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Let's discover **OntoLearn Annotator in less than 15 minutes**.
 
-## Getting Started
+## Installation
 
-Get started by **creating a new site**.
+To install OntoLearn Annotator, you need [Docker](https://docs.docker.com/engine/install/), [Docker Compose](https://docs.docker.com/compose/install/) and [Git](https://git-scm.com/) installed on your machine.
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
-
-### What you'll need
-
-- [Node.js](https://nodejs.org/en/download/) version 18.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
-
-## Generate a new site
-
-Generate a new Docusaurus site using the **classic template**.
-
-The classic template will automatically be added to your project after you run the command:
-
-```bash
-npm init docusaurus@latest my-website classic
+```bash	
+git clone --depth 1 https://github.com/mboultoureau/ontolearn-annotator
+cd ontolearn-annotator
+cp .env .env.local
 ```
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
+Then, you need to fill the `.env.local` file with your own configuration.
 
-The command also installs all necessary dependencies you need to run Docusaurus.
+```yaml
+# You create a GitHub OAuth application by following the instructions at https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app
+GITHUB_CLIENT_ID=CLIENT_ID
+GITHUB_CLIENT_SECRET=CLIENT_SECRET
 
-## Start your site
+# Your application URL
+NEXTAUTH_URL="http://localhost"
 
-Run the development server:
+# Your database URL
+DATABASE_URL="postgresql://app:ChangeMe@db:5432/app?schema=public"
 
-```bash
-cd my-website
-npm run start
+# You can generate a secret with the following command: npx auth secret
+AUTH_SECRET="CHANGE_ME"
+
+# Your email server configuration
+EMAIL_SERVER=smtp://username:password@smtp.example.com:587
+EMAIL_FROM=noreply@example.com
 ```
 
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
+You can now start the project:
 
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
+```bash
+docker compose up -d
+```
 
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+See the [installation guide](/docs/usage/installation) for more installation options.
+
+## Create your first project
+
+Once the project is started, you can access the interface at [http://localhost](http://localhost). You can 

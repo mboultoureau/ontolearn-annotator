@@ -14,11 +14,16 @@ import { Button } from "../ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import { Input } from "../ui/input";
 import DataTypeField from "./data-type-field";
+import { Prisma, SourceType } from "@prisma/client";
 
 type Props = {
     formId?: string,
     displaySubmit?: boolean,
-    data?: z.infer<typeof dataTypeSchema>,
+    data?: Prisma.SourceTypeGetPayload<{
+        include: {
+            fields: true
+        }
+    }>,
     projectId: string
 }
 

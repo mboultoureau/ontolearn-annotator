@@ -18,7 +18,7 @@ export type Props = {
     onCategoryCreated: () => void;
 }
 
-export default function DialogCategory({ onCategoryCreated }) {
+export default function DialogCategory({ onCategoryCreated }: Props) {
     const t = useTranslations("Category.Create")
     const [open, setOpen] = useState(false)
     const formId = "create-category";

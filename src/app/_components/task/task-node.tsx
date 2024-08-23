@@ -4,11 +4,11 @@ import { useCallback } from 'react';
 const handleStyle = { top: 10 };
 const handleStyle2 = { top: 10 };
 
-export default function TaskNode({ data, isConnectable }) {
+export default function TaskNode({ data, isConnectable }: { data: any; isConnectable: boolean }) {
     const edges = useEdges();
     console.log(edges)
 
-    const onChange = useCallback((evt) => {
+    const onChange = useCallback((evt: any) => {
         console.log(evt.target.value);
     }, []);
 
@@ -19,7 +19,7 @@ export default function TaskNode({ data, isConnectable }) {
             </div>
             <div className="flex">
                 <div>
-                    {data.inputs.map((input, index) => {
+                    {data.inputs.map((input: any, index: any) => {
                         return (
                             <div className="h-[32px] flex items-center px-1" key={index}>
                                 {input.type === "flow" && (
@@ -38,7 +38,7 @@ export default function TaskNode({ data, isConnectable }) {
                                         <ellipse
                                             stroke="#e879f9"
                                             strokeWidth="60px"
-                                            fill="white"
+                                            // fill="white"
                                             cx="249.87"
                                             cy="249.871"
                                             rx="166.58"
@@ -52,7 +52,6 @@ export default function TaskNode({ data, isConnectable }) {
                                     type="target"
                                     position={Position.Left}
                                     // isConnectable={true}
-                                    type="target"
                                     id={`${data.id}-input-${index}`}
                                     style={{ top: 53 + index * 32, left: 10, width: 14, height: 14, opacity: 0 }}
                                 />
@@ -63,12 +62,11 @@ export default function TaskNode({ data, isConnectable }) {
                     })}
                 </div>
                 <div>
-                    {data.outputs.map((output, index) => {
+                    {data.outputs.map((output: any, index: any) => {
                         return (
                             <div className="h-[32px] flex items-center justify-end px-1" key={index}>
                                 <Handle
                                     id={`${data.id}-output-${index}`}
-                                    type="target"
                                     position={Position.Right}
                                     type="source"
                                     // isConnectable={isConnectable}

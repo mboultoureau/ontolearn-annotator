@@ -10,13 +10,13 @@ export type Props = {
     fields: any,
     append: any,
     remove: any,
-    updateName: any,
+    form: any
 }
 
 export default function DataTypeField({ fields, append, remove, form }: Props) {
     const t = useTranslations("SourceType.Form")
 
-    const updateName = (e: React.ChangeEvent<HTMLInputElement>, field: any, index) => {
+    const updateName = (e: React.ChangeEvent<HTMLInputElement>, field: any, index: number) => {
         form.setValue(`fields.${index}.name`, `${e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`);
         form.trigger(`fields.${index}.name`);
         field.onChange(e);
@@ -34,7 +34,7 @@ export default function DataTypeField({ fields, append, remove, form }: Props) {
                     {t('addField')}
                 </Button>
             </div>
-            {fields.map((field, index) => (
+            {fields.map((field: any, index: number) => (
                 <Card className="mt-4" key={field.id}>
                     <CardHeader className="flex flex-row justify-between items-center">
                         {t('fieldNumber', {number: index + 1})}

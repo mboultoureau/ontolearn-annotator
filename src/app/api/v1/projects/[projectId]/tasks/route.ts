@@ -48,6 +48,7 @@ export async function POST(request: Request, { params }: Props) {
   const createdData = await prisma.task.create({
     data: {
       ...data.data,
+      input: data.data.input,
       projectId: params.projectId,
       status: TaskStatus.PENDING,
     },

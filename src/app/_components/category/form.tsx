@@ -15,7 +15,8 @@ import SelectIcon from "./select-icon";
 
 const initialState = {
     success: false,
-    message: ""
+    message: "",
+    errors: {}
 }
 
 export type Props = {

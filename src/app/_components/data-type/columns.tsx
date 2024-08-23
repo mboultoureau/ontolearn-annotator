@@ -1,7 +1,7 @@
 import { Button } from "@/app/_components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/app/_components/ui/dropdown-menu";
 import { icons } from "@/lib/icons";
-import { DataType } from "@prisma/client";
+import { DataType, Prisma, SourceType } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
@@ -16,7 +16,13 @@ export type Props = {
   }
 }
 
-export function getColumns({ translations }: Props): ColumnDef<DataType>[] {
+type SourceWithProject = Prisma.SourceTypeGetPayload<{
+  include: {
+    project: true;
+  }
+}>
+
+export function getColumns({ translations }: Props): ColumnDef<SourceWithProject>[] {
   return [
     {
       accessorKey: "label",
@@ -58,7 +64,7 @@ export function getColumns({ translations }: Props): ColumnDef<DataType>[] {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <Link href={`/projects/${row.original!.project.slug}/settings/data-types/${row.original.name}`}>
+                <Link href={`/projects/${row.original!.project.slug}/settings/source-types/${row.original.name}`}>
                   <DropdownMenuItem>
                     Edit
                   </DropdownMenuItem>

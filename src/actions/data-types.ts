@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { dataTypeSchema } from "../lib/zod";
 import { auth } from "@/server/auth";
+import { SourceTypeFieldType } from "@prisma/client";
 
 export type StateResponse = {
     success?: boolean,
@@ -76,7 +77,10 @@ export async function createDataType(projectId: string, prevState: any, formData
         }
 
         const updatedFields = fields.filter((field: any) => field.id);
-        const createdFields = fields.filter((field: any) => !field.id);
+        const createdFields = fields.filter((field: any) => !field.id).map((field: any) => ({
+            ...field,
+            type: field.type as SourceTypeFieldType,
+        }));
         const removedFieldIds = existingDataType.fields
             .filter((field: any) => !fields.some((f: any) => f.id === field.id))
             .map((field: any) => field.id);
@@ -104,7 +108,7 @@ export async function createDataType(projectId: string, prevState: any, formData
                 data: {
                     name: field.name,
                     label: field.label,
-                    type: field.type,
+                    type: field.type as SourceTypeFieldType | undefined,
                     required: field.required,
                 },
             });
@@ -135,7 +139,10 @@ export async function createDataType(projectId: string, prevState: any, formData
             label,
             icon,
             fields: {
-                create: fields,
+                create: fields.map((field: any) => ({
+                    ...field,
+                    type: field.type as SourceTypeFieldType,
+                })),
             },
             projectId: projectId
         },

@@ -8,6 +8,7 @@ import { useServerAction } from "zsa-react";
 import { useToast } from "../ui/use-toast";
 import { useTranslations } from "next-intl";
 import { PlaygroundTask, PlaygroundTaskStatus } from "@prisma/client";
+import Image from "next/image";
 
 interface DropzoneProps extends React.InputHTMLAttributes<HTMLInputElement> {
   projectId: string;
@@ -22,7 +23,7 @@ interface DropzoneHandle {
   getFiles: () => FileList | null;
 }
 
-const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
+const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function Dropzone(
   { onUploaded, projectId, status, className, fileExtension, ...props },
   ref
 ) {
@@ -117,7 +118,7 @@ const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
     >
       {filePreview ? (
         <CardContent className="flex flex-col items-center justify-center h-full space-y-2 px-2 py-4 text-xs">
-          <img src={filePreview} alt="Preview" className={cn("h-full w-auto", (status === "PROCESSING" || status === "PENDING") && "shimmer")} />
+          <Image src={filePreview} alt="Preview" className={cn("h-full w-auto", (status === "PROCESSING" || status === "PENDING") && "shimmer")} width={500} />
         </CardContent>
       ) : (
         <CardContent
@@ -148,4 +149,5 @@ const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function (
   );
 });
 
+Dropzone.displayName = "Dropzone";
 export { Dropzone };

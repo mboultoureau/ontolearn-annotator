@@ -7,7 +7,7 @@ export async function PATCH(
 ) {
     const schema = z.object({
         name: z.string().optional(),
-        type: z.enum(["IMAGE", "LARGE_IMAGE"]).optional(),
+        type: z.enum(["IMAGE", "DEEP_ZOOM_IMAGE"]).optional(),
         status: z.enum(["PENDING", "PROCESSING", "COMPLETED"]),
         statusInfo: z.record(z.string(), z.string().or(z.number())).optional()
     });

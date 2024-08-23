@@ -29,7 +29,7 @@ export default function Playground({ project }: Props) {
       const data = await response.json();
 
       if (data.status === "COMPLETED") {
-        const prediction = data.output?.prediction.map((p) => {
+        const prediction = data.output?.prediction.map((p: any) => {
           return {
             name: p.name,
             value: parseFloat(p.value),
@@ -59,7 +59,7 @@ export default function Playground({ project }: Props) {
         />
         {playgroundTask && <Status status={playgroundTask.status} />}
         {playgroundTask && playgroundTask.status === "COMPLETED" && (
-          <Statistics data={playgroundTask.output?.prediction} />
+          <Statistics data={(playgroundTask.output as any)?.prediction} />
         )}
       </div>
     </>

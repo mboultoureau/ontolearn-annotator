@@ -27,11 +27,16 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "../ui/use-toast";
 import SelectCategories from "./select-categories";
+import { Category, Prisma } from "@prisma/client";
 
 type Props = {
   formId?: string;
   displaySubmit?: boolean;
-  data?: z.infer<typeof projectSchema>;
+  data?: Prisma.ProjectGetPayload<{
+    include: {
+      categories: true
+    }
+  }>;
 };
 
 export default function ProjectForm({
@@ -46,7 +51,6 @@ export default function ProjectForm({
 
   const { mutate, error, isPending } = api.project.create.useMutation();
 
-  let categories: string[] = [];
 //   if (Array.isArray(data?.categories) && data?.categories.length > 0) {
 //     categories = data.categories.map((category) => category.id);
 //   }
@@ -57,13 +61,13 @@ export default function ProjectForm({
       name: data?.name || "",
       slug: data?.slug || "",
       description: data?.description || "",
-      visibility: data?.visibility || "private",
-      categories: categories,
+      visibility: data?.visibility || "PRIVATE",
+      categories: data?.categories.map((category: Category) => category.id) || [],
     },
   });
 
   const onSubmit = async (values: z.infer<typeof projectSchema>) => {
-    await mutate(values);
+    await mutate({ ...values, visibility: "public" });
     if (error) return;
 
     toast({
@@ -157,16 +161,16 @@ export default function ProjectForm({
                   onValueChange={(value) =>
                     form.setValue(
                       "visibility",
-                      value === "public" ? "public" : "private"
+                      value === "PUBLIC" ? "PUBLIC" : "PRIVATE"
                     )
                   }
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="public" id="public" />
+                    <RadioGroupItem value="PUBLIC" id="public" />
                     <Label htmlFor="public">{t("visibilityPublic")}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="private" id="private" />
+                    <RadioGroupItem value="PRIVATE" id="private" />
                     <Label htmlFor="private">{t("visibilityPrivate")}</Label>
                   </div>
                 </RadioGroup>

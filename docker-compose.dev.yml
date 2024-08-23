@@ -10,14 +10,8 @@ services:
     volumes:
       - ./data/db:/var/lib/postgresql/data
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  maildev:
+    image: maildev/maildev
     ports:
-      - "80:3000"
-      - "443:3000"
-    volumes:
-      - ./public:/app/public
-    depends_on:
-      - db
+      - "1080:1080"
+      - "1025:1025"

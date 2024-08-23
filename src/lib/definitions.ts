@@ -33,7 +33,7 @@ export type Data = {
     id: string;
     name: string;
     type: $Enums.DataType;
-    status: $Enums.DataStatus;
+    status: $Enums.SourceStatus;
     uploadedAt: Date;
     filePath: string;
     statusInfo: StatusInfo|JsonValue;

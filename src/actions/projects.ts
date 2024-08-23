@@ -62,7 +62,7 @@ export async function createProject(prevState: any, formData: any) {
             name,
             slug,
             description,
-            visibility: visibility === "public" ? "PUBLIC" : "PRIVATE",
+            visibility,
             categories: {
                 connect: categories
             }

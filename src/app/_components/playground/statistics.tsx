@@ -25,7 +25,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function Statistics({ data }) {
+export function Statistics({ data }: { data: any }) {
 
   return (
     <Card>
