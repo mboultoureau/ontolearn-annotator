@@ -9,21 +9,18 @@ import {
   MiniMap,
   OnConnect,
   ReactFlow,
+  ReactFlowProvider,
   useEdgesState,
   useNodesState,
+  useReactFlow,
+  useStoreApi,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useMemo, useRef, useState } from "react";
 // import './style.css';
 import TaskNode from "./task-node";
 import { useTheme } from "next-themes";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "../ui/context-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -31,20 +28,41 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "../ui/command";
+} from "../../ui/command";
 import { cn } from "@/lib/utils";
 import { ChevronsUpDown, Check } from "lucide-react";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
+import { PopoverAnchor } from "@radix-ui/react-popover";
+import { v4 as uuidv4 } from "uuid";
 
 const initialNodes = [
   // { id: '1', position: { x: 0, y: 0 }, data: { label: '1' } },
   // { id: '2', position: { x: 0, y: 100 }, data: { label: '2' } },
   {
+    id: "node-0",
+    type: "taskNode",
+    position: { x: -300, y: 10 },
+    data: {
+      title: "Input",
+      inputs: [],
+      outputs: [
+        {
+          type: "flow",
+          label: "Start"
+        },
+        {
+          type: "image",
+          label: "Image",
+        },
+      ],
+    },
+  },
+  {
     id: "node-1",
     type: "taskNode",
     position: { x: 10, y: 10 },
     data: {
-      id: "node-1",
+      title: "Single or Multiple",
       inputs: [
         {
           type: "flow",
@@ -79,7 +97,7 @@ const initialNodes = [
     type: "taskNode",
     position: { x: 300, y: 10 },
     data: {
-      id: "node-2",
+      title: "Single",
       inputs: [
         {
           type: "flow",
@@ -138,7 +156,7 @@ const initialNodes = [
     type: "taskNode",
     position: { x: 300, y: 380 },
     data: {
-      id: "node-3",
+      title: "Multiple",
       inputs: [
         {
           type: "flow",
@@ -172,6 +190,106 @@ const initialNodes = [
         {
           type: "flow",
           label: "Doesn't contains",
+        },
+      ],
+    },
+  },
+  {
+    id: "node-4",
+    type: "taskNode",
+    position: { x: 600, y: 10 },
+    data: {
+      title: "Quality",
+      inputs: [
+        {
+          type: "flow",
+        },
+        {
+          type: "image",
+          label: "Image",
+        },
+      ],
+      outputs: [
+        {
+          type: "flow",
+        },
+        {
+          type: "number",
+          label: "Quality",
+        },
+      ],
+    },
+  },
+  {
+    id: "node-5",
+    type: "taskNode",
+    position: { x: 900, y: 10 },
+    data: {
+      title: "Confidence",
+      inputs: [
+        {
+          type: "flow",
+        },
+      ],
+      outputs: [
+        {
+          type: "flow",
+        },
+        {
+          type: "number",
+          label: "Confidence",
+        },
+      ],
+    },
+  },
+  {
+    id: "node-6",
+    type: "taskNode",
+    position: { x: -300, y: 10 },
+    data: {
+      title: "Set variable image",
+      inputs: [
+        {
+          type: "flow",
+        },
+        {
+          type: "image",
+          label: "Image",
+        },
+      ],
+      outputs: [
+        {
+          type: "flow",
+        },
+      ],
+    },
+  },
+  {
+    id: "node-7",
+    type: "taskNode",
+    position: { x: -300, y: 10 },
+    data: {
+      title: "image",
+      inputs: [],
+      outputs: [
+        {
+          type: "image",
+          label: "Image",
+        },
+      ],
+    },
+  },
+  {
+    id: "node-8",
+    type: "taskNode",
+    position: { x: -300, y: 10 },
+    data: {
+      title: "image",
+      inputs: [],
+      outputs: [
+        {
+          type: "image",
+          label: "Image",
         },
       ],
     },
@@ -221,86 +339,61 @@ const frameworks = [
     value: "astro",
     label: "Astro",
   },
-  {
-    value: "next.js",
-    label: "Next.js",
-  },
-  {
-    value: "sveltekit",
-    label: "SvelteKit",
-  },
-  {
-    value: "nuxt.js",
-    label: "Nuxt.js",
-  },
-  {
-    value: "remix",
-    label: "Remix",
-  },
-  {
-    value: "astro",
-    label: "Astro",
-  },
-  {
-    value: "next.js",
-    label: "Next.js",
-  },
-  {
-    value: "sveltekit",
-    label: "SvelteKit",
-  },
-  {
-    value: "nuxt.js",
-    label: "Nuxt.js",
-  },
-  {
-    value: "remix",
-    label: "Remix",
-  },
-  {
-    value: "astro",
-    label: "Astro",
-  },
-  {
-    value: "next.js",
-    label: "Next.js",
-  },
-  {
-    value: "sveltekit",
-    label: "SvelteKit",
-  },
-  {
-    value: "nuxt.js",
-    label: "Nuxt.js",
-  },
-  {
-    value: "remix",
-    label: "Remix",
-  },
-  {
-    value: "astro",
-    label: "Astro",
-  },
 ];
 
-export default function FlowBuilder() {
+export function Flow() {
+  const { theme } = useTheme();
+
   const nodeTypes = useMemo(() => ({ taskNode: TaskNode }), []);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const { theme } = useTheme();
-  const [value, setValue] = useState("");
+  const [open, setOpen] = useState(false);
+  const { screenToFlowPosition, zoomIn } = useReactFlow();
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const ref = useRef<HTMLDivElement>(null);
+  const store = useStoreApi();
+
 
   const onConnect: OnConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
 
+  const createNode = (type: string) => {
+    const newNode = {
+      id: uuidv4(),
+      type: "taskNode",
+      position: screenToFlowPosition({
+        x: coords.x,
+        y: coords.y,
+      }),
+      data: {
+        title: "New Node",
+        inputs: [],
+        outputs: [],
+      },
+    };
+
+    setNodes((nodes) => nodes.concat(newNode));
+  };
+
   return (
-    <ContextMenu>
-      <ContextMenuTrigger>
+      <Popover open={open}>
+        <PopoverAnchor asChild>
+          <div
+            className="absolute"
+            style={{ left: coords.x, top: coords.y }}
+          ></div>
+        </PopoverAnchor>
         <div
+          ref={ref}
           style={{ width: "100%", height: "100%", minHeight: "450px" }}
           className="rounded-md border border-input"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setCoords({ x: e.clientX, y: e.clientY });
+            setOpen(true);
+          }}
         >
           <ReactFlow
             nodes={nodes}
@@ -322,34 +415,36 @@ export default function FlowBuilder() {
             <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
           </ReactFlow>
         </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <Command>
-          <CommandInput placeholder="Search framework..." autoFocus />
-          <CommandList>
-            <CommandEmpty>No framework found.</CommandEmpty>
-            <CommandGroup>
-              {frameworks.map((framework) => (
-                <CommandItem
-                  key={framework.value}
-                  value={framework.value}
-                  onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === framework.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {framework.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </ContextMenuContent>
-    </ContextMenu>
+        <PopoverContent className="p-0">
+          <Command>
+            <CommandInput placeholder="Search framework..." autoFocus />
+            <CommandList>
+              <CommandEmpty>No framework found.</CommandEmpty>
+              <CommandGroup>
+                {frameworks.map((framework) => (
+                  <CommandItem
+                    key={framework.value}
+                    value={framework.value}
+                    onSelect={(currentValue) => {
+                      setOpen(false);
+                      createNode(currentValue);
+                    }}
+                  >
+                    {framework.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+  );
+}
+
+export default function FlowBuilder() {
+  return (
+    <ReactFlowProvider>
+      <Flow />
+    </ReactFlowProvider>
   );
 }
