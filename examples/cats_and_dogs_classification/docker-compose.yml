@@ -1,0 +1,20 @@
+services:
+  playground:
+    build:
+      context: .
+      dockerfile: ./playground/Dockerfile 
+    volumes:
+      - ./playground:/app
+    environment:
+      PROJECT_ID: ${PROJECT_ID}
+      PLATFORM_URL: ${PLATFORM_URL}
+    restart: always
+    command: bash -c "python3 -u /app/playground.py"
+    network_mode: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: 1

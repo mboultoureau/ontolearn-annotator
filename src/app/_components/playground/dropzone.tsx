@@ -118,7 +118,9 @@ const Dropzone = forwardRef<DropzoneHandle, DropzoneProps>(function Dropzone(
     >
       {filePreview ? (
         <CardContent className="flex flex-col items-center justify-center h-full space-y-2 px-2 py-4 text-xs">
-          <Image src={filePreview} alt="Preview" className={cn("h-full w-auto", (status === "PROCESSING" || status === "PENDING") && "shimmer")} width={500} />
+          <div className="w-full h-full relative">
+            <Image src={filePreview} alt="Preview" className={cn("h-full w-auto", (status === "PROCESSING" || status === "PENDING") && "shimmer")} fill />
+          </div>
         </CardContent>
       ) : (
         <CardContent

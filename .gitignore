@@ -39,3 +39,8 @@ next-env.d.ts
 /public/datasets
 /public/img/projects
 /data
+
+# Examples
+/examples/*/env
+*.keras
+.env

@@ -26,7 +26,7 @@ cp .env .env.local
 Then, you need to fill the `.env.local` file with your own configuration. You can now start the project:
 
 ```bash
-docker compose up -d
+docker compose -f ./docker-compose.yml -f ./docker-compose.dev.yml up -d
 dotenv -e .env.local -- npm exec prisma migrate dev
 npm run dev
 ```

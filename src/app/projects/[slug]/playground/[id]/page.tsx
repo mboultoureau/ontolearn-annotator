@@ -40,7 +40,7 @@ export default async function Playground({
         <h1 className="text-3xl font-semibold">{t("title")}</h1>
       </div>
       <div className="mx-auto grid w-full max-w-6xl gap-2">
-        <Image src={((playgroundTask.input as JsonObject)?.file ?? "").toString()} width={500} height={300} alt="Input" />
+        <Image src={((playgroundTask.input as JsonObject)?.file ?? "").toString()} width={500} height={300} alt="Input" fill />
         <Statistics data={prediction} />
       </div>
     </>
