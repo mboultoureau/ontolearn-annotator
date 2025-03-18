@@ -62,6 +62,7 @@
   "Data": {
     "Form": {
       "dataUploaded": "Données téléversées avec succès.",
+      "errorOccurred": "Une erreur s'est produite.",
       "sourceType": "Type de source",
       "submit": "Téléverser",
       "title": "Téléverser des données"

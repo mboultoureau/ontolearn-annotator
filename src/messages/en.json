@@ -62,6 +62,7 @@
   "Data": {
     "Form": {
       "dataUploaded": "Data uploaded successfully.",
+      "errorOccurred": "Error occurred.",
       "sourceType": "Source Type",
       "submit": "Upload",
       "title": "Upload Data"

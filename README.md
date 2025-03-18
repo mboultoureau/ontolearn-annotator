@@ -23,6 +23,11 @@ npm install
 cp .env .env.local
 ```
 
+Create the following folder in `public/`:
+
+- `uploads/playground/`
+- `img/projects/`
+
 Then, you need to fill the `.env.local` file with your own configuration. You can now start the project:
 
 ```bash

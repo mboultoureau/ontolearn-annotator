@@ -14,7 +14,6 @@ model = tf.keras.models.load_model("/app/model.keras")
 
 while True:
     try:
-        print(f"{PLATFORM_URL}/api/v1/projects/{PROJECT_ID}/playground-tasks?status=PENDING")
         response = requests.get(
             f"{PLATFORM_URL}/api/v1/projects/{PROJECT_ID}/playground-tasks?status=PENDING"
         )
@@ -63,8 +62,6 @@ while True:
                 "output": {"prediction": formatted_prediction},
                 "status": "COMPLETED",
             }
-
-            print(json.dumps(body))
 
             requests.patch(
                 f"{PLATFORM_URL}/api/v1/projects/{PROJECT_ID}/playground-tasks/{task_id}",

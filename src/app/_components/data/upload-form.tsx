@@ -70,21 +70,30 @@ export default function UploadForm({ project, sourceTypes }: Props) {
         }
     });
 
+    const onSubmit = form.handleSubmit(async (data) => {
+        console.log(data)
+
+        const formData = new FormData();
+        formData.append('sourceTypeId', data.sourceTypeId); 
+        formData.append('test', data.sourceTypeId);                
+
+        data.fields.forEach((field) => {
+            console.log(field)
+            if (field.value instanceof FileList) {
+                formData.append(`fields[${field.id}]`, field.value[0]);
+                return;
+            }
+            formData.append(`fields[${field.id}]`, field.value);
+        });
+        
+        console.log(formData)
+
+        execute(formData);
+    })
+
     return (
         <Form {...form}>
-            <form className="space-y-8" onSubmit={form.handleSubmit((values) => {
-                const formData = new FormData();
-                formData.append('sourceTypeId', values.sourceTypeId);
-                values.fields.forEach((field) => {
-                    if (field.value instanceof FileList) {
-                        formData.append(`fields[${field.id}]`, field.value[0]);
-                        return;
-                    }
-                    formData.append(`fields[${field.id}]`, field.value);
-                });
-                
-                execute(formData);
-            })}>
+            <form className="space-y-8" onSubmit={onSubmit}>
                 {isError && (
                     <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
