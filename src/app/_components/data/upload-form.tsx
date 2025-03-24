@@ -56,7 +56,7 @@ export default function UploadForm({ project, sourceTypes }: Props) {
             keys.forEach((key) => {
                 const errorMessage = err.fieldErrors[key]?.join(' ');
 
-                form.setError(key, {
+                form.setError(key.toString(), {
                     type: 'custom',
                     message: errorMessage
                 })
@@ -77,8 +77,7 @@ export default function UploadForm({ project, sourceTypes }: Props) {
         formData.append('sourceTypeId', data.sourceTypeId); 
         formData.append('test', data.sourceTypeId);                
 
-        data.fields.forEach((field) => {
-            console.log(field)
+        data.fields.forEach((field: any) => {
             if (field.value instanceof FileList) {
                 formData.append(`fields[${field.id}]`, field.value[0]);
                 return;
