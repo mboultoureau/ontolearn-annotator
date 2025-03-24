@@ -1,0 +1,9 @@
+content.data-type.categorical # Contains categorical data.
+content.data-type.image # Contains image data.
+content.data-type.tabular # Contains tabular data.
+content.language.en # Contains text in language English / en.
+content.subject.earth-and-nature # Relates to earth and nature.
+ml.task.anomaly-detection # Relates to Anomaly Detection, a machine learning task.
+ml.task.image-classification # Relates to Image Classification, a machine learning task.
+ml.task.image-clustering # Relates to Image Clustering, a machine learning task.
+ml.task.image-segmentation # Relates to Image Segmentation, a machine learning task.
