@@ -6,13 +6,7 @@ import { FormControl, FormField, FormItem, FormLabel } from "../ui/form";
 import { Input } from "../ui/input";
 
 export type Props = {
-    formFields: FieldArrayWithId<{
-        dataTypeId: string;
-        fields: {
-            id: string;
-            value: string | FileList;
-        }[];
-    }, "fields", "id">[],
+    formFields: any[],
     fields: SourceTypeField[],
     form: ReturnType<typeof useForm<z.infer<typeof createDataInputSchema>>>
 }
