@@ -13,10 +13,55 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum DataType {
+  TEXT
+  IMAGE
+  DEEP_ZOOM_IMAGE
+  FILE
+}
+
+enum Job {
+  GUEST
+  EXPERT
+  PHOTOGRAPH
+  ADMIN
+}
+
 enum Locale {
   ENGLISH
   FRENCH
   JAPANESE
+}
+
+enum PlaygroundTaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum SourceStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum SourceTypeFieldType {
+  STRING
+  FILE
+}
+
+enum TaskStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 enum Theme {
@@ -25,24 +70,29 @@ enum Theme {
   DARK
 }
 
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
 model User {
-  id            String          @id @default(cuid())
+  id_user       String    @id @default(uuid())
   name          String?
-  email         String          @unique
+  email         String    @unique
   emailVerified DateTime?
   image         String?
-  accounts      Account[]
-  sessions      Session[]
-  // Optional for WebAuthn support
-  Authenticator Authenticator[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now())
+  locale        Locale    @default(ENGLISH)
+  theme         Theme     @default(SYSTEM)
+  job           String    @default("Guest")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  locale         Locale           @default(ENGLISH)
-  theme          Theme            @default(SYSTEM)
-  membersOf      ProjectMember[]
-  PlaygroundTask PlaygroundTask[]
+  accounts        Account[]
+  sessions        Session[]
+  projectMembers  ProjectMember[]
+  playgroundTasks PlaygroundTask[]
+  areaOfInterests AreaOfInterest[]
+  authenticators  Authenticator[]
 }
 
 model Account {
@@ -57,23 +107,37 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id_user], onDelete: Cascade)
 
   @@id([provider, providerAccountId])
 }
 
 model Session {
-  sessionToken String   @unique
+  sessionToken String   @id
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id_user], onDelete: Cascade)
+
+  @@unique([sessionToken])
+}
+
+model Authenticator {
+  credentialID         String  @id
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  user User @relation(fields: [userId], references: [id_user], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -84,193 +148,228 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
-// Optional for WebAuthn support
-model Authenticator {
-  credentialID         String  @unique
-  userId               String
-  providerAccountId    String
-  credentialPublicKey  String
-  counter              Int
-  credentialDeviceType String
-  credentialBackedUp   Boolean
-  transports           String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([userId, credentialID])
-}
-
-model Category {
-  id          String    @id @default(cuid())
-  name        String
-  slug        String    @unique
-  description String?
-  icon        String
-  projects    Project[]
-}
-
 model Project {
-  id              String           @id @default(cuid())
-  name            String
-  slug            String           @unique
-  description     String
-  image           String?
-  useHeadwork     Boolean          @default(false)
-  visibility      Visibility       @default(PRIVATE)
-  categories      Category[]
-  data            Data[]
-  members         ProjectMember[]
-  sources         Source[]
-  sourceTypes     SourceType[]
-  statistics      Statistics[]
-  playgroundTasks PlaygroundTask[]
-  tasks           Task[]
-}
+  id_project String @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String
+  visibility  Visibility @default(PRIVATE)
+  image       String?
+  useHeadwork Boolean    @default(false)
 
-enum Visibility {
-  PUBLIC
-  PRIVATE
+  members    ProjectMember[]
+  dataFiles  DataFile[]
+  tasks      Question[]
+  stats      Statistics[]
+  sources    DataSource[]
+  pgTasks    PlaygroundTask[]
+  classTypes ClassType[]
+  categories CategoryToProject[]
 }
 
 model ProjectMember {
-  id        String  @id @default(cuid())
-  role      Role    @default(USER)
-  user      User    @relation(fields: [userId], references: [id])
-  userId    String
-  project   Project @relation(fields: [projectId], references: [id])
-  projectId String
+  id_user    String
+  id_project String
+  role       Role   @default(USER)
+
+  user    User    @relation(fields: [id_user], references: [id_user])
+  project Project @relation(fields: [id_project], references: [id_project])
+
+  @@id([id_user, id_project])
 }
 
-enum Role {
-  ADMIN
-  USER
+model DataFile {
+  id_data       String   @id
+  id_dataSource String
+  id_project    String
+  name          String
+  type          DataType @default(TEXT)
+  uploadedAt    DateTime @default(now())
+  content       String?
+  preview       String?
+  metadata      Json?
+  filePath      String   @unique
+  previewPath   String   @unique
+
+  project      Project          @relation(fields: [id_project], references: [id_project])
+  source       DataSource       @relation(fields: [id_dataSource], references: [id_dataSource])
+  annotated    Annotated?
+  nonAnnotated NonAnnotated?
+  classified   Classified[]
+  questions    Question[]
+  aois         AreaOfInterest[]
 }
 
-model Data {
-  id         String   @id @default(cuid())
-  name       String
-  type       DataType @default(TEXT)
-  uploadedAt DateTime @default(now())
-  content    String?
-  preview    String?
-  project    Project  @relation(fields: [projectId], references: [id])
-  projectId  String
-  metadata   Json?
-}
+model DataSource {
+  id_dataSource String       @id
+  id_sourceType String
+  id_project    String
+  name          String
+  sourceStatus  SourceStatus @default(PENDING)
+  uploadedAt    DateTime     @default(now())
+  statusInfo    Json?
 
-enum DataType {
-  TEXT
-  IMAGE
-  DEEP_ZOOM_IMAGE
-  FILE
-}
-
-enum SourceStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
-model Source {
-  id           String        @id @default(cuid())
-  name         String
-  type         SourceType    @relation(fields: [sourceTypeId], references: [id])
-  status       SourceStatus  @default(PENDING)
-  uploadedAt   DateTime      @default(now())
-  project      Project       @relation(fields: [projectId], references: [id])
-  projectId    String
-  statusInfo   Json?
-  sourceTypeId String
-  fields       SourceField[]
+  project    Project       @relation(fields: [id_project], references: [id_project])
+  sourceType SourceType    @relation(fields: [id_sourceType], references: [id_sourceType])
+  files      DataFile[]
+  fields     SourceField[]
 }
 
 model SourceType {
-  id        String            @id @default(cuid())
-  name      String
-  label     String
-  icon      String
-  fields    SourceTypeField[]
-  project   Project           @relation(fields: [projectId], references: [id])
-  projectId String
-  sources   Source[]
-}
+  id_sourceType String @id
+  name          String
+  label         String
+  icon          String
 
-model SourceField {
-  id       String          @id @default(cuid())
-  source   Source          @relation(fields: [sourceId], references: [id])
-  sourceId String
-  field    SourceTypeField @relation(fields: [fieldId], references: [id])
-  fieldId  String
-  value    String
+  fields  SourceTypeField[]
+  sources DataSource[]
 }
 
 model SourceTypeField {
-  id           String              @id @default(cuid())
-  name         String
-  label        String
-  type         SourceTypeFieldType
-  sourceType   SourceType?         @relation(fields: [sourceTypeId], references: [id])
-  sourceTypeId String?
-  required     Boolean
-  sources      SourceField[]
+  id_sourceTypeField String              @id
+  id_sourceType      String
+  name               String
+  label              String
+  type               SourceTypeFieldType
+  required           Boolean
+
+  sourceType   SourceType    @relation(fields: [id_sourceType], references: [id_sourceType])
+  sourceFields SourceField[]
 }
 
-enum SourceTypeFieldType {
-  STRING
-  FILE
+model SourceField {
+  id_sourceField     String @id
+  id_dataSource      String
+  id_sourceTypeField String
+  value              String
+
+  source   DataSource      @relation(fields: [id_dataSource], references: [id_dataSource])
+  fieldDef SourceTypeField @relation(fields: [id_sourceTypeField], references: [id_sourceTypeField])
 }
 
-model Image {
-  id          String @id @default(cuid())
-  filePath    String @unique
-  previewPath String @unique
+model ProjectCategory {
+  id_category String  @id @default(uuid())
+  name        String
+  slug        String  @unique
+  description String?
+  icon        String
+
+  projects CategoryToProject[]
 }
 
-model Statistics {
-  id        String  @id @default(cuid())
-  project   Project @relation(fields: [projectId], references: [id])
-  projectId String
-  epoch     Int
-  loss      Float
-  accuracy  Float
-}
+model CategoryToProject {
+  id_project  String
+  id_category String
 
-enum PlaygroundTaskStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
+  project  Project         @relation(fields: [id_project], references: [id_project], onDelete: Cascade)
+  category ProjectCategory @relation(fields: [id_category], references: [id_category], onDelete: Cascade)
+
+  @@id([id_project, id_category])
+  @@unique([id_category, id_project])
 }
 
 model PlaygroundTask {
-  id          String               @id @default(cuid())
-  project     Project              @relation(fields: [projectId], references: [id])
-  projectId   String
-  status      PlaygroundTaskStatus @default(PENDING)
-  createdAt   DateTime             @default(now())
-  createdBy   User                 @relation(fields: [createdById], references: [id])
-  createdById String
-  updatedAt   DateTime             @updatedAt
+  id_pgTask            String               @id
+  id_project           String
+  id_user              String
+  playgroundTaskStatus PlaygroundTaskStatus @default(PENDING)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime
+  input                Json
+  output               Json?
+
+  project Project @relation(fields: [id_project], references: [id_project])
+  user    User    @relation(fields: [id_user], references: [id_user])
+}
+
+model Question {
+  id_question Int        @id @default(autoincrement())
+  id_project  String
+  id_data     String
   input       Json
-  output      Json?
+  taskStatus  TaskStatus @default(PENDING)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  type        String
+
+  project  Project    @relation(fields: [id_project], references: [id_project])
+  data     DataFile   @relation(fields: [id_data], references: [id_data])
+  assigned Assigned[]
 }
 
-enum TaskStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
+model Assigned {
+  id_user             String
+  id_question         Int
+  id_aoi              Int
+  opinion             String
+  output              Json?
+  Question            Question? @relation(fields: [questionId_question], references: [id_question])
+  questionId_question Int?
+
+  @@id([id_user, id_question, id_aoi])
 }
 
-model Task {
-  id        String     @id @default(cuid())
-  project   Project    @relation(fields: [projectId], references: [id])
-  projectId String
-  type      String
-  input     Json
-  output    Json?
-  status    TaskStatus @default(PENDING)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+model AreaOfInterest {
+  id_aoi       Int      @id @default(autoincrement())
+  id_user      String
+  id_classType String?
+  id_data      String?
+  area         String
+  createdAt    DateTime @default(now())
+
+  user User?     @relation(fields: [id_user], references: [id_user])
+  data DataFile? @relation(fields: [id_data], references: [id_data])
+}
+
+model ClassType {
+  id_classType String @id
+  id_project   String
+  name         String
+
+  project Project @relation(fields: [id_project], references: [id_project])
+}
+
+model Statistics {
+  id_stats   String   @id
+  id_project String
+  epoch      Int
+  loss       Float
+  accuracy   Float
+  addedAt    DateTime @default(now())
+
+  project Project @relation(fields: [id_project], references: [id_project])
+}
+
+model Annotated {
+  id_annotated String   @id
+  data         DataFile @relation(fields: [id_annotated], references: [id_data])
+}
+
+model NonAnnotated {
+  id_nonannotated String   @id
+  data            DataFile @relation(fields: [id_nonannotated], references: [id_data])
+}
+
+model Classified {
+  id_classType    String
+  id_aoi          Int
+  id_data         String
+  addedAt         DateTime  @default(now())
+  updatedAt       DateTime
+  quality         String
+  DataFile        DataFile? @relation(fields: [dataFileId_data], references: [id_data])
+  dataFileId_data String?
+
+  @@id([id_classType, id_aoi, id_data])
+}
+
+model prisma_migrations {
+  id                  String    @id @db.VarChar(36)
+  checksum            String    @db.VarChar(64)
+  finished_at         DateTime?
+  migration_name      String    @db.VarChar(255)
+  logs                String?
+  rolled_back_at      DateTime?
+  started_at          DateTime  @default(now())
+  applied_steps_count Int       @default(0)
 }

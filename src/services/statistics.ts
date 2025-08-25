@@ -21,19 +21,19 @@ export async function fetchHeaderStatistics(projectId: string): Promise<HeaderSt
 
     const numberOfUsers = await prisma.projectMember.count({
         where: {
-            projectId: projectId
+            id_project: projectId
         }
     })
 
-    const numberOfData = await prisma.data.count({
+    const numberOfData = await prisma.dataFile.count({
         where: {
-            projectId: projectId
+            id_project: projectId
         }
     });
 
-    const numberOfDataThisMonth = await prisma.data.count({
+    const numberOfDataThisMonth = await prisma.dataFile.count({
         where: {
-            projectId: projectId,
+            id_data: projectId,
             uploadedAt: {
                 gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
                 lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
@@ -43,7 +43,7 @@ export async function fetchHeaderStatistics(projectId: string): Promise<HeaderSt
 
     const accuracy = await prisma.statistics.findFirst({
         where: {
-            projectId: projectId,
+            id_project: projectId,
             epoch: {
                 gte: 0
             }

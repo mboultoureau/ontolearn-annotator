@@ -32,7 +32,7 @@ export async function POST(request: Request, { params }: Props) {
   // Check if the project exists
   const project = await prisma.project.findUnique({
     where: {
-      id: params.projectId,
+      id_project: params.projectId,
     },
   });
 
@@ -45,12 +45,14 @@ export async function POST(request: Request, { params }: Props) {
     });
   }
 
-  const createdData = await prisma.task.create({
+  const createdData = await prisma.question.create({
     data: {
       ...data.data,
       input: data.data.input,
-      projectId: params.projectId,
-      status: TaskStatus.PENDING,
+      id_data: params.projectId,
+      updatedAt: params.projectId,
+      id_project: params.projectId,
+      taskStatus: TaskStatus.PENDING,
     },
   });
 

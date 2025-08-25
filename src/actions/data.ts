@@ -24,7 +24,7 @@ export const createData = authedProcedure
 
         const sourceType = await prisma.sourceType.findUnique({
             where: {
-                id: sourceTypeId
+                id_sourceType: sourceTypeId
             },
             include: {
                 fields: true
@@ -37,24 +37,24 @@ export const createData = authedProcedure
 
         // Validate each fields
         sourceType.fields.forEach((field) => {
-            if (!input[`fields[${field.id}]`]) {
+            if (!input[`fields[${field.id_sourceType}]`]) {
                 throw new Error(`Field ${field.label} is required`);
             }
 
-            if (field.type === "FILE" && !(input[`fields[${field.id}]`] instanceof File)) {
+            if (field.type === "FILE" && !(input[`fields[${field.id_sourceType}]`] instanceof File)) {
                 throw new Error(`Field ${field.label} must be a file`);
             }
 
-            if (field.type === "STRING" && typeof input[`fields[${field.id}]`] !== "string") {
+            if (field.type === "STRING" && typeof input[`fields[${field.id_sourceType}]`] !== "string") {
                 throw new Error(`Field ${field.label} must be a string`);
             }
         });
 
         const project = await prisma.project.findFirst({
             where: {
-                sourceTypes: {
+                sources: {
                     some: {
-                        id: sourceTypeId
+                        id_sourceType: sourceTypeId
                     }
                 }
             }
@@ -69,7 +69,7 @@ export const createData = authedProcedure
         for (const field of sourceType.fields) {
             if (field.type === "FILE") {
                 // Write the file to the disk
-                const file = input[`fields[${field.id}]`];
+                const file = input[`fields[${field.id_sourceTypeField}]`];
                 const extension = file.name.split('.').pop()?.toLocaleLowerCase();
                 const fileName = `${uuidv4()}.${extension}`;
 
@@ -84,22 +84,23 @@ export const createData = authedProcedure
 
         const fields = sourceType.fields.map((field) => {
             return {
-                fieldId: field.id,
-                value: input[`fields[${field.id}]`], // Ensure this retrieves the correct value
+                fieldId: field.id_sourceTypeField,
+                value: input[`fields[${field.id_sourceTypeField}]`], // Ensure this retrieves the correct value
                 field: {
-                    connect: { id: field.id }
+                    connect: { id: field.id_sourceTypeField }
                 }
             }
         });
 
         // Now we can create the data
-        const source = await prisma.source.create({
+        const source = await prisma.dataSource.create({
             data: {
-                name: "New data",
-                sourceTypeId,
-                projectId: project.id,
-                status: "PENDING",
-            }
+              id_dataSource: uuidv4(),              // obligatoire car pas de @default
+              id_sourceType: sourceType.id_sourceType, // on relie à un SourceType existant
+              id_project: project.id_project,       // relation vers Project
+              name: "New data",                     
+              sourceStatus: "PENDING",              
+            },
         });
 
 

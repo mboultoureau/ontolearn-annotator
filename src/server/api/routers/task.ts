@@ -11,9 +11,9 @@ export const taskRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
 
-      return db.task.findMany({
+      return db.question.findMany({
         where: {
-          projectId,
+          id_project: projectId,
         },
       });
     }),
@@ -23,9 +23,9 @@ export const taskRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
 
-      return db.task.findFirst({
+      return db.question.findFirst({
         where: {
-          projectId,
+          id_project: projectId,
         },
       });
     }),

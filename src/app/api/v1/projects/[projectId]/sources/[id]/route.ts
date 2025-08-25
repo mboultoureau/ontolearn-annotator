@@ -33,10 +33,9 @@ export async function PATCH(request: Request, { params } : Props) {
         });
     }
 
-    const updatedSource = await prisma.source.update({
+    const updatedSource = await prisma.dataSource.update({
         where: {
-            id: params.id,
-            projectId,
+            id_dataSource: params.id
         },
         data: {
             ...data.data

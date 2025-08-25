@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params } : Props) {
     // Check if the project exists
     const project = await prisma.project.findUnique({
         where: {
-            id: params.projectId
+            id_project: params.projectId
         }
     });
 
@@ -27,26 +27,27 @@ export async function GET(request: NextRequest, { params } : Props) {
     
     const status = request.nextUrl.searchParams.get('status');
     let where: {
-        projectId: string;
-        status?: SourceStatus;
+        id_project: string;
+        sourceStatus?: SourceStatus;
     } = {
-        projectId: params.projectId
+        id_project: params.projectId
     };
 
     if (status && status in SourceStatus) {
         where = {
             ...where,
-            status: status as SourceStatus
+            sourceStatus: status as SourceStatus
         };
     }
 
-    const sources = await prisma.source.findMany({
-        where: where,
+    const sources = await prisma.dataSource.findMany({
+        where, // <-- on réutilise le where préparé juste avant
         include: {
             fields: true,
-            type: true,
-        }
+            sourceType: true,
+        },
     });
+
 
     return new Response(JSON.stringify(sources), {
         headers: {

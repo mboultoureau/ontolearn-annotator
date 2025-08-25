@@ -2,81 +2,83 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/server/auth";
 import { Prisma } from "@prisma/client";
 
-const categoriesWithProjects = Prisma.validator<Prisma.CategoryDefaultArgs>()({
-    include: { projects: true },
-})
+// Type helper pour inclure les projets liés aux catégories
+const categoriesWithProjects = Prisma.validator<Prisma.CategoryToProjectDefaultArgs>()({
+  include: { project: true },
+});
 
-export type CategoriesWithProjects = Prisma.CategoryGetPayload<typeof categoriesWithProjects>[]
+export type CategoriesWithProjects =
+  Prisma.CategoryToProjectGetPayload<typeof categoriesWithProjects>[];
 
+/**
+ * Récupère toutes les catégories et projets visibles pour l'utilisateur connecté
+ */
 export const fetchProjectsAndCategoriesByUser = async (): Promise<CategoriesWithProjects> => {
-    const session = await auth();
+  const session = await auth();
 
-    if (!session?.user?.id) {
-        return Promise.reject("User not authenticated");
-    }
+  if (!session?.user?.id) {
+    return Promise.reject(new Error("User not authenticated"));
+  }
 
-    console.log("Fetching projects and categories by user", session.user.id)
+  console.log("Fetching projects and categories by user", session.user.id);
 
-    return prisma.category.findMany({
-        where: {
-            projects: {
-                some: {
-                    OR: [
-                        { visibility: "PUBLIC" },
-                        {
-                            members: {
-                                some: {
-                                    userId: session.user.id
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
-        },
+  return prisma.categoryToProject.findMany({
+    where: {
+      project: {
+        OR: [
+          { visibility: "PUBLIC" },
+          {
+            members: {
+              some: { id_user: session.user.id },
+            },
+          },
+        ],
+      },
+    },
+    include: {
+      project: {
         include: {
-            projects: {
-                orderBy: {
-                    name: "asc"
-                },
-                where: {
-                    OR: [
-                        { visibility: "PUBLIC" },
-                        { members: { some: { userId: session.user.id } } }
-                    ]
-                }
-            }
+          members: true, // optionnel → supprime si pas nécessaire
+          categories: true,
         },
-        orderBy: {
-            name: "asc"
-        }
-    });
-}
+      },
+    },
+    orderBy: { id_category: "asc" },
+  });
+};
 
-export const fetchProject = async ({ slug, args }: { slug: string, args?: any }): Promise<any> => {
-    const session = await auth();
+/**
+ * Récupère un projet par son slug si l'utilisateur y a accès
+ */
+export const fetchProject = async ({
+  slug,
+  args,
+}: {
+  slug: string;
+  args?: any;
+}): Promise<any> => {
+  const session = await auth();
 
-    if (!session?.user?.id) {
-        return Promise.reject("User not authenticated");
-    }
+  if (!session?.user?.id) {
+    return Promise.reject(new Error("User not authenticated"));
+  }
 
-    return prisma.project.findFirst({
-        include: {
-            categories: true
+  return prisma.project.findFirst({
+    include: {
+      categories: true,
+      members: true, // optionnel
+    },
+    where: {
+      AND: [
+        { slug },
+        {
+          OR: [
+            { visibility: "PUBLIC" },
+            { members: { some: { id_user: session.user.id } } },
+          ],
         },
-        where: {
-            AND: [
-                {
-                    slug: slug,
-                },
-                {
-                    OR: [
-                        { visibility: "PUBLIC" },
-                        { members: { some: { userId: session.user.id } } }
-                    ]
-                }
-            ]
-        },
-        ...args
-    });
-}
+      ],
+    },
+    ...args,
+  });
+};

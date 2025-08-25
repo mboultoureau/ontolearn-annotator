@@ -29,10 +29,12 @@ export const uploadPlayground = isMemberOfProject
 
     const playgroundTask = await prisma.playgroundTask.create({
       data: {
-        projectId: ctx.project.id,
-        status: "PENDING",
+        id_pgTask: uuidv4(),                   // Obligatoire, pas de default dans le modèle
+        id_project: ctx.project.id_project,
+        id_user: user.id_user,
+        playgroundTaskStatus: "PENDING",      // optionnel vu que tu as un default
         input: inputJSON,
-        createdById: user.id,
+        updatedAt: new Date(), 
       },
     });
 

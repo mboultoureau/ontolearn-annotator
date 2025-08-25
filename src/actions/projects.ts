@@ -72,8 +72,8 @@ export async function createProject(prevState: any, formData: any) {
     // Create project member
     const admin = await prisma.projectMember.create({
         data: {
-            projectId: project.id,
-            userId: session.user.id,
+            id_project: project.id_project,
+            id_user: session.user.id,
             role: "ADMIN",
         },
     });
@@ -94,7 +94,7 @@ export const uploadImage = isAdminOfProject
             // Remove old image from database
             await prisma.project.update({
                 where: {
-                    id: project.id,
+                    id_project: project.id_project,
                 },
                 data: {
                     image: null
@@ -106,7 +106,7 @@ export const uploadImage = isAdminOfProject
         }
 
         // Save new image to storage
-        const fileName = `${project.id}.png`;
+        const fileName = `${project.id_project}.png`;
         const path = `${process.cwd()}/public/img/projects/${fileName}`;
         const image: File = input.image;
 
@@ -121,7 +121,7 @@ export const uploadImage = isAdminOfProject
         // Update project with new image
         await prisma.project.update({
             where: {
-                id: project.id,
+                id_project: project.id_project,
             },
             data: {
                 image: fileName

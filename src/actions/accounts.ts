@@ -15,7 +15,7 @@ export const updateLocale = authedProcedure
         // Update the user's language in the database
         await prisma.user.update({
             where: {
-                id: user.id,
+                id_user: user.id_user,
             },
             data: {
                 locale: input.locale,
@@ -40,7 +40,7 @@ export const updateTheme = authedProcedure
         // Update the user's language in the database
         await prisma.user.update({
             where: {
-                id: user.id,
+                id_user: user.id_user,
             },
             data: {
                 theme: input.theme,

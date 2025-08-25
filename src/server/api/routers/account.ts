@@ -11,7 +11,7 @@ export const accountRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       return ctx.db.user.update({
         where: {
-          id: ctx.user.id,
+          id_user: ctx.user.id_user,
         },
         data: {
           locale: input.locale,
@@ -24,7 +24,7 @@ export const accountRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       return ctx.db.user.update({
         where: {
-          id: ctx.user.id,
+          id_user: ctx.user.id_user,
         },
         data: {
           theme: input.theme,

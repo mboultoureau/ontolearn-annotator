@@ -43,8 +43,8 @@ export async function createDataType(projectId: string, prevState: any, formData
     // Check if the project exists and the user has access to it
     const member = await prisma.projectMember.findFirst({
         where: {
-            projectId: projectId,
-            userId: session.user.id,
+            id_project: projectId,
+            id_user: session.user.id,
         },
         include: {
             project: true
@@ -63,7 +63,7 @@ export async function createDataType(projectId: string, prevState: any, formData
         // Edit the current dataType
         const existingDataType = await prisma.sourceType.findUnique({
             where: {
-                id: formData.id,
+                id_sourceType: formData.id,
             },
             include: {
                 fields: true
@@ -87,7 +87,7 @@ export async function createDataType(projectId: string, prevState: any, formData
 
         await prisma.sourceType.update({
             where: {
-                id: formData.id,
+                id_sourceType: formData.id,
             },
             data: {
                 name,
@@ -103,7 +103,7 @@ export async function createDataType(projectId: string, prevState: any, formData
         for (const field of updatedFields) {
             await prisma.sourceTypeField.update({
                 where: {
-                    id: field.id,
+                    id_sourceTypeField: field.id,
                 },
                 data: {
                     name: field.name,
@@ -117,7 +117,7 @@ export async function createDataType(projectId: string, prevState: any, formData
         // Delete the removed fields
         await prisma.sourceTypeField.deleteMany({
             where: {
-                id: {
+                id_sourceTypeField: {
                     in: removedFieldIds,
                 },
             },
@@ -144,7 +144,7 @@ export async function createDataType(projectId: string, prevState: any, formData
                     type: field.type as SourceTypeFieldType,
                 })),
             },
-            projectId: projectId
+            id_sourceType: projectId
         },
     });
 
@@ -165,17 +165,22 @@ export async function deleteDataType(dataTypeId: string): Promise<StateResponse>
 
     // Check if the data type exists and the user has access to it
     const dataType = await prisma.sourceType.findFirst({
-        where: {
-            id: dataTypeId,
+      where: {
+        id_sourceType: dataTypeId,
+        sources: {
+          some: {
             project: {
-                members: {
-                    some: {
-                        userId: session.user.id,
-                    },
+              members: {
+                some: {
+                  id_user: session.user.id,
                 },
+              },
             },
+          },
         },
+      },
     });
+
 
     if (!dataType) {
         return {
@@ -187,10 +192,10 @@ export async function deleteDataType(dataTypeId: string): Promise<StateResponse>
     // Delete the data type
     await prisma.sourceType.delete({
         where: {
-            id: dataTypeId,
+            id_sourceType: dataTypeId,
         },
     });
 
-    revalidatePath(`/projects/${dataType.projectId}/settings/source-types`);
-    redirect(`/projects/${dataType.projectId}/settings/source-types`);
+    revalidatePath(`/projects/${dataType.id_sourceType}/settings/source-types`);
+    redirect(`/projects/${dataType.id_sourceType}/settings/source-types`);
 }

@@ -13,8 +13,8 @@ export async function GET(
 ) {
     const playground = await prisma.playgroundTask.findUnique({
         where: {
-            id: params.id,
-            projectId: params.projectId,
+            id_pgTask: params.id,
+            id_project: params.projectId,
         },
     });
 
@@ -57,8 +57,8 @@ export async function PATCH(
 
     const playground = await prisma.playgroundTask.findUnique({
         where: {
-            id: params.id,
-            projectId: params.projectId,
+            id_pgTask: params.id,
+            id_project: params.projectId,
         },
     });
 
@@ -73,11 +73,11 @@ export async function PATCH(
 
     const updatedPlayground = await prisma.playgroundTask.update({
         where: {
-            id: params.id,
+            id_pgTask: params.id,
         },
         data: {
             output: data.data.output,
-            status: data.data.status,
+            playgroundTaskStatus: data.data.status,
         }
     });
 

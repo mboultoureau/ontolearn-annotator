@@ -31,7 +31,7 @@ export async function createCategory(prevState: any, formData: any) {
     const { id, name, slug, description, icon } = result.data;
 
     // Check if slug is already taken
-    const existingCategory = await prisma.category.findUnique({
+    const existingCategory = await prisma.projectCategory.findUnique({
         where: {
             slug,
         },
@@ -44,7 +44,7 @@ export async function createCategory(prevState: any, formData: any) {
     }
 
     // Insert the category into the database
-    const project = await prisma.category.create({
+    const project = await prisma.projectCategory.create({
         data: {
             name,
             slug,

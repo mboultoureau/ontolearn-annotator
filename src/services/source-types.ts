@@ -10,18 +10,26 @@ export async function fetchSourceTypes(projectId: string) {
 
     return await prisma.sourceType.findMany({
         where: {
-            projectId: projectId,
-            project: {
-                members: {
-                    some: {
-                        userId: session.user.id,
+            sources: {
+                some: {
+                    id_project: projectId,
+                    project: {
+                        members: {
+                            some: {
+                                id_user: session.user.id,
+                            },
+                        },
                     },
                 },
             },
         },
         include: {
-            project: true,
-        }
+            sources: {
+                include: {
+                    project: true,
+                },
+            },
+        },
     });
 }
 
@@ -35,18 +43,26 @@ export async function fetchSourceType(projectSlug: string, sourceTypeName: strin
     return await prisma.sourceType.findFirst({
         where: {
             name: sourceTypeName,
-            project: {
-                slug: projectSlug,
-                members: {
-                    some: {
-                        userId: session.user.id,
+            sources: {
+                some: {
+                    project: {
+                        slug: projectSlug,
+                        members: {
+                            some: {
+                                id_user: session.user.id,
+                            },
+                        },
                     },
                 },
             },
         },
         include: {
-            project: true,
-            fields: true
-        }
+            sources: {
+                include: {
+                    project: true,
+                },
+            },
+            fields: true,
+        },
     });
 }

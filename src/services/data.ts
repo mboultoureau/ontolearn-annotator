@@ -1,9 +1,9 @@
 import prisma from "@/lib/prisma";
 
 export default async function fetchLastData(projectId: string) {
-    return await prisma.data.findMany({
+    return await prisma.dataFile.findMany({
         where: {
-            projectId: projectId
+            id_project: projectId
         },
         orderBy: {
             uploadedAt: "desc"

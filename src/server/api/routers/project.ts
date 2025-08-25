@@ -24,19 +24,21 @@ export const projectRouter = createTRPCRouter({
           name: input.name,
           slug: input.slug,
           description: input.description,
-          categories: {
-            connect: input.categories.map((category) => {
-              return { id: category };
-            }),
-          },
         },
+      });
+
+      await ctx.db.categoryToProject.createMany({
+        data: input.categories.map((id_category) => ({
+          id_project: project.id_project,
+          id_category,
+        })),
       });
 
       // Assign the project to the user
       await ctx.db.projectMember.create({
         data: {
-          projectId: project.id,
-          userId: ctx.session.user.id,
+          id_project: project.id_project,
+          id_user: ctx.session.user.id,
           role: "ADMIN",
         },
       });
@@ -50,7 +52,7 @@ export const projectRouter = createTRPCRouter({
       // Check if the project exists
       const project = await ctx.db.project.findUnique({
         where: {
-          id: input.id,
+          id_project: input.id,
         },
       });
 
@@ -60,7 +62,7 @@ export const projectRouter = createTRPCRouter({
 
       return ctx.db.project.update({
         where: {
-          id: input.id,
+          id_project: input.id,
         },
         data: {
           useHeadwork: input.useHeadwork,

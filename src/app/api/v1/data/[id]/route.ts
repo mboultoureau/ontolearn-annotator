@@ -24,9 +24,9 @@ export async function PATCH(
         });
     }
 
-    const existingData = await prisma.data.findUnique({
+    const existingData = await prisma.dataFile.findUnique({
         where: {
-            id: params.id,
+            id_data: params.id,
         },
     });
 
@@ -39,9 +39,9 @@ export async function PATCH(
         });
     }
 
-    const updatedData = await prisma.data.update({
+    const updatedData = await prisma.dataFile.update({
         where: {
-            id: params.id,
+            id_data: params.id,
         },
         data: data.data
     });

@@ -32,7 +32,8 @@ export async function POST(
     const createdData = await prisma.statistics.create({
         data: {
             ...data.data,
-            projectId: params.projectId,
+            id_stats: params.projectId,
+            id_project: params.projectId,
         }
     });
 

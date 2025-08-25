@@ -110,7 +110,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 export const userProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   const user = await ctx.db.user.findFirst({
     where: {
-      id: ctx.session.user.id,
+      id_user: ctx.session.user.id,
     },
   })
 

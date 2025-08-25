@@ -14,7 +14,7 @@ export const authedProcedure = createServerActionProcedure()
 
         const user = await prisma.user.findUnique({
             where: {
-                id: session.user.id
+                id_user: session.user.id
             }
         });
 
@@ -36,10 +36,10 @@ export const isAdminOfProject = createServerActionProcedure(authedProcedure)
     .handler(async({ input, ctx }) => {
         const project = await ctx.prisma.project.findUnique({
             where: {
-                id: input.projectId,
+                id_project: input.projectId,
                 members: {
                     some: {
-                        userId: ctx.user.id,
+                        id_user: ctx.user.id_user,
                         role: "ADMIN"
                     }
                 }
@@ -64,10 +64,10 @@ export const isMemberOfProject = createServerActionProcedure(authedProcedure)
     .handler(async({ input, ctx }) => {
         const project = await ctx.prisma.project.findUnique({
             where: {
-                id: input.projectId,
+                id_project: input.projectId,
                 members: {
                     some: {
-                        userId: ctx.user.id
+                        id_user: ctx.user.id_user
                     }
                 }
             }

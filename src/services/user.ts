@@ -18,7 +18,7 @@ export const getUser = async(): Promise<User> => {
 
     const user = await prisma.user.findUnique({
         where: {
-            id: session.user.id
+            id_user: session.user.id
         }
     });
 

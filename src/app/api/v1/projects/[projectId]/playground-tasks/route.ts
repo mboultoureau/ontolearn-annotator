@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params } : Props) {
     // Check if the project exists
     const project = await prisma.project.findUnique({
         where: {
-            id: params.projectId
+            id_project: params.projectId
         }
     });
 
@@ -28,16 +28,16 @@ export async function GET(request: NextRequest, { params } : Props) {
 
     const status = request.nextUrl.searchParams.get('status');
     let where: {
-        projectId: string;
-        status?: PlaygroundTaskStatus;
+        id_project: string;
+        playgroundTaskStatus?: PlaygroundTaskStatus;
     } = {
-        projectId: params.projectId
+        id_project: params.projectId
     };
 
     if (status && status in PlaygroundTaskStatus) {
         where = {
             ...where,
-            status: status as PlaygroundTaskStatus
+            playgroundTaskStatus: status as PlaygroundTaskStatus
         };
     }
 
