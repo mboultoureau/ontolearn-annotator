@@ -1,6 +1,7 @@
 import { env } from "@/env";
 import { LOCALE_COOKIE_NAME } from "@/i18n";
 import prisma from "@/lib/prisma";
+import type { AbacPermissions } from "@/lib/abac-types";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { DefaultSession, default as NextAuth, NextAuthConfig } from "next-auth";
 import type { Provider } from "next-auth/providers";
@@ -21,12 +22,20 @@ declare module "next-auth" {
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
+    permissions?: AbacPermissions;
   }
 
   interface User {
     // ...other properties
     // role: UserRole;
     locale: string;
+  }
+}
+
+declare module "@auth/core/jwt" {
+  interface JWT {
+    locale?: string;
+    permissions?: AbacPermissions;
   }
 }
 
@@ -79,6 +88,7 @@ export const authConfig: NextAuthConfig = {
         ...session.user,
         id: token.sub,
       },
+      permissions: token.permissions, // Add permissions to session
     }),
     signIn: async ({ user }) => {
       if (user.locale) {
@@ -103,9 +113,39 @@ export const authConfig: NextAuthConfig = {
 
       return true;
     },
+    jwt: async ({ token, user }) => {
+      if (user) {
+        token.locale = user.locale;
+        
+        // Fetch the permissons from the ABAC server
+        try {
+          const response = await fetch(env.ABAC_SERVER_URL + "/ontolearn/permissions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              subjectId: user.id, environment: {
+                ip: "255.255.255.254",
+                locale: "en-US"
+              }
+            }),
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            token.permissions = data || {};
+          }
+        } catch (error) {
+          console.error("Error fetching permissions from ABAC server:", error);
+        }
+      }
+      return token;
+    }
   },
   pages: {
     signIn: "/login",
+    signOut: "/"
   },
 };
 

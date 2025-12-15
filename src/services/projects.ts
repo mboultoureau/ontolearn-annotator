@@ -15,8 +15,6 @@ export const fetchProjectsAndCategoriesByUser = async (): Promise<CategoriesWith
         return Promise.reject("User not authenticated");
     }
 
-    console.log("Fetching projects and categories by user", session.user.id)
-
     return prisma.category.findMany({
         where: {
             projects: {

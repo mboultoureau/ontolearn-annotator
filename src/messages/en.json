@@ -192,7 +192,8 @@
       "tasks": "Tasks",
       "title": "Project Settings",
       "useHeadwork": "Use Headwork",
-      "users": "Users"
+      "users": "Users",
+      "noAccess": "You do not have access to these settings: {settings}."
     },
     "Statistics": {
       "accuracy": "Accuracy",

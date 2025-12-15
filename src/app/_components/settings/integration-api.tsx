@@ -9,9 +9,10 @@ import { useState } from "react";
 
 interface Props {
   projectId: string;
+  readOnly?: boolean;
 }
 
-export default function IntegrationApi({ projectId }: Props) {
+export default function IntegrationApi({ projectId, readOnly = false }: Props) {
   const t = useTranslations("Project.Settings");
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -25,7 +26,7 @@ export default function IntegrationApi({ projectId }: Props) {
           <Label htmlFor="project-id">{t("projectId")}</Label>
           <div className="flex space-x-2">
             <Input value={projectId} readOnly id="project-id" />
-            <Button variant="secondary" className="shrink-0" onClick={() => {
+            <Button variant="secondary" className="shrink-0" disabled={readOnly} onClick={() => {
                 navigator.clipboard.writeText(projectId)
                 setCopied(true)
 

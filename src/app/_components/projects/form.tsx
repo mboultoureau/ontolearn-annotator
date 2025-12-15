@@ -37,12 +37,14 @@ type Props = {
       categories: true
     }
   }>;
+  readOnly?: boolean;
 };
 
 export default function ProjectForm({
   formId = "create-project",
   displaySubmit = true,
   data,
+  readOnly = true,
 }: Props) {
   const t = useTranslations("Project.Form");
   const { toast } = useToast();
@@ -68,7 +70,7 @@ export default function ProjectForm({
 
   const onSubmit = async (values: z.infer<typeof projectSchema>) => {
     await mutate({ ...values, visibility: "public" });
-    if (error) return;
+    if (error || readOnly) return;
 
     toast({
       title: t("projectCreated"),
@@ -106,6 +108,7 @@ export default function ProjectForm({
         <FormField
           control={form.control}
           name="name"
+          disabled={readOnly}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("name")}</FormLabel>
@@ -123,6 +126,7 @@ export default function ProjectForm({
         <FormField
           control={form.control}
           name="slug"
+          disabled={readOnly}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("slug")}</FormLabel>
@@ -136,6 +140,7 @@ export default function ProjectForm({
         <FormField
           control={form.control}
           name="description"
+          disabled={readOnly}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("description")}</FormLabel>
@@ -152,6 +157,7 @@ export default function ProjectForm({
         <FormField
           control={form.control}
           name="visibility"
+          disabled={readOnly}
           render={() => (
             <FormItem>
               <FormLabel>{t("visibility")}</FormLabel>
@@ -183,6 +189,7 @@ export default function ProjectForm({
         <FormField
           control={form.control}
           name="categories"
+          disabled={readOnly}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("categories")}</FormLabel>
@@ -205,7 +212,7 @@ export default function ProjectForm({
         />
         {displaySubmit && (
           <div className="flex justify-end">
-            <Button type="submit">{t("submit")}</Button>
+            <Button type="submit" disabled={readOnly}>{t("submit")}</Button>
           </div>
         )}
       </form>

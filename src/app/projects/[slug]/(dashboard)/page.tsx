@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function DashboardPage({ params }: Props) {
-  const t = await getTranslations("Project.Dashboard");
+  const t = await getTranslations("Project.Header.dashboard");
 
   const project = await fetchProject({ slug: params.slug });
   if (!project) {

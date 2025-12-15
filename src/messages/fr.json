@@ -192,7 +192,8 @@
       "tasks": "Tâches",
       "title": "Paramètres du projet",
       "useHeadwork": "Utiliser Headwork",
-      "users": "Utilisateurs"
+      "users": "Utilisateurs",
+      "noAccess": "Vous n'avez pas accès à ces paramètres : {settings}."
     },
     "Statistics": {
       "accuracy": "Précision",

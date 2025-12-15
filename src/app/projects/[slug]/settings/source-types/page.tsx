@@ -14,6 +14,8 @@ import { Plus } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { CanRead } from "@/lib/components/permission-gates"
+import { getAbacPermissions, getProjectPermissions, canWrite } from "@/lib/abac"
 
 type Props = {
     params: {
@@ -28,31 +30,40 @@ export default async function DataTypesPage({ params }: Props) {
         notFound();
     }
 
+    const permissions = await getAbacPermissions();
+    const projectPermissions = getProjectPermissions(permissions, project.id);
+    const readOnly = !canWrite(projectPermissions, "settings.sourceType");
+
     const sourceTypes = await fetchSourceTypes(project.id);
+    const tSettings = await getTranslations("Project.Settings");
 
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-row justify-between items-center">
-                        <CardTitle>
-                            {t('title')}
-                        </CardTitle>
-                        <Button asChild>
-                            <Link href={`/projects/${params.slug}/settings/source-types/create`}>
-                                <Plus className="mr-2" />
-                                {t('create')}
-                            </Link>
-                        </Button>
-                    </div>
-                    <CardDescription>
-                        {t('description')}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <DataTable data={sourceTypes} />
-                </CardContent>
-            </Card>
+            <CanRead projectId={project.id} resource="settings.sourceType" fallback={tSettings('noAccess', { settings: tSettings('sourceTypes') })}>
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-row justify-between items-center">
+                            <CardTitle>
+                                {t('title')}
+                            </CardTitle>
+                            {!readOnly && (
+                                <Button asChild>
+                                    <Link href={`/projects/${params.slug}/settings/source-types/create`}>
+                                        <Plus className="mr-2" />
+                                        {t('create')}
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
+                        <CardDescription>
+                            {t('description')}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <DataTable data={sourceTypes} />
+                    </CardContent>
+                </Card>
+            </CanRead>
         </>
     )
 }

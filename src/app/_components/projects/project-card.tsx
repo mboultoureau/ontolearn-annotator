@@ -16,9 +16,10 @@ type Props = {
       categories: true
     }
   }>;
+  readOnly?: boolean;
 };
 
-export default function ProjectCard({ project }: Props) {
+export default function ProjectCard({ project, readOnly = true }: Props) {
   const t = useTranslations("Project.Form");
 
   return (
@@ -31,10 +32,11 @@ export default function ProjectCard({ project }: Props) {
           formId="create-project"
           displaySubmit={false}
           data={project}
+          readOnly={readOnly}
         />
       </CardContent>
       <CardFooter className="border-t px-6 py-4 flex justify-end">
-        <Button form="create-project" type="submit">
+        <Button form="create-project" type="submit" disabled={readOnly}>
           {t("submit")}
         </Button>
       </CardFooter>

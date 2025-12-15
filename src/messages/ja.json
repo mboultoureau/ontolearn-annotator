@@ -165,7 +165,8 @@
       "sourceTypes": "ソースタイプ",
       "tasks": "タスク",
       "title": "プロジェクト設定",
-      "users": "ユーザー"
+      "users": "ユーザー",
+      "noAccess": "次の設定にアクセスする権限がありません: {settings}."
     },
     "Statistics": {
       "accuracy": "注釈データ",

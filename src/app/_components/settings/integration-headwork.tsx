@@ -12,9 +12,10 @@ import { useState } from "react";
 interface Props {
   projectId: string;
   useHeadwork: boolean;
+  readOnly?: boolean;
 }
 
-export default function IntegrationHeadwork({ projectId, useHeadwork }: Props) {
+export default function IntegrationHeadwork({ projectId, useHeadwork, readOnly = false }: Props) {
   const [isHeadworkEnabled, setIsHeadworkEnabled] = useState<boolean>(useHeadwork);
   const t = useTranslations("Project.Settings");
   const { toast } = useToast();
@@ -56,7 +57,7 @@ export default function IntegrationHeadwork({ projectId, useHeadwork }: Props) {
         <div className="flex items-center space-x-2">
           <Switch
             id="toggle-headwork"
-            disabled={isPending}
+            disabled={isPending || readOnly}
             onCheckedChange={handleChange}
             checked={isHeadworkEnabled}
           />

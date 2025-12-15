@@ -8,10 +8,11 @@ type Props = {
     project: {
         id: string;
         image: string;
-    }
+    },
+    readOnly?: boolean;
 }
 
-export default function UploadImageCard({ project }: Props) {
+export default function UploadImageCard({ project, readOnly = true }: Props) {
     const t = useTranslations("Project.Image");
 
     return (
@@ -37,7 +38,7 @@ export default function UploadImageCard({ project }: Props) {
                 <UploadImageForm formId="upload-image" projectId={project.id} />
             </CardContent>
             <CardFooter className="border-t px-6 py-4 flex justify-end">
-                <Button form="upload-image" type="submit">{t('submit')}</Button>
+                <Button form="upload-image" type="submit" disabled={readOnly}>{t('submit')}</Button>
             </CardFooter>
         </Card>
     )
