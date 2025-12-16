@@ -2,6 +2,7 @@ import ProjectBreadcrumb from "@/app/_components/common/project-breadcrumb";
 import { columns } from "@/app/_components/task/columns";
 import { DataTable } from "@/app/_components/task/data-table";
 import { Button } from "@/app/_components/ui/button";
+import { getAbacPermissions, getProjectPermissions, canWrite } from "@/lib/abac";
 import {
   Tabs,
   TabsContent,
@@ -38,6 +39,11 @@ export default async function DataPage({
     projectId: project.id,
   });
 
+
+  const permissions = await getAbacPermissions();
+  const projectPermissions = getProjectPermissions(permissions, project.id);
+  const canDoTask = canWrite(projectPermissions, "task");
+
   return (
     <HydrateClient>
       {project.useHeadwork ? (
@@ -46,7 +52,7 @@ export default async function DataPage({
         <>
           <div className="mx-auto flex justify-between w-full max-w-6xl gap-2">
             <h1 className="text-3xl font-semibold">{t("title")}</h1>
-            <Button asChild>
+            <Button disabled={!canDoTask}>
               <Link href={`/projects/${params.slug}/viewer`}>{t("start")}</Link>
             </Button>
           </div>

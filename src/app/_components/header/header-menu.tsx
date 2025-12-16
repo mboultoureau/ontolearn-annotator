@@ -4,6 +4,7 @@ import { Project } from "@/lib/definitions";
 import { Brain, Menu } from "lucide-react";
 import { SessionProvider } from "next-auth/react";
 import { getTranslations } from "next-intl/server";
+import { CanRead, CanWrite } from "@/lib/components/permission-gates";
 import Link from "next/link";
 import DropdownUser from "./dropdown-user";
 import HeaderLink from "./header-link";
@@ -25,9 +26,15 @@ export default async function HeaderMenu({ project }: { project?: Project }) {
         {project && (
           <>
             <HeaderLink href={`/projects/${project.slug}`}>{t('dashboard')}</HeaderLink>
-            <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
-            <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
-            <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
+            <CanRead projectId={project.id} resource="data.lowQuality">
+              <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
+            </CanRead>
+            <CanWrite projectId={project.id} resource="playground">
+              <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
+            </CanWrite>
+            <CanRead projectId={project.id} resource="task">
+              <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
+            </CanRead>
             <HeaderLink href={`/projects/${project.slug}/settings`}>{t('settings')}</HeaderLink>
           </>
         )}

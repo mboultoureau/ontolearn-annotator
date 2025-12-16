@@ -71,8 +71,6 @@ export default function UploadForm({ project, sourceTypes }: Props) {
     });
 
     const onSubmit = form.handleSubmit(async (data) => {
-        console.log(data)
-
         const formData = new FormData();
         formData.append('sourceTypeId', data.sourceTypeId); 
         formData.append('test', data.sourceTypeId);                
