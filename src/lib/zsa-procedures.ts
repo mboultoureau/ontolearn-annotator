@@ -34,20 +34,26 @@ export const isAdminOfProject = createServerActionProcedure(authedProcedure)
         z.object({ projectId: z.string() })
     )
     .handler(async({ input, ctx }) => {
+        const session = await auth();
+        const projectIds = session?.permissions?.projects?.map(p => p.id) ?? [];
+        
+        if (!projectIds.includes(input.projectId)) {
+            throw new Error("You are not a member of this project");
+        }
+
+        const projectPermission = session?.permissions?.projects?.find(p => p.id === input.projectId);
+        if (projectPermission?.role !== "ADMIN") {
+            throw new Error("You are not an admin of this project");
+        }
+
         const project = await ctx.prisma.project.findUnique({
             where: {
-                id: input.projectId,
-                members: {
-                    some: {
-                        userId: ctx.user.id,
-                        role: "ADMIN"
-                    }
-                }
+                id: input.projectId
             }
         });
 
         if (!project) {
-            throw new Error("You are not an admin of this project")
+            throw new Error("Project not found");
         }
 
         return {
@@ -62,19 +68,21 @@ export const isMemberOfProject = createServerActionProcedure(authedProcedure)
         z.object({ projectId: z.string() })
     )
     .handler(async({ input, ctx }) => {
+        const session = await auth();
+        const projectIds = session?.permissions?.projects?.map(p => p.id) ?? [];
+        
+        if (!projectIds.includes(input.projectId)) {
+            throw new Error("You are not a member of this project");
+        }
+
         const project = await ctx.prisma.project.findUnique({
             where: {
-                id: input.projectId,
-                members: {
-                    some: {
-                        userId: ctx.user.id
-                    }
-                }
+                id: input.projectId
             }
         });
 
         if (!project) {
-            throw new Error("You are not a member of this project")
+            throw new Error("Project not found");
         }
 
         return {

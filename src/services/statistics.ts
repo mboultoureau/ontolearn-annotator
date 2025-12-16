@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { auth } from "@/server/auth";
 
 export type HeaderStatistics = {
     accuracy: {
@@ -16,6 +17,19 @@ export type HeaderStatistics = {
 }
 
 export async function fetchHeaderStatistics(projectId: string): Promise<HeaderStatistics> {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        throw new Error("User not authenticated");
+    }
+
+    const projectIds = session.permissions?.projects.map(project => project.id) || [];
+
+    // Verify user has access to this project
+    if (!projectIds.includes(projectId)) {
+        throw new Error("Access denied to this project");
+    }
+
     // Simulate long running operation
     await new Promise(resolve => setTimeout(resolve, 10));
 

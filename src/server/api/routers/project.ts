@@ -47,6 +47,17 @@ export const projectRouter = createTRPCRouter({
   updateUseHeadwork: protectedProcedure
     .input(updateUseHeadworkInputSchema)
     .mutation(async ({ ctx, input }) => {
+      // Verify ABAC permissions
+      const projectPermission = ctx.session.permissions?.projects?.find(p => p.id === input.id);
+      if (!projectPermission) {
+        throw new Error("You don't have access to this project");
+      }
+
+      // Check write permission for headwork settings
+      if (!projectPermission.permissions.settings.headwork?.write) {
+        throw new Error("You don't have permission to modify headwork settings");
+      }
+
       // Check if the project exists
       const project = await ctx.db.project.findUnique({
         where: {

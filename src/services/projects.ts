@@ -12,23 +12,16 @@ export const fetchProjectsAndCategoriesByUser = async (): Promise<CategoriesWith
     const session = await auth();
 
     if (!session?.user?.id) {
-        return Promise.reject("User not authenticated");
+        return Promise.reject(new Error("User not authenticated"));
     }
 
+    const projectIds = session.permissions?.projects.map(project => project.id) || [];
+    
     return prisma.category.findMany({
         where: {
             projects: {
                 some: {
-                    OR: [
-                        { visibility: "PUBLIC" },
-                        {
-                            members: {
-                                some: {
-                                    userId: session.user.id
-                                }
-                            }
-                        }
-                    ]
+                    id: {in: projectIds}
                 }
             }
         },
@@ -38,10 +31,7 @@ export const fetchProjectsAndCategoriesByUser = async (): Promise<CategoriesWith
                     name: "asc"
                 },
                 where: {
-                    OR: [
-                        { visibility: "PUBLIC" },
-                        { members: { some: { userId: session.user.id } } }
-                    ]
+                    id: { in: projectIds }
                 }
             }
         },
@@ -55,8 +45,10 @@ export const fetchProject = async ({ slug, args }: { slug: string, args?: any })
     const session = await auth();
 
     if (!session?.user?.id) {
-        return Promise.reject("User not authenticated");
+        return Promise.reject(new Error("User not authenticated"));
     }
+
+    const projectIds = session.permissions?.projects.map(project => project.id) || [];
 
     return prisma.project.findFirst({
         include: {
@@ -68,10 +60,7 @@ export const fetchProject = async ({ slug, args }: { slug: string, args?: any })
                     slug: slug,
                 },
                 {
-                    OR: [
-                        { visibility: "PUBLIC" },
-                        { members: { some: { userId: session.user.id } } }
-                    ]
+                    id: { in: projectIds }
                 }
             ]
         },

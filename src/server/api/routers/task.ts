@@ -11,6 +11,16 @@ export const taskRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
 
+      // Verify ABAC permissions
+      const projectPermission = ctx.session.permissions?.projects?.find(p => p.id === projectId);
+      if (!projectPermission) {
+        throw new Error("You don't have access to this project");
+      }
+
+      if (!projectPermission.permissions.task.read) {
+        throw new Error("You don't have permission to read tasks");
+      }
+
       return db.task.findMany({
         where: {
           projectId,
@@ -22,6 +32,16 @@ export const taskRouter = createTRPCRouter({
     .input(getTaskByProjectIdInputSchema)
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
+
+      // Verify ABAC permissions
+      const projectPermission = ctx.session.permissions?.projects?.find(p => p.id === projectId);
+      if (!projectPermission) {
+        throw new Error("You don't have access to this project");
+      }
+
+      if (!projectPermission.permissions.task.read) {
+        throw new Error("You don't have permission to read tasks");
+      }
 
       return db.task.findFirst({
         where: {
