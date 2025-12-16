@@ -20,7 +20,7 @@ export default function CreateProjectPage() {
                 <h1 className="text-3xl font-semibold">{t('title')}</h1>
             </div>
             <div className="mx-auto grid w-full max-w-6xl gap-2">
-                <ProjectForm />
+                <ProjectForm readOnly={false} />
             </div>
         </>
     )

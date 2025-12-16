@@ -18,6 +18,12 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const project = await fetchProject({ slug: params.slug });
 
+  if (!project) {
+    return {
+      title: "Project not found",
+    };
+  }
+
   return {
     title: project.name,
     description: project.description,
