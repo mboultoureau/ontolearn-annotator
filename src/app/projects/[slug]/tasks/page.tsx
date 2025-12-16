@@ -39,7 +39,6 @@ export default async function DataPage({
     projectId: project.id,
   });
 
-
   const permissions = await getAbacPermissions();
   const projectPermissions = getProjectPermissions(permissions, project.id);
   const canDoTask = canWrite(projectPermissions, "task");

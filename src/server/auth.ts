@@ -116,8 +116,17 @@ export const authConfig: NextAuthConfig = {
     jwt: async ({ token, user }) => {
       if (user) {
         token.locale = user.locale;
+      }
         
-        // Fetch the permissons from the ABAC server
+      // Fetch permissions from ABAC server on sign-in or if permissions are expired
+      const shouldFetchPermissions = 
+        user || // First time signing in
+        !token.permissions || // No permissions yet
+        (token.permissions?.validUntil && new Date(token.permissions.validUntil) <= new Date()); // Permissions expired
+
+      const userId = user?.id || token.sub;
+      
+      if (shouldFetchPermissions && userId) {
         try {
           const response = await fetch(env.ABAC_SERVER_URL + "/ontolearn/permissions", {
             method: "POST",
@@ -125,7 +134,8 @@ export const authConfig: NextAuthConfig = {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              subjectId: user.id, environment: {
+              subjectId: userId,
+              environment: {
                 ip: "255.255.255.254",
                 locale: "en-US"
               }
@@ -135,9 +145,18 @@ export const authConfig: NextAuthConfig = {
           if (response.ok) {
             const data = await response.json();
             token.permissions = data || {};
+            
+            // Log new permissions status
+            // if (token?.permissions?.validUntil) {
+            //   const newValidUntilDate = new Date(token.permissions.validUntil);
+            //   const newTimeLeft = newValidUntilDate.getTime() - Date.now();
+            //   console.log("✓ Permissions refreshed!", (newTimeLeft / 1000).toFixed(2), "seconds left");
+            // }
+          } else {
+            console.error("✗ Failed to fetch permissions from ABAC server:", response.status);
           }
         } catch (error) {
-          console.error("Error fetching permissions from ABAC server:", error);
+          console.error("✗ Error fetching permissions from ABAC server:", error);
         }
       }
       return token;
