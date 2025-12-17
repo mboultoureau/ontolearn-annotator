@@ -113,18 +113,33 @@ export const authConfig: NextAuthConfig = {
 
       return true;
     },
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, user, trigger, session }) => {
       if (user) {
         token.locale = user.locale;
       }
         
-      // Fetch permissions from ABAC server on sign-in or if permissions are expired
-      const shouldFetchPermissions = 
-        user || // First time signing in
-        !token.permissions || // No permissions yet
-        (token.permissions?.validUntil && new Date(token.permissions.validUntil) <= new Date()); // Permissions expired
-
       const userId = user?.id || token.sub;
+      
+      // Fetch permissions from ABAC server on sign-in, update trigger, or if permissions are expired
+      // Also check if permissions are close to expiring (within 30 seconds) to proactively refresh
+      const now = new Date();
+      const permissionsExpired = token.permissions?.validUntil 
+        ? new Date(token.permissions.validUntil) <= now
+        : false;
+      const permissionsExpiringSoon = token.permissions?.validUntil
+        ? (new Date(token.permissions.validUntil).getTime() - now.getTime()) < 30000 // Less than 30 seconds
+        : false;
+      
+      // Check if the session data includes a flag to refresh permissions
+      const sessionRequestsRefresh = session && typeof session === 'object' && 'refreshPermissions' in session;
+      
+      const shouldFetchPermissions = 
+        !!user || // First time signing in
+        !token.permissions || // No permissions yet
+        trigger === "update" || // Manual session update (e.g., after project creation)
+        sessionRequestsRefresh || // Explicit refresh request
+        permissionsExpired || // Permissions expired
+        permissionsExpiringSoon; // Permissions expiring soon
       
       if (shouldFetchPermissions && userId) {
         try {
@@ -145,18 +160,11 @@ export const authConfig: NextAuthConfig = {
           if (response.ok) {
             const data = await response.json();
             token.permissions = data || {};
-            
-            // Log new permissions status
-            // if (token?.permissions?.validUntil) {
-            //   const newValidUntilDate = new Date(token.permissions.validUntil);
-            //   const newTimeLeft = newValidUntilDate.getTime() - Date.now();
-            //   console.log("✓ Permissions refreshed!", (newTimeLeft / 1000).toFixed(2), "seconds left");
-            // }
           } else {
-            console.error("✗ Failed to fetch permissions from ABAC server:", response.status);
+            console.error("Failed to fetch permissions from ABAC server:", response.status);
           }
         } catch (error) {
-          console.error("✗ Error fetching permissions from ABAC server:", error);
+          console.error("Error fetching permissions from ABAC server:", error);
         }
       }
       return token;

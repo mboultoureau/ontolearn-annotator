@@ -28,6 +28,7 @@ import { Textarea } from "../ui/textarea";
 import { useToast } from "../ui/use-toast";
 import SelectCategories from "./select-categories";
 import { Category, Prisma } from "@prisma/client";
+import { useSession } from "next-auth/react";
 
 type Props = {
   formId?: string;
@@ -50,12 +51,9 @@ export default function ProjectForm({
   const { toast } = useToast();
   const [updateCount, setUpdateCount] = useState(0);
   const router = useRouter();
+  const { update } = useSession();
 
-  const { mutate, error, isPending } = api.project.create.useMutation();
-
-//   if (Array.isArray(data?.categories) && data?.categories.length > 0) {
-//     categories = data.categories.map((category) => category.id);
-//   }
+  const { mutateAsync, error, isPending } = api.project.create.useMutation();
 
   const form = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
@@ -69,17 +67,30 @@ export default function ProjectForm({
   });
 
   const onSubmit = async (values: z.infer<typeof projectSchema>) => {
-    await mutate({ ...values, visibility: "public" });
-    if (error || readOnly) return;
-
-    toast({
-      title: t("projectCreated"),
-      description: t("projectCreatedDescription", {
-        name: values.name,
-      }),
-    });
-
-    router.push(`/projects/${values.slug}`);
+    if (readOnly) return;
+    
+    try {
+      const project = await mutateAsync({ ...values, visibility: "public" });
+      
+      toast({
+        title: t("projectCreated"),
+        description: t("projectCreatedDescription", {
+          name: values.name,
+        }),
+      });
+      
+      // Force session update to fetch fresh permissions
+      await update({ refreshPermissions: true });
+      
+      // Wait a bit to ensure permissions are refreshed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Navigate and force a page refresh
+      router.push(`/projects/${values.slug}`);
+      router.refresh();
+    } catch (err) {
+      // Error is already shown via error state
+    }
   };
 
   function updateSlug(e: React.ChangeEvent<HTMLInputElement>, field: any) {

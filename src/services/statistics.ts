@@ -25,7 +25,6 @@ export async function fetchHeaderStatistics(projectId: string): Promise<HeaderSt
 
     const projectIds = session.permissions?.projects.map(project => project.id) || [];
 
-    // Verify user has access to this project
     if (!projectIds.includes(projectId)) {
         throw new Error("Access denied to this project");
     }

@@ -3,84 +3,9 @@
 import prisma from "@/lib/prisma";
 import { uploadImageInputSchema } from "@/lib/validation-schemas/project-image";
 import { isAdminOfProject } from "@/lib/zsa-procedures";
-import { auth } from "@/server/auth";
 import fs from "fs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { projectSchema } from "../lib/zod";
-
-export async function createProject(prevState: any, formData: any) {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-        return {
-            message: "You must be logged in to create a project",
-        };
-    }
-
-    const result = projectSchema.safeParse({
-        id: formData.id,
-        name: formData.name,
-        slug: formData.slug,
-        description: formData.description,
-        visibility: formData.visibility,
-        categories: formData.categories
-    });
-
-    if (!result.success) {
-        return {
-            success: false,
-            message: "Invalid form data",
-            errors: result.error.flatten().fieldErrors,
-        };
-    }
-
-    const { id, name, slug, description, visibility } = result.data;
-
-    // Check if slug is already taken
-    const existingProject = await prisma.project.findUnique({
-        where: {
-            slug,
-        },
-    });
-    if (existingProject) {
-        return {
-            success: false,
-            message: "Slug is already taken",
-        };
-    }
-
-    const categories = formData?.categories.map((category: string) => {
-        return { id: category };
-    });
-
-    console.log(categories)
-
-    // Insert the project into the database
-    const project = await prisma.project.create({
-        data: {
-            name,
-            slug,
-            description,
-            visibility,
-            categories: {
-                connect: categories
-            }
-        },
-    });
-
-    // Create project member
-    const admin = await prisma.projectMember.create({
-        data: {
-            projectId: project.id,
-            userId: session.user.id,
-            role: "ADMIN",
-        },
-    });
-
-    revalidatePath('/projects');
-    redirect(`/projects/${project.slug}`);
-}
 
 export const uploadImage = isAdminOfProject
     .createServerAction()
