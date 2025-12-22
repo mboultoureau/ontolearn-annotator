@@ -1,18 +1,9 @@
 import prisma from "@/lib/prisma";
-import { auth } from "@/server/auth";
+import { requireRead } from "@/lib/abac-guards";
 
 export default async function fetchLastData(projectId: string) {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-        throw new Error("User not authenticated");
-    }
-
-    const projectIds = session.permissions?.projects.map(project => project.id) || [];
-
-    if (!projectIds.includes(projectId)) {
-        throw new Error("Access denied to this project");
-    }
+    // Check permission to read data
+    await requireRead(projectId, "data");
 
     return await prisma.data.findMany({
         where: {

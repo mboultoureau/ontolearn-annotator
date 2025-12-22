@@ -1,8 +1,7 @@
 
 import { fetchProject } from "@/services/projects"
 import { getTranslations } from "next-intl/server"
-import { CanRead } from "@/lib/components/permission-gates"
-import { getAbacPermissions, getProjectPermissions, canWrite } from "@/lib/abac"
+import { checkPermission } from "@/lib/abac-client"
 import { notFound } from "next/navigation"
 import { UserTableWrapper } from "./user-table-wrapper"
 
@@ -32,15 +31,17 @@ export default async function UserSettingPage({ params }: Props) {
         notFound();
     }
 
-    const permissions = await getAbacPermissions();
-    const projectPermissions = getProjectPermissions(permissions, project.id);
-    const readOnly = !canWrite(projectPermissions, "settings.user");
+    const canRead = await checkPermission(project.id, "settings:read");
+    const canWriteSettings = await checkPermission(project.id, "settings:write");
+    const readOnly = !canWriteSettings;
+
+    if (!canRead) {
+        return <div>{t('noAccess', { settings: t('users') })}</div>;
+    }
 
     return (
         <>
-            <CanRead projectId={project.id} resource="settings.user" fallback={t('noAccess', { settings: t('users') })}>
-                <UserTableWrapper members={project.members} readOnly={readOnly} />
-            </CanRead>
+            <UserTableWrapper members={project.members} readOnly={readOnly} />
         </>
     )
 }

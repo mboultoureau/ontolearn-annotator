@@ -1,7 +1,7 @@
 import { env } from "@/env";
 import { LOCALE_COOKIE_NAME } from "@/i18n";
 import prisma from "@/lib/prisma";
-import type { AbacPermissions } from "@/lib/abac-types";
+import type { cachedPermissions } from "@/lib/abac-types";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { DefaultSession, default as NextAuth, NextAuthConfig } from "next-auth";
 import type { Provider } from "next-auth/providers";
@@ -22,7 +22,14 @@ declare module "next-auth" {
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
-    permissions?: AbacPermissions;
+    cachedPermissions?: cachedPermissions;
+    updatePermissionCache?: {
+      projectId: string;
+      action: string;
+      allowed: boolean;
+      cachedAt: number;
+    };
+    invalidatePermissions?: boolean;
   }
 
   interface User {
@@ -35,7 +42,7 @@ declare module "next-auth" {
 declare module "@auth/core/jwt" {
   interface JWT {
     locale?: string;
-    permissions?: AbacPermissions;
+    cachedPermissions?: cachedPermissions;
   }
 }
 
@@ -118,55 +125,34 @@ export const authConfig: NextAuthConfig = {
         token.locale = user.locale;
       }
         
-      const userId = user?.id || token.sub;
-      
-      // Fetch permissions from ABAC server on sign-in, update trigger, or if permissions are expired
-      // Also check if permissions are close to expiring (within 30 seconds) to proactively refresh
-      const now = new Date();
-      const permissionsExpired = token.permissions?.validUntil 
-        ? new Date(token.permissions.validUntil) <= now
-        : false;
-      const permissionsExpiringSoon = token.permissions?.validUntil
-        ? (new Date(token.permissions.validUntil).getTime() - now.getTime()) < 30000 // Less than 30 seconds
-        : false;
-      
-      // Check if the session data includes a flag to refresh permissions
-      const sessionRequestsRefresh = session && typeof session === 'object' && 'refreshPermissions' in session;
-      
-      const shouldFetchPermissions = 
-        !!user || // First time signing in
-        !token.permissions || // No permissions yet
-        trigger === "update" || // Manual session update (e.g., after project creation)
-        sessionRequestsRefresh || // Explicit refresh request
-        permissionsExpired || // Permissions expired
-        permissionsExpiringSoon; // Permissions expiring soon
-      
-      if (shouldFetchPermissions && userId) {
-        try {
-          const response = await fetch(env.ABAC_SERVER_URL + "/ontolearn/permissions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              subjectId: userId,
-              environment: {
-                ip: "255.255.255.254",
-                locale: "en-US"
-              }
-            }),
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            token.permissions = data || {};
-          } else {
-            console.error("Failed to fetch permissions from ABAC server:", response.status);
-          }
-        } catch (error) {
-          console.error("Error fetching permissions from ABAC server:", error);
-        }
+      // Initialize cache structure
+      if (!token.cachedPermissions) {
+        token.cachedPermissions = {
+          version: Date.now(),
+          projects: {}
+        };
       }
+      
+      // Handle cache invalidation
+      if (session?.invalidatePermissions) {
+        token.cachedPermissions.version = Date.now();
+        token.cachedPermissions.projects = {};
+      }
+      
+      // Handle cache update for specific project:action
+      if (session?.updatePermissionCache) {
+        const { projectId, action, allowed, cachedAt } = session.updatePermissionCache;
+        
+        if (!token.cachedPermissions.projects[projectId]) {
+          token.cachedPermissions.projects[projectId] = {};
+        }
+        
+        token.cachedPermissions.projects[projectId][action] = {
+          allowed,
+          cachedAt
+        };
+      }
+      
       return token;
     }
   },

@@ -4,7 +4,7 @@ import { Project } from "@/lib/definitions";
 import { Brain, Menu } from "lucide-react";
 import { SessionProvider } from "next-auth/react";
 import { getTranslations } from "next-intl/server";
-import { CanRead, CanWrite } from "@/lib/components/permission-gates";
+import { checkPermission } from "@/lib/abac-client";
 import Link from "next/link";
 import DropdownUser from "./dropdown-user";
 import HeaderLink from "./header-link";
@@ -12,6 +12,11 @@ import HeaderLink from "./header-link";
 export default async function HeaderMenu({ project }: { project?: Project }) {
 
   const t = await getTranslations("Project.Header");
+  
+  // Check permissions server-side
+  const canReadData = project ? await checkPermission(project.id, "data:read") : false;
+  const canWritePlayground = project ? await checkPermission(project.id, "playground:write") : false;
+  const canReadTask = project ? await checkPermission(project.id, "task:read") : false;
 
   return (
     <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-10">
@@ -26,15 +31,15 @@ export default async function HeaderMenu({ project }: { project?: Project }) {
         {project && (
           <>
             <HeaderLink href={`/projects/${project.slug}`}>{t('dashboard')}</HeaderLink>
-            <CanRead projectId={project.id} resource="data.lowQuality">
+            {canReadData && (
               <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
-            </CanRead>
-            <CanWrite projectId={project.id} resource="playground">
+            )}
+            {canWritePlayground && (
               <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
-            </CanWrite>
-            <CanRead projectId={project.id} resource="task">
+            )}
+            {canReadTask && (
               <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
-            </CanRead>
+            )}
             <HeaderLink href={`/projects/${project.slug}/settings`}>{t('settings')}</HeaderLink>
           </>
         )}

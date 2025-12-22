@@ -5,8 +5,7 @@ import IntegrationHeadwork from "@/app/_components/settings/integration-headwork
 import { fetchProject } from "@/services/projects";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { CanRead } from "@/lib/components/permission-gates";
-import { getAbacPermissions, getProjectPermissions, canWrite } from "@/lib/abac";
+import { checkPermission } from "@/lib/abac-client";
 
 type Props = {
   params: {
@@ -22,16 +21,18 @@ export default async function IntegrationsPage({ params }: Props) {
     notFound();
   }
 
-  const permissions = await getAbacPermissions();
-  const projectPermissions = getProjectPermissions(permissions, project.id);
-  const readOnly = !canWrite(projectPermissions, "settings.integration");
+  const canRead = await checkPermission(project.id, "settings:read");
+  const canWriteSettings = await checkPermission(project.id, "settings:write");
+  const readOnly = !canWriteSettings;
+
+  if (!canRead) {
+    return <div>{t('noAccess', { settings: t('integrations') })}</div>;
+  }
 
   return (
     <>
-      <CanRead projectId={project.id} resource="settings.integration" fallback={t('noAccess', { settings: t('integrations') })}>
-        <IntegrationApi projectId={project.id} readOnly={readOnly} />
-        <IntegrationHeadwork projectId={project.id} useHeadwork={project.useHeadwork} readOnly={readOnly} />
-      </CanRead>
+      <IntegrationApi projectId={project.id} readOnly={readOnly} />
+      <IntegrationHeadwork projectId={project.id} useHeadwork={project.useHeadwork} readOnly={readOnly} />
     </>
   );
 }

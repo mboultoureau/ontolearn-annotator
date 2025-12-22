@@ -1,19 +1,9 @@
 import prisma from '@/lib/prisma';
-import { auth } from '@/server/auth';
+import { requireRead } from '@/lib/abac-guards';
 
 export async function fetchSourceTypes(projectId: string) {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-        return Promise.reject(new Error("User not authenticated"));
-    }
-
-    const projectIds = session.permissions?.projects.map(project => project.id) || [];
-
-    // Verify user has access to this project
-    if (!projectIds.includes(projectId)) {
-        return Promise.reject(new Error("Access denied to this project"));
-    }
+    // Check permission to read source types
+    await requireRead(projectId, "sourceType");
 
     return await prisma.sourceType.findMany({
         where: {
@@ -26,20 +16,24 @@ export async function fetchSourceTypes(projectId: string) {
 }
 
 export async function fetchSourceType(projectSlug: string, sourceTypeName: string) {
-    const session = await auth();
+    // First find the project to get its ID
+    const project = await prisma.project.findUnique({
+        where: { slug: projectSlug },
+        select: { id: true }
+    });
 
-    if (!session?.user?.id) {
-        return Promise.reject(new Error("User not authenticated"));
+    if (!project) {
+        return Promise.reject(new Error("Project not found"));
     }
 
-    const projectIds = session.permissions?.projects.map(project => project.id) || [];
+    // Check permission to read source types
+    await requireRead(project.id, "sourceType");
 
     return await prisma.sourceType.findFirst({
         where: {
             name: sourceTypeName,
             project: {
-                slug: projectSlug,
-                id: { in: projectIds }
+                slug: projectSlug
             },
         },
         include: {

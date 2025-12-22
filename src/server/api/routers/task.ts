@@ -4,6 +4,7 @@ import {
   protectedProcedure,
 } from "@/server/api/trpc";
 import { db } from "@/server/db";
+import { requireRead } from "@/lib/abac-guards";
 
 export const taskRouter = createTRPCRouter({
   get: protectedProcedure
@@ -11,15 +12,8 @@ export const taskRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
 
-      // Verify ABAC permissions
-      const projectPermission = ctx.session.permissions?.projects?.find(p => p.id === projectId);
-      if (!projectPermission) {
-        throw new Error("You don't have access to this project");
-      }
-
-      if (!projectPermission.permissions.task.read) {
-        throw new Error("You don't have permission to read tasks");
-      }
+      // Check read permission for tasks
+      await requireRead(projectId, "task");
 
       return db.task.findMany({
         where: {
@@ -33,15 +27,8 @@ export const taskRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
 
-      // Verify ABAC permissions
-      const projectPermission = ctx.session.permissions?.projects?.find(p => p.id === projectId);
-      if (!projectPermission) {
-        throw new Error("You don't have access to this project");
-      }
-
-      if (!projectPermission.permissions.task.read) {
-        throw new Error("You don't have permission to read tasks");
-      }
+      // Check read permission for tasks
+      await requireRead(projectId, "task");
 
       return db.task.findFirst({
         where: {

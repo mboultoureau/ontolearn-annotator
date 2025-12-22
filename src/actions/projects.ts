@@ -2,12 +2,12 @@
 
 import prisma from "@/lib/prisma";
 import { uploadImageInputSchema } from "@/lib/validation-schemas/project-image";
-import { isAdminOfProject } from "@/lib/zsa-procedures";
+import { canWriteSettings } from "@/lib/zsa-procedures";
 import fs from "fs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-export const uploadImage = isAdminOfProject
+export const uploadImage = canWriteSettings
     .createServerAction()
     .input(uploadImageInputSchema, {
         type: "formData"

@@ -4,15 +4,7 @@
  */
 
 import { redirect } from "next/navigation";
-import {
-  canRead,
-  canWrite,
-  getAbacPermissions,
-  getProjectPermissions,
-  hasPermission,
-  isProjectAdmin,
-} from "./abac";
-import type { ActionType, ResourceType } from "./abac-types";
+import { checkPermission } from "./abac-client";
 
 /**
  * Error thrown when permission check fails
@@ -30,24 +22,23 @@ export class PermissionDeniedError extends Error {
  * 
  * @example
  * async function deleteData(projectId: string, dataId: string) {
- *   await requirePermission(projectId, "data.highQuality", "write");
+ *   await requirePermission(projectId, "data", "write");
  *   // ... perform deletion
  * }
  */
 export async function requirePermission(
   projectId: string,
-  resource: ResourceType,
-  action: ActionType
-): Promise<void> {
-  const permissions = await getAbacPermissions();
-  
-  if (!permissions) {
-    throw new PermissionDeniedError("Not authenticated");
+  resource: string,
+  action: string,
+  options?: {
+    resourceAttributes?: Record<string, any>;
+    environment?: Record<string, any>;
   }
-
-  const projectPermissions = getProjectPermissions(permissions, projectId);
+): Promise<void> {
+  const actionKey = `${resource}:${action}`;
+  const hasPermission = await checkPermission(projectId, actionKey, options);
   
-  if (!hasPermission(projectPermissions, resource, action)) {
+  if (!hasPermission) {
     throw new PermissionDeniedError(
       `No ${action} permission for ${resource} in project ${projectId}`
     );
@@ -59,9 +50,13 @@ export async function requirePermission(
  */
 export async function requireRead(
   projectId: string,
-  resource: ResourceType
+  resource: string,
+  options?: {
+    resourceAttributes?: Record<string, any>;
+    environment?: Record<string, any>;
+  }
 ): Promise<void> {
-  return requirePermission(projectId, resource, "read");
+  return requirePermission(projectId, resource, "read", options);
 }
 
 /**
@@ -69,112 +64,11 @@ export async function requireRead(
  */
 export async function requireWrite(
   projectId: string,
-  resource: ResourceType
+  resource: string,
+  options?: {
+    resourceAttributes?: Record<string, any>;
+    environment?: Record<string, any>;
+  }
 ): Promise<void> {
-  return requirePermission(projectId, resource, "write");
-}
-
-/**
- * Require user to be admin of the project
- */
-export async function requireProjectAdmin(projectId: string): Promise<void> {
-  const permissions = await getAbacPermissions();
-  
-  if (!permissions) {
-    throw new PermissionDeniedError("Not authenticated");
-  }
-
-  const projectPermissions = getProjectPermissions(permissions, projectId);
-  
-  if (!isProjectAdmin(projectPermissions)) {
-    throw new PermissionDeniedError(
-      `Admin role required for project ${projectId}`
-    );
-  }
-}
-
-/**
- * Require user to have access to the project (any permission)
- */
-export async function requireProjectAccess(projectId: string): Promise<void> {
-  const permissions = await getAbacPermissions();
-  
-  if (!permissions) {
-    throw new PermissionDeniedError("Not authenticated");
-  }
-
-  const projectPermissions = getProjectPermissions(permissions, projectId);
-  
-  if (!projectPermissions) {
-    throw new PermissionDeniedError(
-      `No access to project ${projectId}`
-    );
-  }
-}
-
-/**
- * Check permission and return boolean (doesn't throw)
- */
-export async function checkPermission(
-  projectId: string,
-  resource: ResourceType,
-  action: ActionType
-): Promise<boolean> {
-  try {
-    await requirePermission(projectId, resource, action);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Higher-order function to wrap server actions with permission check
- * 
- * @example
- * const deleteDataAction = withPermission(
- *   "write",
- *   "data.highQuality",
- *   async (projectId: string, dataId: string) => {
- *     // ... delete data
- *   }
- * );
- */
-export function withPermission<T extends any[], R>(
-  action: ActionType,
-  resource: ResourceType,
-  handler: (projectId: string, ...args: T) => Promise<R>
-) {
-  return async (projectId: string, ...args: T): Promise<R> => {
-    await requirePermission(projectId, resource, action);
-    return handler(projectId, ...args);
-  };
-}
-
-/**
- * Higher-order function to wrap server actions requiring admin role
- */
-export function withAdminRole<T extends any[], R>(
-  handler: (projectId: string, ...args: T) => Promise<R>
-) {
-  return async (projectId: string, ...args: T): Promise<R> => {
-    await requireProjectAdmin(projectId);
-    return handler(projectId, ...args);
-  };
-}
-
-/**
- * Redirect to access denied page if permission check fails
- */
-export async function requirePermissionOrRedirect(
-  projectId: string,
-  resource: ResourceType,
-  action: ActionType,
-  redirectUrl: string = "/access-denied"
-): Promise<void> {
-  try {
-    await requirePermission(projectId, resource, action);
-  } catch {
-    redirect(redirectUrl);
-  }
+  return requirePermission(projectId, resource, "write", options);
 }

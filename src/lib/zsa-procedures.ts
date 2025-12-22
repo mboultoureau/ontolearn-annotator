@@ -3,6 +3,7 @@ import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createServerActionProcedure } from "zsa";
+import { requireWrite } from "@/lib/abac-guards";
 
 export const authedProcedure = createServerActionProcedure()
     .handler(async() => {
@@ -29,22 +30,13 @@ export const authedProcedure = createServerActionProcedure()
     }
 )
 
-export const isAdminOfProject = createServerActionProcedure(authedProcedure)
+export const canWriteSettings = createServerActionProcedure(authedProcedure)
     .input(
         z.object({ projectId: z.string() })
     )
     .handler(async({ input, ctx }) => {
-        const session = await auth();
-        const projectIds = session?.permissions?.projects?.map(p => p.id) ?? [];
-        
-        if (!projectIds.includes(input.projectId)) {
-            throw new Error("You are not a member of this project");
-        }
-
-        const projectPermission = session?.permissions?.projects?.find(p => p.id === input.projectId);
-        if (projectPermission?.role !== "ADMIN") {
-            throw new Error("You are not an admin of this project");
-        }
+        // Use new ABAC system to check settings:write permission
+        await requireWrite(input.projectId, "settings");
 
         const project = await ctx.prisma.project.findUnique({
             where: {
@@ -62,18 +54,13 @@ export const isAdminOfProject = createServerActionProcedure(authedProcedure)
         }
     }
 )
-
-export const isMemberOfProject = createServerActionProcedure(authedProcedure)
+export const canWritePlayground = createServerActionProcedure(authedProcedure)
     .input(
         z.object({ projectId: z.string() })
     )
     .handler(async({ input, ctx }) => {
-        const session = await auth();
-        const projectIds = session?.permissions?.projects?.map(p => p.id) ?? [];
-        
-        if (!projectIds.includes(input.projectId)) {
-            throw new Error("You are not a member of this project");
-        }
+        // Use new ABAC system to check playground:write permission
+        await requireWrite(input.projectId, "playground");
 
         const project = await ctx.prisma.project.findUnique({
             where: {

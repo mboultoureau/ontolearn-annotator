@@ -1,116 +1,140 @@
-/**
- * ABAC Client Utilities
- * Permission functions for client-side use (don't use server-only APIs)
- */
+import { auth } from "@/server/auth";
+import { isActionCacheable, CACHE_DURATION } from "@/lib/abac-action-categories";
+import { env } from "@/env";
+import type { AbacRequest } from "@/lib/abac-types";
+import { SignJWT } from "jose";
+import prisma from "@/lib/prisma";
 
-import type {
-  AbacPermissions,
-  ActionType,
-  ProjectWithPermissions,
-  ResourceType,
-} from "./abac-types";
+// Server-side cache for permissions
+// Key format: "userId:projectId:action"
+const permissionCache = new Map<string, { allowed: boolean; cachedAt: number }>();
 
-/**
- * Get permissions for a specific project
- */
-export function getProjectPermissions(
-  permissions: AbacPermissions | null,
-  projectId: string
-): ProjectWithPermissions | null {
-  if (!permissions) return null;
-  
-  return permissions.projects.find(p => p.id === projectId) || null;
+function getCacheKey(userId: string, projectId: string, action: string): string {
+  return `${userId}:${projectId}:${action}`;
 }
 
-/**
- * Check if user has permission for a specific resource and action in a project
- */
-export function hasPermission(
-  projectPermissions: ProjectWithPermissions | null,
-  resource: ResourceType,
-  action: ActionType
-): boolean { 
-  if (!projectPermissions) return false;
+function getCachedPermission(userId: string, projectId: string, action: string): boolean | null {
+  const key = getCacheKey(userId, projectId, action);
+  const cached = permissionCache.get(key);
+  
+  if (!cached) return null;
+  
+  const age = Date.now() - cached.cachedAt;
+  if (age >= CACHE_DURATION) {
+    permissionCache.delete(key);
+    return null;
+  }
+  
+  return cached.allowed;
+}
 
-  const parts = resource.split(".");
-  let perms: any = projectPermissions.permissions;
+function setCachedPermission(userId: string, projectId: string, action: string, allowed: boolean): void {
+  const key = getCacheKey(userId, projectId, action);
+  permissionCache.set(key, {
+    allowed,
+    cachedAt: Date.now()
+  });
+}
 
-  // Navigate through nested permissions
-  for (const part of parts) {
-    if (!perms || typeof perms !== "object") return false;
-    perms = perms[part];
+export async function checkPermission(
+  projectId: string,
+  action: string, // e.g., "settings:read"
+  options?: {
+    resourceAttributes?: Record<string, any>;
+    environment?: Record<string, any>;
+  }
+): Promise<boolean> {
+  const session = await auth();
+  
+  if (!session?.user?.id) {
+    return false;
   }
 
-  // Check the action
-  if (typeof perms === "object" && perms !== null) {
-    return perms[action] === true;
+  // Get the user's role in the project
+  const projectMember = await prisma.projectMember.findFirst({
+    where: {
+      userId: session.user.id,
+      projectId: projectId,
+    },
+    select: {
+      role: true,
+    },
+  });
+
+  // If user is not a member of the project, deny access
+  if (!projectMember) {
+    return false;
   }
-
-  return false;
-}
-
-/**
- * Shorthand: Check read permission
- */
-export function canRead(
-  projectPermissions: ProjectWithPermissions | null,
-  resource: ResourceType
-): boolean {
-  return hasPermission(projectPermissions, resource, "read");
-}
-
-/**
- * Shorthand: Check write permission
- */
-export function canWrite(
-  projectPermissions: ProjectWithPermissions | null,
-  resource: ResourceType
-): boolean {
-  return hasPermission(projectPermissions, resource, "write");
-}
-
-/**
- * Check if user is admin of a project
- */
-export function isProjectAdmin(
-  projectPermissions: ProjectWithPermissions | null
-): boolean {
-  return projectPermissions?.role === "ADMIN";
-}
-
-/**
- * Get all projects where user has at least read access
- */
-export function getAccessibleProjects(
-  permissions: AbacPermissions | null
-): ProjectWithPermissions[] {
-  if (!permissions) return [];
-  return permissions.projects;
-}
-
-/**
- * Get all project IDs where user has specific permission
- */
-export function getProjectIdsWithPermission(
-  permissions: AbacPermissions | null,
-  resource: ResourceType,
-  action: ActionType
-): string[] {
-  if (!permissions) return [];
   
-  return permissions.projects
-    .filter(project => hasPermission(project, resource, action))
-    .map(project => project.id);
+  // Check if action is cacheable and in cache
+  if (isActionCacheable(action)) {
+    const cached = getCachedPermission(session.user.id, projectId, action);
+    if (cached !== null) {
+      return cached;
+    }
+  }
+  
+  // Make direct ABAC call
+  const [resourceType, actionType] = action.split(':'); // "settings:read" → ["settings", "read"]
+  const abacToken = await createAbacToken(session.user.id);
+  
+  try {
+    const response = await fetch(env.ABAC_SERVER_URL + '/authorize', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${abacToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        subject: {
+          id: session.user.id,
+          role: projectMember.role,
+        },
+        resource: {
+          id: projectId,
+          type: resourceType,
+        },
+        environment: options?.environment || null,
+        action: {
+          name: actionType,
+          metadata: {
+            duration: "1d"
+          }
+        },        
+      } as AbacRequest),
+    });
+    
+    if (!response.ok) {
+      console.error(`ABAC request failed: ${response.status}`);
+      return false;
+    }
+    
+    const result = await response.json();
+    const allowed = result.result || false;
+    
+    // Cache the result if the action is cacheable
+    if (isActionCacheable(action)) {
+      setCachedPermission(session.user.id, projectId, action, allowed);
+    }
+    
+    return allowed;
+  } catch (error) {
+    console.error('ABAC error:', error);
+    return false; // Fail closed
+  }
 }
 
 /**
- * Check if permissions are still valid (not expired)
+ * Create a signed JWT for ABAC server authentication
+ * This is separate from NextAuth's encrypted session token
  */
-export function arePermissionsValid(permissions: AbacPermissions | null): boolean {
-  if (!permissions) return false;
+async function createAbacToken(userId: string): Promise<string> {
+  const secret = new TextEncoder().encode(env.AUTH_SECRET);
   
-  const validUntil = new Date(permissions.validUntil);
-  const now = new Date();
-  
-  return validUntil > now;
+  const token = await new SignJWT({ sub: userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('5d') // Short-lived token for ABAC requests
+    .sign(secret);    
+  return token;
 }

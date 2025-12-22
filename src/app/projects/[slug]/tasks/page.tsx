@@ -2,7 +2,7 @@ import ProjectBreadcrumb from "@/app/_components/common/project-breadcrumb";
 import { columns } from "@/app/_components/task/columns";
 import { DataTable } from "@/app/_components/task/data-table";
 import { Button } from "@/app/_components/ui/button";
-import { getAbacPermissions, getProjectPermissions, canWrite } from "@/lib/abac";
+import { checkPermission } from "@/lib/abac-client";
 import {
   Tabs,
   TabsContent,
@@ -39,9 +39,7 @@ export default async function DataPage({
     projectId: project.id,
   });
 
-  const permissions = await getAbacPermissions();
-  const projectPermissions = getProjectPermissions(permissions, project.id);
-  const canDoTask = canWrite(projectPermissions, "task");
+  const canDoTask = await checkPermission(project.id, "task:write");
 
   return (
     <HydrateClient>
