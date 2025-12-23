@@ -28,7 +28,6 @@ import { Textarea } from "../ui/textarea";
 import { useToast } from "../ui/use-toast";
 import SelectCategories from "./select-categories";
 import { Category, Prisma } from "@prisma/client";
-import { useSession } from "next-auth/react";
 
 type Props = {
   formId?: string;
@@ -51,7 +50,6 @@ export default function ProjectForm({
   const { toast } = useToast();
   const [updateCount, setUpdateCount] = useState(0);
   const router = useRouter();
-  const { update } = useSession();
 
   const { mutateAsync, error, isPending } = api.project.create.useMutation();
 
@@ -78,12 +76,6 @@ export default function ProjectForm({
           name: values.name,
         }),
       });
-      
-      // Force session update to fetch fresh permissions
-      await update({ refreshPermissions: true });
-      
-      // Wait a bit to ensure permissions are refreshed
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Navigate and force a page refresh
       router.push(`/projects/${values.slug}`);

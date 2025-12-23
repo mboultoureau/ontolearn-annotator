@@ -17,9 +17,3 @@ export interface AbacRequest {
     metadata?: Record<string, any>
   };
 }
-
-export interface cachedPermissions {
-  version: number;
-  // "ProjectId": { "action": { allowed: boolean; cachedAt: number } }
-  projects: Record<string, Record<string, { allowed: boolean; cachedAt: number }>>;
-}

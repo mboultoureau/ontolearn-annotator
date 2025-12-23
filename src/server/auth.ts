@@ -1,7 +1,6 @@
 import { env } from "@/env";
 import { LOCALE_COOKIE_NAME } from "@/i18n";
 import prisma from "@/lib/prisma";
-import type { cachedPermissions } from "@/lib/abac-types";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { DefaultSession, default as NextAuth, NextAuthConfig } from "next-auth";
 import type { Provider } from "next-auth/providers";
@@ -22,27 +21,12 @@ declare module "next-auth" {
       // ...other properties
       // role: UserRole;
     } & DefaultSession["user"];
-    cachedPermissions?: cachedPermissions;
-    updatePermissionCache?: {
-      projectId: string;
-      action: string;
-      allowed: boolean;
-      cachedAt: number;
-    };
-    invalidatePermissions?: boolean;
   }
 
   interface User {
     // ...other properties
     // role: UserRole;
     locale: string;
-  }
-}
-
-declare module "@auth/core/jwt" {
-  interface JWT {
-    locale?: string;
-    cachedPermissions?: cachedPermissions;
   }
 }
 
@@ -120,41 +104,6 @@ export const authConfig: NextAuthConfig = {
 
       return true;
     },
-    jwt: async ({ token, user, trigger, session }) => {
-      if (user) {
-        token.locale = user.locale;
-      }
-        
-      // Initialize cache structure
-      if (!token.cachedPermissions) {
-        token.cachedPermissions = {
-          version: Date.now(),
-          projects: {}
-        };
-      }
-      
-      // Handle cache invalidation
-      if (session?.invalidatePermissions) {
-        token.cachedPermissions.version = Date.now();
-        token.cachedPermissions.projects = {};
-      }
-      
-      // Handle cache update for specific project:action
-      if (session?.updatePermissionCache) {
-        const { projectId, action, allowed, cachedAt } = session.updatePermissionCache;
-        
-        if (!token.cachedPermissions.projects[projectId]) {
-          token.cachedPermissions.projects[projectId] = {};
-        }
-        
-        token.cachedPermissions.projects[projectId][action] = {
-          allowed,
-          cachedAt
-        };
-      }
-      
-      return token;
-    }
   },
   pages: {
     signIn: "/login",
