@@ -4,10 +4,15 @@ import { env } from "@/env";
 import type { AbacRequest } from "@/lib/abac-types";
 import { SignJWT } from "jose";
 import prisma from "@/lib/prisma";
+import { LRUCache } from "lru-cache";
 
-// Server-side cache for permissions
+// Server-side cache for permissions with LRU eviction
 // Key format: "userId:projectId:action"
-const permissionCache = new Map<string, { allowed: boolean; cachedAt: number }>();
+const permissionCache = new LRUCache<string, boolean>({
+  max: env.ABAC_CACHE_SIZE_LIMIT,
+  ttl: env.ABAC_CACHE_TTL * 1000, // Convert seconds to milliseconds
+  updateAgeOnGet: true, // LRU behavior: refresh age on access
+});
 
 function getCacheKey(userId: string, projectId: string, action: string): string {
   return `${userId}:${projectId}:${action}`;
@@ -16,24 +21,12 @@ function getCacheKey(userId: string, projectId: string, action: string): string 
 function getCachedPermission(userId: string, projectId: string, action: string): boolean | null {
   const key = getCacheKey(userId, projectId, action);
   const cached = permissionCache.get(key);
-  
-  if (!cached) return null;
-  
-  const age = Date.now() - cached.cachedAt;
-  if (age >= (env.ABAC_CACHE_TTL * 1000)) {
-    permissionCache.delete(key);
-    return null;
-  }
-  
-  return cached.allowed;
+  return cached !== undefined ? cached : null;
 }
 
 function setCachedPermission(userId: string, projectId: string, action: string, allowed: boolean): void {
   const key = getCacheKey(userId, projectId, action);
-  permissionCache.set(key, {
-    allowed,
-    cachedAt: Date.now()
-  });
+  permissionCache.set(key, allowed);
 }
 
 export async function checkPermission(
