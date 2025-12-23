@@ -15,7 +15,7 @@ interface Props {
   readOnly?: boolean;
 }
 
-export default function IntegrationHeadwork({ projectId, useHeadwork, readOnly = false }: Props) {
+export default function IntegrationHeadwork({ projectId, useHeadwork, readOnly = true }: Props) {
   const [isHeadworkEnabled, setIsHeadworkEnabled] = useState<boolean>(useHeadwork);
   const t = useTranslations("Project.Settings");
   const { toast } = useToast();

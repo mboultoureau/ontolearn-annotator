@@ -12,7 +12,7 @@ interface Props {
   readOnly?: boolean;
 }
 
-export default function IntegrationApi({ projectId, readOnly = false }: Props) {
+export default function IntegrationApi({ projectId, readOnly = true }: Props) {
   const t = useTranslations("Project.Settings");
   const [copied, setCopied] = useState<boolean>(false);
 
