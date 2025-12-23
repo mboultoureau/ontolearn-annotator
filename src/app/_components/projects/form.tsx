@@ -51,7 +51,7 @@ export default function ProjectForm({
   const [updateCount, setUpdateCount] = useState(0);
   const router = useRouter();
 
-  const { mutateAsync, error, isPending } = api.project.create.useMutation();
+  const { mutateAsync, error } = api.project.create.useMutation();
 
   const form = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
@@ -68,7 +68,7 @@ export default function ProjectForm({
     if (readOnly) return;
     
     try {
-      const project = await mutateAsync({ ...values, visibility: "public" });
+      await mutateAsync({ ...values, visibility: "public" });
       
       toast({
         title: t("projectCreated"),

@@ -49,9 +49,13 @@ export default async function DataPage({
         <>
           <div className="mx-auto flex justify-between w-full max-w-6xl gap-2">
             <h1 className="text-3xl font-semibold">{t("title")}</h1>
-            <Button disabled={!canDoTask}>
-              <Link href={`/projects/${params.slug}/viewer`}>{t("start")}</Link>
-            </Button>
+            {canDoTask ? (
+              <Link href={`/projects/${params.slug}/viewer`}>
+                <Button>{t("start")}</Button>
+              </Link>
+            ) : (
+              <Button disabled>{t("start")}</Button>
+            )}
           </div>
           <ProjectBreadcrumb project={project} page={t("title")} />
           <div className="mx-auto grid w-full max-w-6xl gap-2">

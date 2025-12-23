@@ -11,8 +11,8 @@ export interface AbacRequest {
     id: string;
     [key: string]: any;
   };
-  environment?: Record<string, any>;
-  actions?: {
+  environments?: Record<string, any>;
+  action?: {
     name: string,
     metadata?: Record<string, any>
   };
