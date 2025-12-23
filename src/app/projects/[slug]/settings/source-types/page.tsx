@@ -30,8 +30,7 @@ export default async function DataTypesPage({ params }: Props) {
     }
 
     const canRead = await checkPermission(project.id, "settings:read");
-    const canWriteSettings = await checkPermission(project.id, "settings:write");
-    const readOnly = !canWriteSettings;
+    const readOnly = !(await checkPermission(project.id, "settings:write"));
 
     if (!canRead) {
         const tSettings = await getTranslations("Project.Settings");
@@ -62,6 +61,7 @@ export default async function DataTypesPage({ params }: Props) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
+                    <DataTable data={sourceTypes} />
                 </CardContent>
             </Card>
         </>

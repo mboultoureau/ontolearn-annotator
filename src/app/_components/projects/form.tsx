@@ -77,9 +77,7 @@ export default function ProjectForm({
         }),
       });
       
-      // Navigate and force a page refresh
       router.push(`/projects/${values.slug}`);
-      router.refresh();
     } catch (err) {
       // Error is already shown via error state
     }

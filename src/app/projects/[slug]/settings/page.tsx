@@ -20,8 +20,7 @@ export default async function DashboardPage({ params }: Props) {
   }
 
   const canRead = await checkPermission(project.id, "settings:read");
-  const canWriteSettings = await checkPermission(project.id, "settings:write");
-  const readOnly = !canWriteSettings;
+  const readOnly = !(await checkPermission(project.id, "settings:write"));
 
   if (!canRead) {
     return <div>{t('noAccess', { settings: t('general') })}</div>;

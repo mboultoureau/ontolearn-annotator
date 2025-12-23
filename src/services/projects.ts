@@ -66,8 +66,13 @@ export const fetchProject = async ({ slug, args }: { slug: string, args?: any })
 
     // First find the project by slug
     const project = await prisma.project.findUnique({
-        where: { slug },
-        select: { id: true }
+        include: {
+            categories: true
+        },
+        where: {
+            slug: slug,
+        },
+        ...args
     });
 
     if (!project) {
@@ -80,13 +85,5 @@ export const fetchProject = async ({ slug, args }: { slug: string, args?: any })
         return null;
     }
 
-    return prisma.project.findFirst({
-        include: {
-            categories: true
-        },
-        where: {
-            slug: slug,
-        },
-        ...args
-    });
+    return project;
 }

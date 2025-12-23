@@ -79,7 +79,6 @@ export const authConfig: NextAuthConfig = {
         ...session.user,
         id: token.sub,
       },
-      permissions: token.permissions, // Add permissions to session
     }),
     signIn: async ({ user }) => {
       if (user.locale) {

@@ -98,9 +98,7 @@ export async function checkPermission(
         environments: options?.environments || null,
         action: {
           name: actionType,
-          metadata: {
-            duration: "1d"
-          }
+          metadata: {}
         },        
       } as AbacRequest),
     });

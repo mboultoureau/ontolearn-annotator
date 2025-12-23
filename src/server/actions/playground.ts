@@ -1,12 +1,12 @@
 "use server";
 
 import { uploadPlaygroundInputSchema } from "@/lib/validation-schemas/playground";
-import { canWriteSettings } from "@/lib/zsa-procedures";
+import { canWritePlayground } from "@/lib/zsa-procedures";
 import { Prisma } from "@prisma/client";
 import { writeFileSync } from "fs";
 import { v4 as uuidv4 } from "uuid";
 
-export const uploadPlayground = canWriteSettings
+export const uploadPlayground = canWritePlayground
   .createServerAction()
   .input(uploadPlaygroundInputSchema, {
     type: "formData",
