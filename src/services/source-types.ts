@@ -1,9 +1,9 @@
 import prisma from '@/lib/prisma';
-import { requireRead } from '@/lib/abac-guards';
+import { requirePermission } from '@/lib/abac-guards';
 
 export async function fetchSourceTypes(projectId: string) {
     // Check permission to read source types
-    await requireRead(projectId, "sourceType");
+    await requirePermission(projectId, "sourceType", "list");
 
     return await prisma.sourceType.findMany({
         where: {
@@ -27,7 +27,7 @@ export async function fetchSourceType(projectSlug: string, sourceTypeName: strin
     }
 
     // Check permission to read source types
-    await requireRead(project.id, "sourceType");
+    await requirePermission(project.id, "sourceType", "list");
 
     return await prisma.sourceType.findFirst({
         where: {

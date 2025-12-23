@@ -27,6 +27,11 @@ export const env = createEnv({
     EMAIL_SERVER: z.string(),
     EMAIL_FROM: z.string().email(),
     ABAC_SERVER_URL: z.string().url(),
+    ABAC_SECRET: z.string(),
+    ABAC_CACHE_TTL: z.preprocess(
+      (v) => (v === undefined ? undefined : Number(v)),
+      z.number().nonnegative().default(3600) // secondes
+    ),
   },
 
   /**
@@ -52,6 +57,8 @@ export const env = createEnv({
     EMAIL_SERVER: process.env.EMAIL_SERVER,
     EMAIL_FROM: process.env.EMAIL_FROM,
     ABAC_SERVER_URL: process.env.ABAC_SERVER_URL,
+    ABAC_SECRET: process.env.ABAC_SECRET,
+    ABAC_CACHE_TTL: process.env.ABAC_CACHE_TTL
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

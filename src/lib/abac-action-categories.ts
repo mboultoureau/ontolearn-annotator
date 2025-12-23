@@ -26,8 +26,6 @@ export const ABAC_ACTIONS = {
   ],
 } as const;
 
-export const CACHE_DURATION = 24 * 60 * 60 * 1000; // 1 day
-
 export function isActionCacheable(action: string): boolean {
   return ABAC_ACTIONS.CACHEABLE.includes(action as any);
 }

@@ -1,5 +1,5 @@
 import { auth } from "@/server/auth";
-import { isActionCacheable, CACHE_DURATION } from "@/lib/abac-action-categories";
+import { isActionCacheable } from "@/lib/abac-action-categories";
 import { env } from "@/env";
 import type { AbacRequest } from "@/lib/abac-types";
 import { SignJWT } from "jose";
@@ -20,7 +20,7 @@ function getCachedPermission(userId: string, projectId: string, action: string):
   if (!cached) return null;
   
   const age = Date.now() - cached.cachedAt;
-  if (age >= CACHE_DURATION) {
+  if (age >= (env.ABAC_CACHE_TTL * 1000)) {
     permissionCache.delete(key);
     return null;
   }
@@ -41,7 +41,7 @@ export async function checkPermission(
   action: string, // e.g., "settings:read"
   options?: {
     resourceAttributes?: Record<string, any>;
-    environment?: Record<string, any>;
+    environments?: Record<string, any>;
   }
 ): Promise<boolean> {
   const session = await auth();
@@ -79,7 +79,7 @@ export async function checkPermission(
   const abacToken = await createAbacToken(session.user.id);
   
   try {
-    const response = await fetch(env.ABAC_SERVER_URL + '/authorize', {
+    const response = await fetch(env.ABAC_SERVER_URL + '/request_access', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${abacToken}`,
@@ -89,12 +89,13 @@ export async function checkPermission(
         subject: {
           id: session.user.id,
           role: projectMember.role,
+          email: session.user.email,
         },
         resource: {
           id: projectId,
           type: resourceType,
         },
-        environment: options?.environment || null,
+        environments: options?.environments || null,
         action: {
           name: actionType,
           metadata: {
@@ -129,12 +130,12 @@ export async function checkPermission(
  * This is separate from NextAuth's encrypted session token
  */
 async function createAbacToken(userId: string): Promise<string> {
-  const secret = new TextEncoder().encode(env.AUTH_SECRET);
+  const secret = new TextEncoder().encode(env.ABAC_SECRET);
   
   const token = await new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('5d') // Short-lived token for ABAC requests
+    .setExpirationTime('1h') // Short-lived token for ABAC requests
     .sign(secret);    
   return token;
 }
