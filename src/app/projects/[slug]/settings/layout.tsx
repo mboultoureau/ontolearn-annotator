@@ -27,6 +27,7 @@ export default async function Layout({
 
     // Check permissions server-side
     const canReadSettings = await checkPermission(project.id, "settings:read");
+    const canListUsers = await checkPermission(project.id, "user:list");
 
     return (
         <>
@@ -52,10 +53,12 @@ export default async function Layout({
                             <SettingLink href={`/projects/${project.slug}/settings/tasks`}>
                                 {t('tasks')}
                             </SettingLink>
-                            <SettingLink href={`/projects/${project.slug}/settings/users`}>
-                                {t('users')}
-                            </SettingLink>
                         </>
+                    )}
+                    {canListUsers && (
+                        <SettingLink href={`/projects/${project.slug}/settings/users`}>
+                            {t('users')}
+                        </SettingLink>
                     )}
                 </nav>
                 <div className="grid gap-6">

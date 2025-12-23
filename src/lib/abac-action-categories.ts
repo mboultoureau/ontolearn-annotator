@@ -26,6 +26,10 @@ export const ABAC_ACTIONS = {
   ],
 } as const;
 
-export function isActionCacheable(action: string): boolean {
+type CacheableAction = (typeof ABAC_ACTIONS)['CACHEABLE'][number];
+type AlwaysVerifyAction = (typeof ABAC_ACTIONS)['ALWAYS_VERIFY'][number];
+export type ABACAction = CacheableAction | AlwaysVerifyAction;
+
+export function isActionCacheable(action: ABACAction): boolean {
   return ABAC_ACTIONS.CACHEABLE.includes(action as any);
 }

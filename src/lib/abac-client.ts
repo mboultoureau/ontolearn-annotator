@@ -1,5 +1,5 @@
 import { auth } from "@/server/auth";
-import { isActionCacheable } from "@/lib/abac-action-categories";
+import { isActionCacheable, ABACAction } from "@/lib/abac-action-categories";
 import { env } from "@/env";
 import type { AbacRequest } from "@/lib/abac-types";
 import { SignJWT } from "jose";
@@ -38,7 +38,7 @@ function setCachedPermission(userId: string, projectId: string, action: string, 
 
 export async function checkPermission(
   projectId: string,
-  action: string, // e.g., "settings:read"
+  action: ABACAction,
   options?: {
     resourceAttributes?: Record<string, any>;
     environments?: Record<string, any>;

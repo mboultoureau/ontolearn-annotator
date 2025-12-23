@@ -3,8 +3,8 @@
  * Middleware and utilities to protect server actions and API routes
  */
 
-import { redirect } from "next/navigation";
 import { checkPermission } from "./abac-client";
+import type { ABACAction } from "./abac-action-categories";
 
 /**
  * Error thrown when permission check fails
@@ -35,7 +35,7 @@ export async function requirePermission(
     environment?: Record<string, any>;
   }
 ): Promise<void> {
-  const actionKey = `${resource}:${action}`;
+  const actionKey = `${resource}:${action}` as ABACAction;
   const hasPermission = await checkPermission(projectId, actionKey, options);
   
   if (!hasPermission) {

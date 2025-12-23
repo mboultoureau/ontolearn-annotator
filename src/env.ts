@@ -29,7 +29,7 @@ export const env = createEnv({
     ABAC_SERVER_URL: z.string().url(),
     ABAC_SECRET: z.string(),
     ABAC_CACHE_TTL: z.preprocess(
-      (v) => (v === undefined ? undefined : Number(v)),
+      (v) => v ? Number(v) : 3600,
       z.number().nonnegative().default(3600) // secondes
     ),
   },
