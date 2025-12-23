@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@/app/_components/theme-provider";
 import { Toaster } from "@/app/_components/ui/toaster";
-import { AuthProvider } from "@/app/_components/auth-provider";
+import { SessionProvider } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import { TRPCReactProvider } from "@/trpc/react";
@@ -45,7 +45,7 @@ export default async function RootLayout({
         )}
       >
         <TRPCReactProvider>
-          <AuthProvider>
+          <SessionProvider>
             <NextIntlClientProvider messages={messages}>
               <ThemeProvider
                 attribute="class"
@@ -57,7 +57,7 @@ export default async function RootLayout({
               </ThemeProvider>
               <Toaster />
             </NextIntlClientProvider>
-          </AuthProvider>
+          </SessionProvider>
         </TRPCReactProvider>
       </body>
     </html>

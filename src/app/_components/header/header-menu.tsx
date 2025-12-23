@@ -77,9 +77,7 @@ export default async function HeaderMenu({ project }: { project?: Project }) {
         </SheetContent>
       </Sheet>
       <div className="flex w-full justify-end items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <SessionProvider>
-          <DropdownUser />
-        </SessionProvider>
+        <DropdownUser />
       </div>
     </header>
   )
