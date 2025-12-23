@@ -2,7 +2,6 @@ import { Button } from "@/app/_components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
 import { Project } from "@/lib/definitions";
 import { Brain, Menu } from "lucide-react";
-import { SessionProvider } from "next-auth/react";
 import { getTranslations } from "next-intl/server";
 import { checkPermission } from "@/lib/abac-client";
 import Link from "next/link";
