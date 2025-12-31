@@ -162,11 +162,11 @@
       "title": "OntoLearn Annotator",
       "toggleNavigation": "Afficher/Masquer la navigation"
     },
-    "Image": {
-      "current": "Image actuelle",
-      "image": "Image",
-      "imageDescription": "L'image actuelle sera supprimée.",
-      "imageUpload": "Téléverser une image",
+    "Icon": {
+      "current": "Icône actuelle",
+      "icon": "Icône",
+      "iconDescription": "L'icône actuelle sera supprimée.",
+      "iconUpload": "Téléverser une icône",
       "submit": "Enregistrer"
     },
     "List": {

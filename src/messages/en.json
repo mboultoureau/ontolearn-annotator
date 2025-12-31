@@ -162,11 +162,11 @@
       "title": "OntoLearn Annotator",
       "toggleNavigation": "Toggle navigation"
     },
-    "Image": {
-      "current": "Current Image",
-      "image": "Image",
-      "imageDescription": "The current image will be deleted.",
-      "imageUpload": "Image Upload",
+    "Icon": {
+      "current": "Current Icon",
+      "icon": "Icon",
+      "iconDescription": "The current icon will be deleted.",
+      "iconUpload": "Icon Upload",
       "submit": "Save"
     },
     "List": {

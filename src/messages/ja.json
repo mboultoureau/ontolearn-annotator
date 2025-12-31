@@ -149,11 +149,11 @@
       "title": "クラウド・レーベル・ジェン",
       "toggleNavigation": "ナビゲーションの切り替え"
     },
-    "Image": {
-      "current": "現在の画像",
-      "image": "画像",
-      "imageDescription": "現在の画像は削除されます。",
-      "imageUpload": "画像アップロード",
+    "Icon": {
+      "current": "現在のアイコン",
+      "icon": "アイコン",
+      "iconDescription": "現在のアイコンは削除されます。",
+      "iconUpload": "アイコンアップロード",
       "submit": "保存"
     },
     "List": {

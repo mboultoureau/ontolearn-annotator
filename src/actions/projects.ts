@@ -15,41 +15,41 @@ export const uploadImage = canWriteSettings
     .handler(async ({ input, ctx }) => {
         const project = ctx.project;
 
-        if (project.image) {
+        if (project.icon) {
             // Remove old image from database
             await prisma.project.update({
                 where: {
                     id: project.id,
                 },
                 data: {
-                    image: null
+                    icon: null
                 },
             });
 
             // Remove old image from storage
-            fs.unlinkSync(`${process.cwd()}/public/img/projects/${project.image}`);
+            fs.unlinkSync(`${process.cwd()}/public/img/projects/${project.icon}`);
         }
 
         // Save new image to storage
         const fileName = `${project.id}.png`;
         const path = `${process.cwd()}/public/img/projects/${fileName}`;
-        const image: File = input.image;
+        const icon: File = input.icon;
 
         try {
-            const arrayBuffer = await image.arrayBuffer();
+            const arrayBuffer = await icon.arrayBuffer();
             const buffer = new Uint8Array(arrayBuffer);
             fs.writeFileSync(path, buffer);
         } catch (error) {
-            throw new Error("Failed to save image");
+            throw new Error("Failed to save icon");
         }
 
-        // Update project with new image
+        // Update project with new icon
         await prisma.project.update({
             where: {
                 id: project.id,
             },
             data: {
-                image: fileName
+                icon: fileName
             },
         });
 
