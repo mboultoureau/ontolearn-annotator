@@ -38,7 +38,7 @@ export const StaticDataSourceSchema = z.object({
 
 export const FetchDataSourceSchema = z.object({
   type: z.literal('fetch'),
-  endpoint: z.string().url('Endpoint must be a valid URL'),
+  endpoint: z.string(),
   method: z.enum(['GET', 'POST', 'PUT', 'DELETE']).default('GET'),
   headers: z.record(z.string()).optional(),
   body: z.unknown().optional(),
@@ -84,8 +84,10 @@ export const SelectFieldOptionSchema: z.ZodType<{
 
 export const SelectFieldSchema = BaseFieldSchema.extend({
   type: z.literal('select'),
-  options: z.array(SelectFieldOptionSchema),
-  dataSource: z.string().optional(),
+  options: z.object({
+    source: z.string().optional(),
+    values: z.array(SelectFieldOptionSchema).optional(),
+  }).optional(),
   multiple: z.boolean().default(false),
   useParentAsGroup: z.boolean().default(false),
   placeholder: z.string().optional(),
@@ -112,7 +114,7 @@ export const YesNoFieldSchema = BaseFieldSchema.extend({
 
 export const AreaSelectFieldSchema = BaseFieldSchema.extend({
   type: z.literal('area_select'),
-  imageSource: z.string().min(1, 'Image source is required'),
+  imageSource: z.string().optional(),
   toolType: z.enum(['rectangle', 'polygon', 'both']).default('both'),
   allowMultiple: z.boolean().default(false),
 }).strict();
@@ -153,32 +155,65 @@ export const TaskStateSchema = BaseStateSchema.extend({
   instructions: z.string().optional(),
 }).strict();
 
+export const BranchStateSchema = BaseStateSchema.extend({
+  type: z.literal('branch'),
+  transitions: z.array(TransitionSchema).min(1, 'Branch state must have at least one transition'),
+  default: z.string().optional(),
+}).strict();
+
 export const ChoiceStateSchema = BaseStateSchema.extend({
   type: z.literal('choice'),
-  transitions: z.array(TransitionSchema).min(1, 'Choice state must have at least one transition'),
-  default: z.string().optional(),
+  prompt: z.string().min(1, 'Prompt is required'),
+  options: z.object({
+    source: z.string().optional(),
+    values: z.array(z.object({
+      value: z.string().min(1),
+      label: z.string().min(1),
+    })).optional(),
+  }).refine(
+    (data) => data.source || (data.values && data.values.length > 0),
+    { message: 'Either source or values must be provided' }
+  ),
+  storeAs: z.string().optional(),
+  transitions: z.array(TransitionSchema).optional(),
 }).strict();
 
 export const MultiChoiceStateSchema = BaseStateSchema.extend({
   type: z.literal('multi_choice'),
-  question: z.string().min(1, 'Question is required'),
-  choices: z.array(z.object({
-    value: z.string().min(1, 'Choice value is required'),
-    label: z.string().min(1, 'Choice label is required'),
-    target: z.string().min(1, 'Choice target is required'),
-  }).strict()).min(2, 'Multi-choice must have at least 2 choices'),
+  prompt: z.string().optional(),
+  options: z.object({
+    source: z.string().optional(),
+    values: z.array(z.object({
+      value: z.string().min(1),
+      label: z.string().min(1),
+    })).optional(),
+  }).refine(
+    (data) => data.source || (data.values && data.values.length > 0),
+    { message: 'Either source or values must be provided' }
+  ),
   storeAs: z.string().optional(),
+  transitions: z.array(TransitionSchema).optional(),
 }).strict();
 
-export const YesNoStateSchema = BaseStateSchema.extend({
+const YesNoStateSchemaBase = BaseStateSchema.extend({
   type: z.literal('yes_no'),
   question: z.string().min(1, 'Question is required'),
   yesLabel: z.string().optional(),
   noLabel: z.string().optional(),
-  yesTarget: z.string().min(1, 'Yes target is required'),
-  noTarget: z.string().min(1, 'No target is required'),
+  yesTarget: z.string().optional(),
+  noTarget: z.string().optional(),
   storeAs: z.string().optional(),
 }).strict();
+
+export const YesNoStateSchema = YesNoStateSchemaBase.refine(
+  (data) => {
+    // Either use yesTarget/noTarget OR transitions
+    const hasTargets = data.yesTarget && data.noTarget;
+    const hasTransitions = data.transitions && data.transitions.length > 0;
+    return hasTargets || hasTransitions;
+  },
+  { message: 'Yes/No state must have either yesTarget/noTarget or transitions' }
+);
 
 export const AreaSelectStateSchema = BaseStateSchema.extend({
   type: z.literal('area_select'),
@@ -190,16 +225,24 @@ export const AreaSelectStateSchema = BaseStateSchema.extend({
   storeAs: z.string().optional(),
 }).strict();
 
-// Loop state schema - simpler version without z.lazy for discriminated union
-export const LoopStateSchema = BaseStateSchema.extend({
+// Loop state schema - supports both iteration and conditional repetition
+const LoopStateSchemaBase = BaseStateSchema.extend({
   type: z.literal('loop'),
-  over: z.string().min(1, 'Loop "over" source is required'),
-  itemName: z.string().default('item'),
-  indexName: z.string().default('index'),
-  workflow: z.array(z.any()).min(1, 'Loop workflow must have at least one state'), // Use z.any() to avoid circular reference
-  entry: z.string().min(1, 'Loop entry state is required'),
+  as: z.string().optional(),
+  over: z.string().optional(),
+  repeatWhile: z.object({
+    type: z.literal('yes_no'),
+    question: z.string().min(1, 'Question is required'),
+  }).optional(),
+  steps: z.array(z.any()).min(1, 'Loop must have at least one step'),
   storeAs: z.string().optional(),
+  transitions: z.array(TransitionSchema).optional(),
 }).strict();
+
+export const LoopStateSchema = LoopStateSchemaBase.refine(
+  (data) => data.over || data.repeatWhile,
+  { message: 'Either "over" (iteration) or "repeatWhile" (conditional) must be provided' }
+);
 
 export const FinalStateSchema = BaseStateSchema.extend({
   type: z.literal('final'),
@@ -209,11 +252,12 @@ export const FinalStateSchema = BaseStateSchema.extend({
 
 export const WorkflowStateSchema = z.discriminatedUnion('type', [
   TaskStateSchema,
+  BranchStateSchema,
   ChoiceStateSchema,
   MultiChoiceStateSchema,
-  YesNoStateSchema,
+  YesNoStateSchemaBase, // Use base schema without refine for discriminated union
   AreaSelectStateSchema,
-  LoopStateSchema,
+  LoopStateSchemaBase, // Use base schema without refine for discriminated union
   FinalStateSchema,
 ]);
 
@@ -379,7 +423,7 @@ function validateWorkflowSemantics(workflow: z.infer<typeof WorkflowDefinitionSc
   }
   
   // Check if state IDs are unique
-  const duplicates = workflow.workflow.states
+  const dupli   tes = workflow.workflow.states
     .map(s => s.id)
     .filter((id, index, arr) => arr.indexOf(id) !== index);
   
@@ -405,45 +449,45 @@ function validateWorkflowSemantics(workflow: z.infer<typeof WorkflowDefinitionSc
       });
     }
     
-    // Check multi_choice targets
-    if (state.type === 'multi_choice') {
-      state.choices.forEach((choice: any, cIndex: number) => {
-        if (!stateIds.has(choice.target)) {
-          errors.push({
-            path: `workflow.states[${index}].choices[${cIndex}].target`,
-            message: `Choice target "${choice.target}" does not exist`,
-            code: 'invalid_choice_target',
-          });
-        }
-      });
-    }
+    // Multi-choice and choice states no longer have target-based choices
     
-    // Check yes/no targets
+    // Check yes/no targets (if using yesTarget/noTarget approach)
     if (state.type === 'yes_no') {
-      if (!stateIds.has(state.yesTarget)) {
+      if (state.yesTarget && !stateIds.has(state.yesTarget)) {
         errors.push({
           path: `workflow.states[${index}].yesTarget`,
           message: `Yes target "${state.yesTarget}" does not exist`,
           code: 'invalid_yes_target',
         });
       }
-      if (!stateIds.has(state.noTarget)) {
+      if (state.noTarget && !stateIds.has(state.noTarget)) {
         errors.push({
           path: `workflow.states[${index}].noTarget`,
           message: `No target "${state.noTarget}" does not exist`,
           code: 'invalid_no_target',
         });
       }
+      
+      // Validate that either yesTarget/noTarget OR transitions are used
+      const hasTargets = state.yesTarget && state.noTarget;
+      const hasTransitions = state.transitions && state.transitions.length > 0;
+      if (!hasTargets && !hasTransitions) {
+        errors.push({
+          path: `workflow.states[${index}]`,
+          message: 'Yes/No state must have either yesTarget/noTarget or transitions',
+          code: 'invalid_yesno_routing',
+        });
+      }
     }
     
-    // Check loop workflow
+    // Check loop steps (no entry validation needed, steps execute sequentially)
     if (state.type === 'loop') {
-      const loopStateIds = new Set(state.workflow.map((s: any) => s.id));
-      if (!loopStateIds.has(state.entry)) {
+      // Validate loop has either over or repeatWhile
+      if (!state.over && !state.repeatWhile) {
         errors.push({
-          path: `workflow.states[${index}].entry`,
-          message: `Loop entry state "${state.entry}" does not exist in loop workflow`,
-          code: 'invalid_loop_entry',
+          path: `workflow.states[${index}]`,
+          message: 'Loop must have either "over" or "repeatWhile"',
+          code: 'invalid_loop_config',
         });
       }
     }
@@ -453,18 +497,39 @@ function validateWorkflowSemantics(workflow: z.infer<typeof WorkflowDefinitionSc
   const dataSourceNames = workflow.dataSources ? Object.keys(workflow.dataSources) : [];
   
   workflow.workflow.states.forEach((state, index) => {
+    // Check field dataSource references
     if (state.type === 'task') {
       state.fields.forEach((field: any, fIndex: number) => {
-        if ('dataSource' in field && field.dataSource) {
-          if (!dataSourceNames.includes(field.dataSource)) {
-            errors.push({
-              path: `workflow.states[${index}].fields[${fIndex}].dataSource`,
-              message: `DataSource "${field.dataSource}" is not defined`,
-              code: 'undefined_datasource',
-            });
-          }
+        if (field.options?.source && !dataSourceNames.includes(field.options.source)) {
+          errors.push({
+            path: `workflow.states[${index}].fields[${fIndex}].options.source`,
+            message: `DataSource "${field.options.source}" is not defined`,
+            code: 'undefined_datasource',
+          });
         }
       });
+    }
+    
+    // Check choice state dataSource references
+    if (state.type === 'choice' && state.options?.source) {
+      if (!dataSourceNames.includes(state.options.source)) {
+        errors.push({
+          path: `workflow.states[${index}].options.source`,
+          message: `DataSource "${state.options.source}" is not defined`,
+          code: 'undefined_datasource',
+        });
+      }
+    }
+    
+    // Check multi_choice state dataSource references
+    if (state.type === 'multi_choice' && state.options?.source) {
+      if (!dataSourceNames.includes(state.options.source)) {
+        errors.push({
+          path: `workflow.states[${index}].options.source`,
+          message: `DataSource "${state.options.source}" is not defined`,
+          code: 'undefined_datasource',
+        });
+      }
     }
   });
   

@@ -115,10 +115,13 @@ export interface SelectFieldOption {
 
 export interface SelectFieldDefinition extends BaseFieldDefinition {
   type: 'select';
-  /** Available options */
-  options: SelectFieldOption[];
-  /** Data source reference (alternative to static options) */
-  dataSource?: string;
+  /** Options configuration */
+  options?: {
+    /** DataSource reference to load options from */
+    source?: string;
+    /** Static options (used if source is not provided) */
+    values?: SelectFieldOption[];
+  };
   /** Allow multiple selections */
   multiple?: boolean;
   /** Use parent as optgroup (children cannot be selected) */
@@ -153,7 +156,7 @@ export interface YesNoFieldDefinition extends BaseFieldDefinition {
 export interface AreaSelectFieldDefinition extends BaseFieldDefinition {
   type: 'area_select';
   /** Image source (URL or context reference) */
-  imageSource: string;
+  imageSource?: string;
   /** Drawing tool type */
   toolType?: 'rectangle' | 'polygon' | 'both';
   /** Enable multiple area selection */
@@ -228,11 +231,11 @@ export interface TaskState extends BaseState {
 }
 
 /**
- * Choice state - branching based on conditions
+ * Branch state - automatic branching based on conditions
  * No user input, automatically evaluates conditions and transitions
  */
-export interface ChoiceState extends BaseState {
-  type: 'choice';
+export interface BranchState extends BaseState {
+  type: 'branch';
   /** List of conditional transitions (first matching wins) */
   transitions: Transition[];
   /** Optional default transition if no condition matches */
@@ -240,24 +243,51 @@ export interface ChoiceState extends BaseState {
 }
 
 /**
- * Multi-choice state - user selects one option from multiple choices
+ * Choice state - user selects one option from a list
+ * Options can be static or loaded from a dataSource
  */
-export interface MultiChoiceState extends BaseState {
-  type: 'multi_choice';
-  /** Question or prompt to display */
-  question: string;
-  /** Available choices */
-  choices: Array<{
-    value: string;
-    label: string;
-    target: string;
-  }>;
+export interface ChoiceState extends BaseState {
+  type: 'choice';
+  /** Prompt text to display */
+  prompt: string;
+  /** Options configuration */
+  options: {
+    /** DataSource reference to load options from */
+    source?: string;
+    /** Static options (used if source is not provided) */
+    values?: Array<{
+      value: string;
+      label: string;
+    }>;
+  };
   /** Path to store selected value */
   storeAs?: string;
 }
 
 /**
+ * Multi-choice state - user selects multiple options from a list
+ */
+export interface MultiChoiceState extends BaseState {
+  type: 'multi_choice';
+  /** Prompt or question to display */
+  prompt?: string;
+  /** Options configuration */
+  options: {
+    /** DataSource reference to load options from */
+    source?: string;
+    /** Static options (used if source is not provided) */
+    values?: Array<{
+      value: string;
+      label: string;
+    }>;
+  };
+  /** Path to store selected values (array) */
+  storeAs?: string;
+}
+
+/**
  * Yes/No state - binary choice
+ * Can use either yesTarget/noTarget OR standard transitions with conditions
  */
 export interface YesNoState extends BaseState {
   type: 'yes_no';
@@ -267,10 +297,10 @@ export interface YesNoState extends BaseState {
   yesLabel?: string;
   /** Label for "no" option */
   noLabel?: string;
-  /** Target state for "yes" */
-  yesTarget: string;
-  /** Target state for "no" */
-  noTarget: string;
+  /** Target state for "yes" (alternative to using transitions) */
+  yesTarget?: string;
+  /** Target state for "no" (alternative to using transitions) */
+  noTarget?: string;
   /** Path to store boolean result */
   storeAs?: string;
 }
@@ -295,21 +325,27 @@ export interface AreaSelectState extends BaseState {
 }
 
 /**
- * Loop state - repeats a sub-workflow multiple times
- * Implemented using XState actors
+ * Loop state - repeats a sub-workflow
+ * Two modes: iteration over array OR conditional repetition
  */
 export interface LoopState extends BaseState {
   type: 'loop';
-  /** Data source for iteration (array) */
-  over: string;
-  /** Variable name for current item */
-  itemName?: string;
-  /** Variable name for index */
-  indexName?: string;
-  /** Sub-workflow to execute for each item */
-  workflow: WorkflowState[];
-  /** Entry state of sub-workflow */
-  entry: string;
+  
+  /** Variable name to store current iteration data */
+  as?: string;
+  
+  /** Mode 1: Iterate over array */
+  over?: string;
+  
+  /** Mode 2: Conditional repetition (do-while loop) */
+  repeatWhile?: {
+    type: 'yes_no';
+    question: string;
+  };
+  
+  /** Sub-workflow steps to execute */
+  steps: WorkflowState[];
+  
   /** Path to store loop results (array) */
   storeAs?: string;
 }
@@ -330,6 +366,7 @@ export interface FinalState extends BaseState {
  */
 export type WorkflowState =
   | TaskState
+  | BranchState
   | ChoiceState
   | MultiChoiceState
   | YesNoState
