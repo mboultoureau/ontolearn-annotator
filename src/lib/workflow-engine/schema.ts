@@ -423,7 +423,7 @@ function validateWorkflowSemantics(workflow: z.infer<typeof WorkflowDefinitionSc
   }
   
   // Check if state IDs are unique
-  const dupli   tes = workflow.workflow.states
+  const duplicates = workflow.workflow.states
     .map(s => s.id)
     .filter((id, index, arr) => arr.indexOf(id) !== index);
   
