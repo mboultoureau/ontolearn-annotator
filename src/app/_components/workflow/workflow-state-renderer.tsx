@@ -13,6 +13,74 @@ import {
 } from '@/app/_components/ui/select';
 import { ImageSegmentation } from '@/app/_components/data/image-segmentation';
 
+/**
+ * Utility: Creates a nested object structure from a dot-notation path
+ * Example: createNestedObject("crystal.area", coordinates) => { crystal: { area: coordinates } }
+ */
+function createNestedObject(path: string, value: any): any {
+  const segments = path.split('.');
+  const result: any = {};
+  let current = result;
+  
+  for (let i = 0; i < segments.length - 1; i++) {
+    current[segments[i]] = {};
+    current = current[segments[i]];
+  }
+  
+  current[segments[segments.length - 1]] = value;
+  return result;
+}
+
+/**
+ * Utility: Resolves template strings like "${dataSources.images[0].url}" from context
+ */
+function resolveTemplateString(template: string, context: any): string {
+  if (!template || !template.includes('dataSources')) {
+    return template;
+  }
+
+  try {
+    const match = template.match(/\$\{(.+)\}/);
+    if (match) {
+      const path = match[1];
+      // Simple path resolution - in production, use a proper path resolver
+      return eval(`context.${path}`);
+    }
+  } catch (error) {
+    console.error('[resolveTemplateString] Failed to resolve:', template, error);
+  }
+  
+  return template;
+}
+
+/**
+ * Utility: Recursively searches for metadata in nested state configurations
+ */
+function findMetadataForState(stateValue: any, config: any): any {
+  // Handle simple state (string)
+  if (typeof stateValue === 'string') {
+    return config.states?.[stateValue]?.meta;
+  }
+
+  // Handle compound state (nested object)
+  if (typeof stateValue === 'object' && stateValue !== null) {
+    const parentKey = Object.keys(stateValue)[0];
+    const childValue = stateValue[parentKey];
+    const parentState = config.states?.[parentKey];
+    
+    if (parentState) {
+      if (typeof childValue === 'string') {
+        return parentState.states?.[childValue]?.meta;
+      } else if (typeof childValue === 'object') {
+        // Recursively search deeper nested states
+        return findMetadataForState(childValue, parentState);
+      }
+    }
+  }
+
+  return null;
+}
+
 interface WorkflowStateRendererProps {
   state: any; // Current XState state
   machine: any; // XState machine definition
@@ -24,45 +92,12 @@ export function WorkflowStateRenderer({ state, machine, onEvent }: WorkflowState
     return <div className="p-4 text-gray-500">Loading...</div>;
   }
 
-  // Helper function to find metadata in nested states
-  const findMetadataForState = (stateValue: any, config: any): any => {
-    // Handle string state (simple state)
-    if (typeof stateValue === 'string') {
-      return config.states?.[stateValue]?.meta;
-    }
-
-    // Handle object state (compound/nested state like { subsection_loop: "select_subsection_area" })
-    if (typeof stateValue === 'object' && stateValue !== null) {
-      const parentKey = Object.keys(stateValue)[0];
-      const childValue = stateValue[parentKey];
-
-      // Get parent state config
-      const parentState = config.states?.[parentKey];
-      
-      if (parentState) {
-        // Recursively search in nested states
-        if (typeof childValue === 'string') {
-          return parentState.states?.[childValue]?.meta;
-        } else if (typeof childValue === 'object') {
-          // Further nested states
-          return findMetadataForState(childValue, parentState);
-        }
-      }
-    }
-
-    return null;
-  };
-
-  // Get current state value and metadata
   const stateValue = state.value;
   const stateMeta = findMetadataForState(stateValue, machine.config);
   
-  console.log('🎨 [WorkflowStateRenderer]');
-  console.log('  State value:', stateValue);
-  console.log('  Machine config states:', Object.keys(machine.config?.states || {}));
-  console.log('  State meta:', stateMeta);
-  
   if (!stateMeta) {
+    console.warn('[WorkflowStateRenderer] No metadata found for state:', stateValue);
+    
     return (
       <div className="p-4 border rounded bg-yellow-50">
         <p className="text-gray-700">No metadata found for state: <code className="font-mono">{JSON.stringify(stateValue)}</code></p>
@@ -75,7 +110,7 @@ export function WorkflowStateRenderer({ state, machine, onEvent }: WorkflowState
 
   const stateType = stateMeta.type;
 
-  // Render based on state type
+  // Render component based on state type
   switch (stateType) {
     case 'yes_no':
     case 'loop_check':
@@ -94,6 +129,8 @@ export function WorkflowStateRenderer({ state, machine, onEvent }: WorkflowState
       return <FinalRenderer meta={stateMeta} onEvent={onEvent} />;
     
     default:
+      console.warn('[WorkflowStateRenderer] Unsupported state type:', stateType);
+      
       return (
         <div className="p-4 border rounded">
           <p className="text-sm text-gray-600">Unsupported state type: {stateType}</p>
@@ -105,16 +142,17 @@ export function WorkflowStateRenderer({ state, machine, onEvent }: WorkflowState
   }
 }
 
-// Yes/No Renderer
+/**
+ * Renderer for Yes/No and Loop Check states
+ * Displays a question with two radio button options
+ */
 function YesNoRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: string, data?: any) => void }) {
   const [selectedValue, setSelectedValue] = useState<string>('');
 
   const handleSubmit = () => {
-    if (selectedValue === 'yes') {
-      onEvent('YES', true);
-    } else if (selectedValue === 'no') {
-      onEvent('NO', false);
-    }
+    const eventType = selectedValue === 'yes' ? 'YES' : 'NO';
+    const eventData = selectedValue === 'yes';
+    onEvent(eventType, eventData);
   };
 
   return (
@@ -152,47 +190,20 @@ function YesNoRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: stri
   );
 }
 
-// Area Select Renderer
+/**
+ * Renderer for Area Selection states
+ * Displays an image with annotation tools (polygon/rectangle)
+ */
 function AreaSelectRenderer({ meta, context, onEvent }: { meta: any; context: any; onEvent: (eventType: string, data?: any) => void }) {
   const handleAreaSelected = (coordinates: any) => {
-    console.log('Area selected:', coordinates);
+    const data = meta.storeAs 
+      ? createNestedObject(meta.storeAs, coordinates)
+      : { area: coordinates };
     
-    // Store the area and transition
-    if (meta.storeAs) {
-      // Create nested object structure based on storeAs path
-      const path = meta.storeAs.split('.');
-      const data: any = {};
-      let current = data;
-      
-      for (let i = 0; i < path.length - 1; i++) {
-        current[path[i]] = {};
-        current = current[path[i]];
-      }
-      current[path[path.length - 1]] = coordinates;
-      
-      onEvent('AREA_SELECTED', data);
-    } else {
-      onEvent('AREA_SELECTED', { area: coordinates });
-    }
+    onEvent('AREA_SELECTED', data);
   };
 
-  // Resolve imageSource if it references dataSources
-  let imageUrl = meta.imageSource;
-  if (imageUrl && imageUrl.includes('dataSources')) {
-    // Try to resolve from context
-    try {
-      // Extract path like "dataSources.images[0].url"
-      const match = imageUrl.match(/\$\{(.+)\}/);
-      if (match) {
-        const path = match[1];
-        // Simple eval for POC - in production use proper path resolver
-        const resolved = eval(`context.${path}`);
-        imageUrl = resolved;
-      }
-    } catch (e) {
-      console.error('Failed to resolve imageSource:', e);
-    }
-  }
+  const imageUrl = resolveTemplateString(meta.imageSource, context);
 
   return (
     <div className="space-y-4">
@@ -216,47 +227,34 @@ function AreaSelectRenderer({ meta, context, onEvent }: { meta: any; context: an
   );
 }
 
-// Choice Renderer (Dropdown)
+/**
+ * Renderer for Single Choice states
+ * Displays a dropdown with options from static data or data sources
+ */
 function ChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; onEvent: (eventType: string, data?: any) => void }) {
   const [selectedValue, setSelectedValue] = useState<string>('');
 
-  // Resolve options from dataSources if needed
+  // Resolve options from dataSources or use static values
   let options = meta.options?.values || [];
   
   if (meta.options?.source && context.dataSources) {
-    const sourceName = meta.options.source;
-    const sourceData = context.dataSources[sourceName];
+    const sourceData = context.dataSources[meta.options.source];
     
     if (sourceData?.type === 'static' && Array.isArray(sourceData.data)) {
-      // Convert array of strings to options format
-      options = sourceData.data.map((item: any) => {
-        if (typeof item === 'string') {
-          return { value: item, label: item };
-        }
-        return item;
-      });
+      options = sourceData.data.map((item: any) => 
+        typeof item === 'string' 
+          ? { value: item, label: item }
+          : item
+      );
     }
   }
-  
-  console.log('💡 [ChoiceRenderer] Options:', options);
 
   const handleSubmit = () => {
-    if (selectedValue && meta.storeAs) {
-      // Create nested object structure
-      const path = meta.storeAs.split('.');
-      const data: any = {};
-      let current = data;
-      
-      for (let i = 0; i < path.length - 1; i++) {
-        current[path[i]] = {};
-        current = current[path[i]];
-      }
-      current[path[path.length - 1]] = selectedValue;
-      
-      onEvent('NEXT', data);
-    } else {
-      onEvent('NEXT', { value: selectedValue });
-    }
+    const data = meta.storeAs
+      ? createNestedObject(meta.storeAs, selectedValue)
+      : { value: selectedValue };
+    
+    onEvent('NEXT', data);
   };
 
   return (
@@ -295,7 +293,10 @@ function ChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; o
   );
 }
 
-// Multi-Choice Renderer (Placeholder)
+/**
+ * Renderer for Multi-Choice states (placeholder implementation)
+ * TODO: Implement multi-select component with checkboxes
+ */
 function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; onEvent: (eventType: string, data?: any) => void }) {
   return (
     <div className="p-6 border rounded-lg space-y-4 bg-gray-50">
@@ -308,7 +309,7 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
 
       <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
         <p className="text-sm text-yellow-800">
-          🚧 Multi-choice component coming soon
+          Multi-choice component coming soon
         </p>
       </div>
 
@@ -323,11 +324,12 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
   );
 }
 
-// Final State Renderer
+/**
+ * Renderer for Final states
+ * Displays completion message with save button
+ */
 function FinalRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: string, data?: any) => void }) {
   const handleSave = () => {
-    // Emit a custom SAVE event or just notify parent
-    console.log('Workflow completed - ready to save');
     onEvent('SAVE');
   };
 

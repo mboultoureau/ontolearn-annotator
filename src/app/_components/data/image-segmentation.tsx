@@ -60,7 +60,11 @@ export function ImageSegmentation({
             <div className="text-center p-8">
               <p className="text-sm text-gray-600 mb-2">Image: {imageUrl}</p>
               <div className="w-full h-64 bg-gradient-to-br from-blue-100 to-purple-100 rounded flex items-center justify-center">
-                <p className="text-gray-500">🖼️ Image Viewer</p>
+                <img 
+                  src={imageUrl} 
+                  alt="Segmentation Source" 
+                  className="max-h-60 object-contain rounded-lg shadow-md"
+                />
               </div>
             </div>
           ) : (

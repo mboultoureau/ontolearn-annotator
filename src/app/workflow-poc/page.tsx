@@ -19,7 +19,7 @@ dataSources:
     type: static
     data:
       - id: img1
-        url: /uploads/playground/3548bd71-45b1-48f1-9803-9e6706cb104e.jpg
+        url: /uploads/playground/30c5dbe9-1fc4-4676-832e-5c5839ea64ed.jpg
         name: Water Crystal Sample
 
   crystal_classes:
@@ -47,7 +47,7 @@ workflow:
     - id: select_crystal_area
       type: area_select
       name: Select crystal area
-      imageSource: `+"${dataSources.images[0].url}"+`
+      imageSource: `+"${dataSources.images.data[0].url}"+`
       toolType: polygon
       allowMultiple: false
       storeAs: crystal.area
@@ -147,24 +147,14 @@ export default function WorkflowPOCPage() {
     try {
       setError(null);
       
-      // Parse YAML
       const workflow = parseWorkflowDefinition(SAMPLE_WORKFLOW);
-      console.log('📄 Parsed workflow:', workflow);
-      
-      // Compile to machine
       const { machine } = compileWorkflowToMachine(workflow);
-      console.log('⚙️ Compiled machine:', machine);
       
-      // Store machine for later use
       setMachine(machine);
       
-      // Create actor
       const newActor = createActor(machine);
       
-      // Subscribe to state changes
       newActor.subscribe((state) => {
-        console.log('🔄 State changed:', state.value);
-        console.log('💾 Context:', state.context);
         setCurrentState(state);
         setContext(state.context);
       });
@@ -173,9 +163,8 @@ export default function WorkflowPOCPage() {
       setActor(newActor);
       
     } catch (err) {
-      console.error('❌ Error:', err);
       setError(err instanceof Error ? err.message : String(err));
-        setCurrentState(null);
+      setCurrentState(null);
       setContext(null);
     }
   };
@@ -192,20 +181,18 @@ export default function WorkflowPOCPage() {
 
   const handleEvent = (eventType: string, data?: any) => {
     if (actor) {
-      console.log(`📤 Sending event: ${eventType}`, data);
       actor.send({ type: eventType, data });
     }
   };
 
   const handleSave = () => {
-    console.log('💾 Saving workflow data:', context?.data);
     alert('Workflow data saved!\n\n' + JSON.stringify(context?.data, null, 2));
   };
 
   return (
     <div className="container mx-auto p-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">🎨 Workflow POC</h1>
+        <h1 className="text-4xl font-bold mb-2">Workflow POC</h1>
         <p className="text-gray-600">
           Interactive workflow with conditional rendering
         </p>
@@ -233,7 +220,6 @@ export default function WorkflowPOCPage() {
         </div>
       ) : (
         <>
-          {/* Main Workflow UI */}
           <div className="mb-6">
             <WorkflowStateRenderer 
               state={currentState}
@@ -248,7 +234,6 @@ export default function WorkflowPOCPage() {
             />
           </div>
 
-          {/* Debug Panel */}
           <div className="border-t-2 pt-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold">Debug Information</h3>
@@ -262,7 +247,6 @@ export default function WorkflowPOCPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Current State */}
               <div className="p-4 bg-blue-50 border border-blue-200 rounded">
                 <h4 className="font-bold text-blue-800 mb-2">Current State</h4>
                 <p className="font-mono text-sm text-gray-800">
@@ -273,7 +257,6 @@ export default function WorkflowPOCPage() {
                 </p>
               </div>
 
-              {/* State Type */}
               <div className="p-4 bg-purple-50 border border-purple-200 rounded">
                 <h4 className="font-bold text-purple-800 mb-2">State Type</h4>
                 <p className="font-mono text-sm text-gray-800">
@@ -282,7 +265,6 @@ export default function WorkflowPOCPage() {
               </div>
             </div>
 
-            {/* Context Data */}
             <details className="p-4 bg-gray-50 border border-gray-200 rounded">
               <summary className="cursor-pointer font-bold text-gray-800">
                 View Context Data

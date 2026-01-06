@@ -4,8 +4,6 @@
  * This file handles parsing and validation of YAML workflow definitions.
  * YAML files are loaded, parsed, and validated against the Zod schemas.
  * 
- * Note: Full implementation will be done in Step 2.
- * This is a placeholder with the expected interface.
  */
 
 import yaml from 'js-yaml';

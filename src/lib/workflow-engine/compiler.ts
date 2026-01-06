@@ -2,7 +2,6 @@
  * XState v5 Compiler for Workflow Engine
  * 
  * This module converts validated workflow JSON definitions into XState v5 state machines.
- * The compiler is fully generic and derives all behavior from the workflow definition.
  */
 
 import { createMachine, setup, assign } from 'xstate';
@@ -10,7 +9,6 @@ import type { WorkflowDefinition, WorkflowState, WorkflowContext } from './types
 
 /**
  * Deep merge two objects
- * Used to merge event.data with context.data for guard evaluation
  */
 function mergeDeep(target: any, source: any): any {
   if (!source || typeof source !== 'object') return target;
@@ -93,13 +91,13 @@ export function compileWorkflowToMachine(
   // Step 4: Compile states into XState state nodes
   const states = compileStates(workflow);
 
-  // Step 4: Count transitions for metadata
+  // Step 5: Count transitions for metadata
   const transitionCount = workflow.workflow.states.reduce(
     (count, state) => count + (state.transitions?.length || 0),
     0
   );
 
-  // Step 5: Create the XState v5 machine using setup()
+  // Step 6: Create the XState v5 machine using setup()
   const machineConfig = setup({
     types: {
       context: {} as WorkflowContext,
@@ -113,8 +111,6 @@ export function compileWorkflowToMachine(
     context: initialContext,
     states,
   });
-
-  console.log("Compiled machine:", machineConfig);
   
 
   return {
@@ -234,27 +230,21 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
       }
     }
 
-    // ✅ Special handling for yes_no states
+    // Special handling for yes_no states
+    // These states support two transition modes:
+    // 1. Direct targets: yesTarget/noTarget properties
+    // 2. Conditional: standard transitions array with guards
     if (state.type === 'yes_no') {
       const yesNoState = state as Extract<WorkflowState, { type: 'yes_no' }>;
-      
-      console.log(`🔧 [Compiler] Compiling yes_no state: ${state.id}`);
-      console.log(`   yesTarget: ${yesNoState.yesTarget || 'none'}`);
-      console.log(`   noTarget: ${yesNoState.noTarget || 'none'}`);
-      console.log(`   storeAs: ${yesNoState.storeAs || 'none'}`);
-      console.log(`   transitions: ${state.transitions?.length || 0}`);
-      
       stateNode.on = {};
       
       // Priority 1: Use yesTarget/noTarget if specified
       if (yesNoState.yesTarget || yesNoState.noTarget) {
-        console.log(`   Using yesTarget/noTarget mode`);
         if (yesNoState.yesTarget) {
           stateNode.on.YES = {
             target: yesNoState.yesTarget,
             actions: yesNoState.storeAs ? [`store_${state.id}_yes`] : undefined,
           };
-          console.log(`   YES -> ${yesNoState.yesTarget} (actions: ${stateNode.on.YES.actions || 'none'})`);
         }
         
         if (yesNoState.noTarget) {
@@ -262,13 +252,10 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
             target: yesNoState.noTarget,
             actions: yesNoState.storeAs ? [`store_${state.id}_no`] : undefined,
           };
-          console.log(`   NO -> ${yesNoState.noTarget} (actions: ${stateNode.on.NO.actions || 'none'})`);
         }
       }
       // Priority 2: Use transitions if no direct targets
       else if (state.transitions && state.transitions.length > 0) {
-        console.log(`   Using transitions mode`);
-        // Map first two transitions to YES and NO
         const yesTransition = state.transitions[0];
         const noTransition = state.transitions.length > 1 ? state.transitions[1] : undefined;
         
@@ -277,7 +264,6 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
           guard: yesTransition.when ? `guard_${state.id}_0` : undefined,
           actions: yesNoState.storeAs ? [`store_${state.id}_yes`] : undefined,
         };
-        console.log(`   YES -> ${yesTransition.target} (guard: ${stateNode.on.YES.guard || 'none'}, when: "${yesTransition.when || 'none'}")`);
         
         if (noTransition) {
           stateNode.on.NO = {
@@ -285,15 +271,13 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
             guard: noTransition.when ? `guard_${state.id}_1` : undefined,
             actions: yesNoState.storeAs ? [`store_${state.id}_no`] : undefined,
           };
-          console.log(`   NO -> ${noTransition.target} (guard: ${stateNode.on.NO.guard || 'none'}, when: "${noTransition.when || 'none'}")`);
         }
       }
-      console.log('');
     }
 
-    // Handle area_select auto-transition
+    // Handle area_select states
+    // These states automatically respond to AREA_SELECTED events
     if (state.type === 'area_select') {
-      // Area select states auto-transition on AREA_SELECTED event
       stateNode.on = stateNode.on || {};
       if (!stateNode.on.AREA_SELECTED && state.transitions?.[0]) {
         stateNode.on.AREA_SELECTED = {
@@ -302,14 +286,15 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
       }
     }
 
-    // Handle loop states - FULL repeatWhile support (no actors)
+    // Handle loop states
+    // Loops create compound states with nested steps and a loop check state
     if (state.type === 'loop') {
     const loopState = state as Extract<WorkflowState, { type: 'loop' }>;
 
     stateNode.type = 'compound';
 
     if (!loopState.steps || loopState.steps.length === 0) {
-        // Empty loop → immediate transition
+        // Empty loop: immediate transition
         stateNode.type = 'atomic';
         stateNodes[state.id] = stateNode;
         continue;
@@ -318,7 +303,7 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
     const nestedStates: Record<string, any> = {};
     const stepIds = loopState.steps.map(s => s.id);
 
-    // 1️⃣ Compile loop steps
+    // Step 1: Compile individual loop steps
     for (let i = 0; i < loopState.steps.length; i++) {
         const step = loopState.steps[i];
 
@@ -329,14 +314,14 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
         },
         };
 
-        // Auto-chain steps if no explicit transitions
+        // Auto-chain steps if no explicit transitions defined
         if (!step.transitions || step.transitions.length === 0) {
         if (i < loopState.steps.length - 1) {
             nestedNode.on = {
             NEXT: { target: stepIds[i + 1] },
             };
         } else {
-            // Last step → go to loop check
+            // Last step transitions to loop check
             nestedNode.on = {
             NEXT: { target: '__loop_check' },
             };
@@ -345,7 +330,7 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
         nestedNode.on = compileTransitions(step);
         }
 
-        // ✅ Add AREA_SELECTED event for area_select steps
+        // Add AREA_SELECTED event support for area_select steps
         if (step.type === 'area_select') {
         nestedNode.on = nestedNode.on || {};
         const nextTarget = i < loopState.steps.length - 1 ? stepIds[i + 1] : '__loop_check';
@@ -361,7 +346,7 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
         nestedStates[step.id] = nestedNode;
     }
 
-    // 2️⃣ Add loop check state (YES / NO)
+    // Step 2: Add loop check state (YES repeats, NO exits)
     nestedStates['__loop_check'] = {
         meta: {
         type: 'loop_check',
@@ -371,7 +356,7 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
         },
         on: {
         YES: {
-            target: stepIds[0], // restart loop
+            target: stepIds[0],
         },
         NO: {
             target: '__loop_exit',
@@ -379,7 +364,7 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
         },
     };
 
-    // 3️⃣ Exit pseudo-state
+    // Step 3: Add exit pseudo-state
     nestedStates['__loop_exit'] = {
         type: 'final',
     };
@@ -387,14 +372,14 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
     stateNode.states = nestedStates;
     stateNode.initial = stepIds[0];
 
-    // 4️⃣ Exit transition of the loop
+    // Step 4: Configure loop exit transition
     if (state.transitions && state.transitions.length > 0) {
         stateNode.onDone = {
         target: state.transitions[0].target,
         };
     }
 
-    // Loop handled → no outer transitions
+    // Remove outer transitions as loop manages its own flow
     delete stateNode.on;
     }
 
@@ -485,26 +470,14 @@ function compileGuards(
         
         // Compile the 'when' expression into a guard function
         guards[guardName] = ({ context, event }: { context: WorkflowContext; event: any }) => {
-          console.log(`🛡️ [Guard ${guardName}] Evaluating:`);
-          console.log(`   Expression: "${whenExpression}"`);
-          console.log(`   Context:`, JSON.stringify(context, null, 2));
-          console.log(`   Event:`, JSON.stringify(event, null, 2));
-          
-          // Create a merged context that includes event.data
-          // This allows guards to evaluate against data being submitted
+          // Merge event data into context for evaluation
+          // This allows guards to check against data being submitted
           const mergedContext = {
             ...context,
             data: mergeDeep(context.data || {}, event.data || {}),
           };
           
-          console.log(`   Merged Context:`, JSON.stringify(mergedContext, null, 2));
-          
-          const result = evaluateWhenExpression(whenExpression, mergedContext);
-          
-          console.log(`   Result: ${result}`);
-          console.log('');
-          
-          return result;
+          return evaluateWhenExpression(whenExpression, mergedContext);
         };
       }
     }
@@ -650,62 +623,37 @@ function compileActions(workflow: WorkflowDefinition): Record<string, any> {
 /**
  * Evaluates a 'when' expression against the current context
  * 
- * This is a simple expression evaluator that handles:
+ * Supports basic expression syntax:
  * - Property access: context.data.field
  * - Comparisons: ==, !=, >, <, >=, <=
  * - Logical operators: &&, ||
  * 
- * For production use, consider a proper expression parser/evaluator.
- * This implementation uses Function constructor for simplicity but should be
- * replaced with a safe parser in production.
+ * Note: Uses Function constructor for simplicity. In production,
+ * consider using a proper expression parser (jsep, mathjs, etc.)
  * 
  * @param expression - The 'when' expression string
  * @param context - Current workflow context
  * @returns Boolean result of evaluation
  */
 function evaluateWhenExpression(expression: string, context: WorkflowContext): boolean {
-  console.log(`📊 [evaluateWhenExpression] Starting evaluation`);
-  console.log(`   Original expression: "${expression}"`);
-  
   try {
-    // Create a safe evaluation context
-    // Replace context.X with direct access to context object
+    // Replace 'context.' with 'ctx.' for safe evaluation
     const safeExpression = expression.replace(/context\./g, 'ctx.');
-    console.log(`   Safe expression: "${safeExpression}"`);
     
-    // Create evaluation function with safe property access
-    // Note: In production, use a proper expression parser like jsep or mathjs
+    // Create evaluation function with context binding
     const evaluator = new Function('ctx', `
       'use strict';
-      
-      // Helper function for safe property access
-      function get(obj, path) {
-        const keys = path.split('.');
-        let result = obj;
-        for (const key of keys) {
-          if (result == null) return undefined;
-          result = result[key];
-        }
-        return result;
-      }
-      
       try {
-        console.log('   [Function] Evaluating with ctx:', JSON.stringify(ctx));
-        const result = Boolean(${safeExpression});
-        console.log('   [Function] Raw result:', ${safeExpression});
-        console.log('   [Function] Boolean result:', result);
-        return result;
+        return Boolean(${safeExpression});
       } catch (e) {
-        console.error('   [Function] Expression evaluation error:', e);
+        console.error('[evaluateWhenExpression] Error:', e);
         return false;
       }
     `);
 
-    const result = evaluator(context);
-    console.log(`   ✅ Final result: ${result}`);
-    return result;
+    return evaluator(context);
   } catch (error) {
-    console.error(`   ❌ Failed to evaluate expression:`, error);
+    console.error('[evaluateWhenExpression] Failed to evaluate:', expression, error);
     return false;
   }
 }
