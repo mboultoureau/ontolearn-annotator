@@ -24,11 +24,38 @@ export function WorkflowStateRenderer({ state, machine, onEvent }: WorkflowState
     return <div className="p-4 text-gray-500">Loading...</div>;
   }
 
-  // Get current state value
-  const stateValue = typeof state.value === 'string' ? state.value : JSON.stringify(state.value);
-  
-  // Get metadata from machine configuration
-  const stateMeta = machine.config?.states?.[stateValue]?.meta;
+  // Helper function to find metadata in nested states
+  const findMetadataForState = (stateValue: any, config: any): any => {
+    // Handle string state (simple state)
+    if (typeof stateValue === 'string') {
+      return config.states?.[stateValue]?.meta;
+    }
+
+    // Handle object state (compound/nested state like { subsection_loop: "select_subsection_area" })
+    if (typeof stateValue === 'object' && stateValue !== null) {
+      const parentKey = Object.keys(stateValue)[0];
+      const childValue = stateValue[parentKey];
+
+      // Get parent state config
+      const parentState = config.states?.[parentKey];
+      
+      if (parentState) {
+        // Recursively search in nested states
+        if (typeof childValue === 'string') {
+          return parentState.states?.[childValue]?.meta;
+        } else if (typeof childValue === 'object') {
+          // Further nested states
+          return findMetadataForState(childValue, parentState);
+        }
+      }
+    }
+
+    return null;
+  };
+
+  // Get current state value and metadata
+  const stateValue = state.value;
+  const stateMeta = findMetadataForState(stateValue, machine.config);
   
   console.log('🎨 [WorkflowStateRenderer]');
   console.log('  State value:', stateValue);
@@ -38,7 +65,7 @@ export function WorkflowStateRenderer({ state, machine, onEvent }: WorkflowState
   if (!stateMeta) {
     return (
       <div className="p-4 border rounded bg-yellow-50">
-        <p className="text-gray-700">No metadata found for state: <code className="font-mono">{stateValue}</code></p>
+        <p className="text-gray-700">No metadata found for state: <code className="font-mono">{JSON.stringify(stateValue)}</code></p>
         <Button onClick={() => onEvent('NEXT')} className="mt-4">
           Next (Default)
         </Button>
@@ -51,6 +78,7 @@ export function WorkflowStateRenderer({ state, machine, onEvent }: WorkflowState
   // Render based on state type
   switch (stateType) {
     case 'yes_no':
+    case 'loop_check':
       return <YesNoRenderer meta={stateMeta} onEvent={onEvent} />;
     
     case 'area_select':

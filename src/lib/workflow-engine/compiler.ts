@@ -345,6 +345,15 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
         nestedNode.on = compileTransitions(step);
         }
 
+        // ✅ Add AREA_SELECTED event for area_select steps
+        if (step.type === 'area_select') {
+        nestedNode.on = nestedNode.on || {};
+        const nextTarget = i < loopState.steps.length - 1 ? stepIds[i + 1] : '__loop_check';
+        if (!nestedNode.on.AREA_SELECTED) {
+            nestedNode.on.AREA_SELECTED = { target: nextTarget };
+        }
+        }
+
         if (step.type === 'final') {
         nestedNode.type = 'final';
         }
@@ -356,7 +365,9 @@ function compileStates(workflow: WorkflowDefinition): Record<string, any> {
     nestedStates['__loop_check'] = {
         meta: {
         type: 'loop_check',
-        description: 'Repeat loop?',
+        name: loopState.repeatWhile?.question || 'Repeat loop?',
+        question: loopState.repeatWhile?.question || 'Repeat loop?',
+        description: 'Loop continuation check',
         },
         on: {
         YES: {
