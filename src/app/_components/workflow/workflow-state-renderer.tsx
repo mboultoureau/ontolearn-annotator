@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/app/_components/ui/button';
 import { Label } from '@/app/_components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/app/_components/ui/radio-group';
@@ -11,7 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/app/_components/ui/select';
-import { ImageSegmentation } from '@/app/_components/data/image-segmentation';
+
+// Annotorious/OpenSeadragon rely on browser globals; load client-side only
+const ImageSegmentation = dynamic(
+  () => import('@/app/_components/data/image-segmentation').then((m) => m.ImageSegmentation),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="p-4 border rounded bg-gray-50 text-sm text-gray-600">Loading image…</div>
+    ),
+  }
+);
 
 /**
  * Utility: Creates a nested object structure from a dot-notation path

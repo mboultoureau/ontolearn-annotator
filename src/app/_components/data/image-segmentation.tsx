@@ -1,7 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/app/_components/ui/button';
+import { v4 as uuid } from 'uuid';
+// @ts-ignore
+import BetterPolygon from '@recogito/annotorious-better-polygon';
+// @ts-ignore
+import * as Annotorious from '@recogito/annotorious-openseadragon';
+import '@recogito/annotorious-openseadragon/dist/annotorious.min.css';
+import OpenSeadragon from 'openseadragon';
 
 interface ImageSegmentationProps {
   imageUrl: string;
@@ -10,137 +17,213 @@ interface ImageSegmentationProps {
   onAreaSelected: (coordinates: any) => void;
 }
 
+function isDzi(url: string): boolean {
+  return /\.dzi(\?|$)/.test(url);
+}
+
+function parseAnnotationGeometry(annotation: any) {
+  const selector = annotation?.target?.selector;
+  if (!selector) return { type: 'unknown', raw: annotation };
+
+  // Rectangle via Media Fragment: xywh=pixel:x,y,w,h
+  if (selector.type === 'FragmentSelector' && typeof selector.value === 'string') {
+    const m = selector.value.match(/xywh=pixel:(\d+),(\d+),(\d+),(\d+)/);
+    if (m) {
+      return {
+        type: 'rectangle',
+        coordinates: { x: Number(m[1]), y: Number(m[2]), width: Number(m[3]), height: Number(m[4]) },
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  // Polygon via SVG selector with <polygon points="x,y ...">
+  if (selector.type === 'SvgSelector' && typeof selector.value === 'string') {
+    const pointsMatch = selector.value.match(/points=\"([^\"]+)\"/);
+    if (pointsMatch) {
+      const pointsStr = pointsMatch[1];
+      const points = pointsStr
+        .trim()
+        .split(/\s+/)
+        .map((p: string) => p.split(',').map((n: string) => Number(n)))
+        .filter((arr: number[]) => arr.length === 2);
+      if (points.length > 2) {
+        return {
+          type: 'polygon',
+          coordinates: points,
+          timestamp: new Date().toISOString(),
+        };
+      }
+    }
+  }
+
+  return { type: 'unknown', raw: annotation };
+}
+
 export function ImageSegmentation({
   imageUrl,
   toolType = 'polygon',
   allowMultiple = false,
   onAreaSelected,
 }: ImageSegmentationProps) {
-  const [selectedArea, setSelectedArea] = useState<any>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [viewer, setViewer] = useState<OpenSeadragon.Viewer | null>(null);
+  const [annotate, setAnnotate] = useState<any>(null);
+  const [selectedTool, setSelectedTool] = useState<'mouse' | 'rectangle' | 'polygon'>(
+    toolType === 'rectangle' ? 'rectangle' : 'polygon'
+  );
   const [areas, setAreas] = useState<any[]>([]);
+  const lastAnnotationRef = useRef<any>(null);
 
-  // Simulated area selection for POC
-  const handleSimulateSelection = () => {
-    const mockArea = {
-      type: toolType,
-      coordinates: toolType === 'polygon' 
-        ? [[100, 100], [200, 100], [200, 200], [100, 200]] // Mock polygon
-        : { x: 100, y: 100, width: 100, height: 100 }, // Mock rectangle
-      timestamp: new Date().toISOString(),
+  useEffect(() => {
+    if (!containerRef.current || !imageUrl) return;
+
+    const viewerInstance = OpenSeadragon({
+      element: containerRef.current,
+      tileSources: isDzi(imageUrl) ? imageUrl : { type: 'image', url: imageUrl },
+      showNavigationControl: false,
+    } as any);
+
+    setViewer(viewerInstance);
+
+    const annotorious = Annotorious(viewerInstance, { disableEditor: true });
+    setAnnotate(annotorious);
+    BetterPolygon(annotorious);
+
+    // initialize tool
+    annotorious.setDrawingEnabled(true);
+    annotorious.setDrawingTool(selectedTool === 'rectangle' ? 'rect' : 'polygon');
+
+    // events
+    annotorious.on('createSelection', (selection: any) => {
+      // Build a persistent WebAnnotation with an explicit id
+      const annotation = {
+        ...selection,
+        type: 'Annotation',
+        id: `#${uuid()}`,
+      };
+
+      // Enforce single selection if required: remove all existing first
+      if (!allowMultiple && typeof annotorious.getAnnotations === 'function') {
+        const existing = annotorious.getAnnotations();
+        existing.forEach((a: any) => annotorious.removeAnnotation(a));
+      }
+
+      // Add to Annotorious so it stays visible
+      annotorious.addAnnotation(annotation, true);
+
+      // Parse and store in React state for upstream consumer
+      const parsed = parseAnnotationGeometry(annotation);
+      if (allowMultiple) {
+        setAreas(prev => [...prev, parsed]);
+      } else {
+        setAreas([parsed]);
+        lastAnnotationRef.current = annotation;
+      }
+
+      // Reset selection and keep drawing enabled
+      annotorious.cancelSelected();
+      annotorious.setDrawingEnabled(true);
+    });
+
+    annotorious.on('cancelSelected', () => {
+      // Keep drawing enabled
+      annotorious.setDrawingEnabled(true);
+    });
+
+    return () => {
+      viewerInstance?.destroy();
+      setViewer(null);
     };
+  }, [imageUrl]);
 
-    if (allowMultiple) {
-      const newAreas = [...areas, mockArea];
-      setAreas(newAreas);
-      setSelectedArea(mockArea);
+  useEffect(() => {
+    if (!annotate) return;
+    if (selectedTool === 'mouse') {
+      annotate.setDrawingEnabled(false);
     } else {
-      setSelectedArea(mockArea);
+      annotate.setDrawingEnabled(true);
+      annotate.setDrawingTool(selectedTool === 'rectangle' ? 'rect' : 'polygon');
+      annotate.cancelSelected();
     }
-  };
+  }, [selectedTool, annotate]);
 
   const handleConfirm = () => {
-    if (allowMultiple && areas.length > 0) {
+    if (allowMultiple) {
       onAreaSelected(areas);
-    } else if (selectedArea) {
-      onAreaSelected(selectedArea);
+    } else if (areas[0]) {
+      onAreaSelected(areas[0]);
     }
   };
 
   const handleClear = () => {
-    setSelectedArea(null);
     setAreas([]);
+    lastAnnotationRef.current = null;
+    if (annotate && typeof annotate.getAnnotations === 'function') {
+      const anns = annotate.getAnnotations();
+      anns.forEach((a: any) => annotate.removeAnnotation(a));
+    }
+    annotate?.cancelSelected();
   };
 
   return (
     <div className="space-y-4">
-      {/* Image Display */}
-      <div className="relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
-        <div className="aspect-video flex items-center justify-center">
-          {imageUrl ? (
-            <div className="text-center p-8">
-              <p className="text-sm text-gray-600 mb-2">Image: {imageUrl}</p>
-              <div className="w-full h-64 bg-gradient-to-br from-blue-100 to-purple-100 rounded flex items-center justify-center">
-                <img 
-                  src={imageUrl} 
-                  alt="Segmentation Source" 
-                  className="max-h-60 object-contain rounded-lg shadow-md"
-                />
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-400">No image source provided</p>
-          )}
-        </div>
-
-        {/* Selection overlay */}
-        {selectedArea && (
-          <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs">
-            ✓ Area Selected
-          </div>
-        )}
-      </div>
-
-      {/* Tool Info */}
-      <div className="flex items-center gap-2 text-sm text-gray-600">
+      <div className="p-2 flex items-center gap-2 text-sm">
         <span className="font-medium">Tool:</span>
-        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
-          {toolType === 'polygon' ? '📐 Polygon' : '▭ Rectangle'}
-        </span>
+        {(toolType === 'polygon' || toolType === 'both') && (
+          <Button
+            variant={selectedTool === 'polygon' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedTool('polygon')}
+          >
+            Polygon
+          </Button>
+        )}
+        {(toolType === 'rectangle' || toolType === 'both') && (
+          <Button
+            variant={selectedTool === 'rectangle' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedTool('rectangle')}
+          >
+            Rectangle
+          </Button>
+        )}
+        <Button
+          variant={selectedTool === 'mouse' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setSelectedTool('mouse')}
+        >
+          Mouse
+        </Button>
         {allowMultiple && (
-          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded">
+          <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 rounded">
             Multiple areas allowed
           </span>
         )}
       </div>
 
-      {/* Areas counter for multiple selection */}
-      {allowMultiple && areas.length > 0 && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-          <p className="text-sm text-blue-800">
-            {areas.length} area{areas.length > 1 ? 's' : ''} selected
-          </p>
-        </div>
-      )}
+      <div className="relative border rounded bg-gray-50" style={{ height: '60vh' }}>
+        <div ref={containerRef} className="seadragon-viewer" style={{ position: 'relative', height: '100%' }} />
 
-      {/* Simulation Controls */}
-      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded space-y-3">
-        <p className="text-xs text-yellow-800">
-          🚧 POC Mode: Click to simulate area selection
-        </p>
-        <div className="flex gap-2">
-          <Button
-            onClick={handleSimulateSelection}
-            variant="outline"
-            size="sm"
-            className="flex-1"
-          >
-            Simulate Selection
-          </Button>
-          {(selectedArea || areas.length > 0) && (
-            <Button
-              onClick={handleClear}
-              variant="outline"
-              size="sm"
-              className="text-red-600 hover:text-red-700"
-            >
-              Clear
-            </Button>
-          )}
-        </div>
+        {areas.length > 0 && (
+          <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs">
+            ✓ {areas.length} selected
+          </div>
+        )}
       </div>
 
-      {/* Confirm Button */}
-      <Button
-        onClick={handleConfirm}
-        disabled={!selectedArea && areas.length === 0}
-        className="w-full"
-        size="lg"
-      >
-        {allowMultiple 
-          ? `Confirm ${areas.length} Area${areas.length !== 1 ? 's' : ''}`
-          : 'Confirm Area Selection'
-        }
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          onClick={handleConfirm}
+          disabled={areas.length === 0}
+          className="flex-1"
+        >
+          {allowMultiple ? `Confirm ${areas.length} Area${areas.length !== 1 ? 's' : ''}` : 'Confirm Area Selection'}
+        </Button>
+        {areas.length > 0 && (
+          <Button onClick={handleClear} variant="outline">Clear</Button>
+        )}
+      </div>
     </div>
   );
 }
