@@ -2,6 +2,7 @@
  * XState v5 Compiler for Workflow Engine
  * 
  * This module converts validated workflow JSON definitions into XState v5 state machines.
+ * The compiler is fully generic and derives all behavior from the workflow definition.
  */
 
 import { createMachine, setup, assign } from 'xstate';
@@ -9,6 +10,7 @@ import type { WorkflowDefinition, WorkflowState, WorkflowContext } from './types
 
 /**
  * Deep merge two objects
+ * Used to merge event.data with context.data for guard evaluation
  */
 function mergeDeep(target: any, source: any): any {
   if (!source || typeof source !== 'object') return target;
@@ -91,13 +93,13 @@ export function compileWorkflowToMachine(
   // Step 4: Compile states into XState state nodes
   const states = compileStates(workflow);
 
-  // Step 5: Count transitions for metadata
+  // Step 4: Count transitions for metadata
   const transitionCount = workflow.workflow.states.reduce(
     (count, state) => count + (state.transitions?.length || 0),
     0
   );
 
-  // Step 6: Create the XState v5 machine using setup()
+  // Step 5: Create the XState v5 machine using setup()
   const machineConfig = setup({
     types: {
       context: {} as WorkflowContext,

@@ -136,16 +136,30 @@ workflow:
       message: Annotation session completed
 `;
 
+interface Annotation {
+  id: string;
+  stateId: string;
+  type: 'area' | 'choice' | 'multi_choice' | 'yes_no';
+  timestamp: string;
+  payload: any;
+  parentState?: string;
+  iteration?: number;
+}
+
 export default function WorkflowPOCPage() {
   const [actor, setActor] = useState<any>(null);
   const [currentState, setCurrentState] = useState<any>(null);
   const [context, setContext] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [machine, setMachine] = useState<any>(null);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [loopIterations, setLoopIterations] = useState<Record<string, number>>({});
 
   const startWorkflow = () => {
     try {
       setError(null);
+      setAnnotations([]);
+      setLoopIterations({});
       
       const workflow = parseWorkflowDefinition(SAMPLE_WORKFLOW);
       const { machine } = compileWorkflowToMachine(workflow);
@@ -179,14 +193,168 @@ export default function WorkflowPOCPage() {
     }
   };
 
-  const handleEvent = (eventType: string, data?: any) => {
+  const handleEvent = (eventType: string, data?: any, meta?: any) => {
+    if (!currentState) return;
+
+    console.log('[handleEvent]', { eventType, data, currentStateValue: currentState.value });
+
+    // Get current state info
+    const stateValue = currentState.value;
+    let stateId: string;
+    let parentState: string | undefined;
+    
+    // Helper function to find metadata (same as in renderer)
+    const findMeta = (value: any, config: any): any => {
+      if (typeof value === 'string') {
+        return config.states?.[value]?.meta;
+      }
+      if (typeof value === 'object' && value !== null) {
+        const parentKey = Object.keys(value)[0];
+        const childValue = value[parentKey];
+        const parentStateConfig = config.states?.[parentKey];
+        
+        if (parentStateConfig) {
+          if (typeof childValue === 'string') {
+            return parentStateConfig.states?.[childValue]?.meta;
+          } else if (typeof childValue === 'object') {
+            return findMeta(childValue, parentStateConfig);
+          }
+        }
+      }
+      return null;
+    };
+    
+    // Handle nested states (loops)
+    if (typeof stateValue === 'object' && stateValue !== null) {
+      const keys = Object.keys(stateValue);
+      parentState = keys[0];
+      stateId = stateValue[parentState];
+      
+      // Track loop iterations
+      if (eventType === 'YES' && stateId === '__loop_check' && parentState) {
+        setLoopIterations(prev => ({
+          ...prev,
+          [parentState as string]: (prev[parentState as string] || 0) + 1
+        }));
+      }
+    } else {
+      stateId = stateValue as string;
+    }
+
+    // Capture annotation based on event type
+    let annotation: Annotation | null = null;
+    
+    switch (eventType) {
+      case 'AREA_SELECTED':
+        // Extract coordinates from nested payload or direct
+        const coordinates = data?.crystal?.area || 
+                          data?.subsection?.area || 
+                          data?.area ||
+                          data;
+        
+        annotation = {
+          id: `${stateId}-${Date.now()}`,
+          stateId,
+          type: 'area',
+          timestamp: new Date().toISOString(),
+          payload: { coordinates },
+          parentState,
+          iteration: parentState ? loopIterations[parentState] : undefined
+        };
+        break;
+        
+      case 'NEXT':
+        // Find metadata using the same logic as in renderer
+        const stateMeta = findMeta(stateValue, machine.config);
+        
+        console.log('[handleEvent NEXT]', {
+          stateId,
+          stateValue,
+          stateType: stateMeta?.type,
+          data,
+          meta: stateMeta
+        });
+        
+        if (stateMeta?.type === 'choice' || stateMeta?.type === 'multi_choice') {
+          // Store the entire data object to preserve nested structure
+          annotation = {
+            id: `${stateId}-${Date.now()}`,
+            stateId,
+            type: stateMeta.type,
+            timestamp: new Date().toISOString(),
+            payload: { data }, // Store full data object
+            parentState,
+            iteration: parentState ? loopIterations[parentState] : undefined
+          };
+        }
+        break;
+        
+      case 'YES':
+      case 'NO':
+        annotation = {
+          id: `${stateId}-${Date.now()}`,
+          stateId,
+          type: 'yes_no',
+          timestamp: new Date().toISOString(),
+          payload: { answer: eventType === 'YES' },
+          parentState,
+          iteration: parentState ? loopIterations[parentState] : undefined
+        };
+        break;
+    }
+
+    // Store annotation if created
+    if (annotation) {
+      setAnnotations(prev => [...prev, annotation!]);
+    }
+
+    // Forward event to actor
     if (actor) {
       actor.send({ type: eventType, data });
     }
   };
 
-  const handleSave = () => {
-    alert('Workflow data saved!\n\n' + JSON.stringify(context?.data, null, 2));
+  const handleSave = async () => {
+    // Prepare data for database save
+    const saveData = {
+      projectId: 'cmk29xxlo0000flyovqqznqgx',
+      dataFileId: 'datafile-12345',
+      userId: 'user-67890',
+      workflowContext: context?.data,
+      annotations: annotations,
+      completedAt: new Date().toISOString()
+    };
+
+    console.log('Workflow completed - Saving annotations...', saveData);
+    
+    try {
+      const response = await fetch('/api/workflow/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(saveData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Error saving annotations:', result);
+        alert(`Erreur lors de la sauvegarde: ${result.error}\n\n${result.details || ''}`);
+        return;
+      }
+
+      console.log('Annotations saved successfully:', result);
+      alert(`✅ Annotations sauvegardées avec succès!\n\n${result.annotationsCreated} enregistrements créés`);
+      
+      // Optionally reset the workflow
+      setTimeout(() => {
+        stopWorkflow();
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to save annotations:', error);
+      alert(`Erreur réseau: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   return (
@@ -231,6 +399,9 @@ export default function WorkflowPOCPage() {
                   handleEvent(eventType, data);
                 }
               }}
+              projectId='gjidrgdrgd87rgdr84g'
+              dataFileId='datafile-12345'
+              userId='user-67890'
             />
           </div>
 
@@ -246,7 +417,7 @@ export default function WorkflowPOCPage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 bg-blue-50 border border-blue-200 rounded">
                 <h4 className="font-bold text-blue-800 mb-2">Current State</h4>
                 <p className="font-mono text-sm text-gray-800">
@@ -263,7 +434,23 @@ export default function WorkflowPOCPage() {
                   {currentState?.meta?.[Object.keys(currentState.meta)[0]]?.type || 'unknown'}
                 </p>
               </div>
+
+              <div className="p-4 bg-green-50 border border-green-200 rounded">
+                <h4 className="font-bold text-green-800 mb-2">Annotations Captured</h4>
+                <p className="font-mono text-sm text-gray-800">
+                  {annotations.length} entries
+                </p>
+              </div>
             </div>
+
+            <details className="p-4 bg-orange-50 border border-orange-200 rounded">
+              <summary className="cursor-pointer font-bold text-orange-800">
+                View Captured Annotations
+              </summary>
+              <textarea className="mt-2 p-2 bg-white rounded border overflow-x-auto text-xs w-full h-64 font-mono text-gray-800" readOnly>
+                {JSON.stringify(annotations, null, 2)}
+              </textarea>
+            </details>
 
             <details className="p-4 bg-gray-50 border border-gray-200 rounded">
               <summary className="cursor-pointer font-bold text-gray-800">

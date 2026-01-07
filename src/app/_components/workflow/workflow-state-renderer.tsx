@@ -85,9 +85,12 @@ interface WorkflowStateRendererProps {
   state: any; // Current XState state
   machine: any; // XState machine definition
   onEvent: (eventType: string, data?: any) => void;
+  projectId: string;
+  dataFileId: string;
+  userId: string;
 }
 
-export function WorkflowStateRenderer({ state, machine, onEvent }: WorkflowStateRendererProps) {
+export function WorkflowStateRenderer({ state, machine, onEvent, projectId, dataFileId, userId }: WorkflowStateRendererProps) {
   if (!state || !machine) {
     return <div className="p-4 text-gray-500">Loading...</div>;
   }
@@ -294,31 +297,148 @@ function ChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; o
 }
 
 /**
- * Renderer for Multi-Choice states (placeholder implementation)
- * TODO: Implement multi-select component with checkboxes
+ * Renderer for Multi-Choice states with ranked selection
+ * Allows selecting multiple options and ordering them by rank (1 to n)
  */
 function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; onEvent: (eventType: string, data?: any) => void }) {
+  const [selectedOptions, setSelectedOptions] = useState<Array<{ value: string; label: string; rank: number }>>([]);
+  const [availableValue, setAvailableValue] = useState<string>('');
+
+  // Resolve options from dataSources or use static values
+  let allOptions = meta.options?.values || [];
+  
+  if (meta.options?.source && context.dataSources) {
+    const sourceData = context.dataSources[meta.options.source];
+    
+    if (sourceData?.type === 'static' && Array.isArray(sourceData.data)) {
+      allOptions = sourceData.data.map((item: any) => 
+        typeof item === 'string' 
+          ? { value: item, label: item }
+          : item
+      );
+    }
+  }
+
+  // Filter out already selected options
+  const availableOptions = allOptions.filter(
+    (option: any) => !selectedOptions.find(s => s.value === option.value)
+  );
+
+  const handleAdd = () => {
+    if (!availableValue) return;
+    
+    const option = allOptions.find((opt: any) => opt.value === availableValue);
+    if (!option) return;
+
+    const newRank = selectedOptions.length + 1;
+    setSelectedOptions([...selectedOptions, { 
+      value: option.value, 
+      label: option.label, 
+      rank: newRank 
+    }]);
+    setAvailableValue('');
+  };
+
+  const handleRemove = (valueToRemove: string) => {
+    const updatedOptions = selectedOptions
+      .filter(opt => opt.value !== valueToRemove)
+      .map((opt, index) => ({ ...opt, rank: index + 1 })); // Recompute ranks
+    
+    setSelectedOptions(updatedOptions);
+  };
+
+  const handleSubmit = () => {
+    const rankedValues = selectedOptions.map(opt => opt.value);
+    
+    const data = meta.storeAs
+      ? createNestedObject(meta.storeAs, rankedValues)
+      : { values: rankedValues };
+    
+    onEvent('NEXT', data);
+  };
+
   return (
-    <div className="p-6 border rounded-lg space-y-4 bg-gray-50">
+    <div className="p-6 border rounded-lg space-y-4">
       <div>
         <h2 className="text-xl font-bold">{meta.name}</h2>
         {meta.prompt && (
           <p className="text-sm text-gray-600 mt-1">{meta.prompt}</p>
         )}
-      </div>
-
-      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
-        <p className="text-sm text-yellow-800">
-          Multi-choice component coming soon
+        <p className="text-sm text-blue-600 mt-2">
+          Sélectionnez et ordonnez les classes par ordre de priorité (1 = plus proche)
         </p>
       </div>
 
+      {/* Add new option */}
+      <div className="space-y-2">
+        <Label>Ajouter une classe</Label>
+        <div className="flex gap-2">
+          <Select 
+            value={availableValue} 
+            onValueChange={setAvailableValue}
+            disabled={availableOptions.length === 0}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder={
+                availableOptions.length === 0 
+                  ? "Toutes les options sélectionnées" 
+                  : "Choisir une classe..."
+              } />
+            </SelectTrigger>
+            <SelectContent>
+              {availableOptions.map((option: any) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={handleAdd} 
+            disabled={!availableValue}
+            type="button"
+          >
+            Ajouter
+          </Button>
+        </div>
+      </div>
+
+      {/* Selected options with ranks */}
+      {selectedOptions.length > 0 && (
+        <div className="space-y-2">
+          <Label>Classes sélectionnées (ordonnées par rang)</Label>
+          <div className="space-y-2">
+            {selectedOptions.map((option) => (
+              <div 
+                key={option.value}
+                className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white font-bold rounded-full text-sm">
+                    {option.rank}
+                  </span>
+                  <span className="font-medium text-gray-800">{option.label}</span>
+                </div>
+                <Button
+                  onClick={() => handleRemove(option.value)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  Supprimer
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <Button 
-        onClick={() => onEvent('NEXT', { values: [] })}
-        variant="outline"
+        onClick={handleSubmit} 
+        disabled={selectedOptions.length === 0}
         className="w-full"
       >
-        Skip (Placeholder)
+        Continuer {selectedOptions.length > 0 && `(${selectedOptions.length} sélectionnée${selectedOptions.length > 1 ? 's' : ''})`}
       </Button>
     </div>
   );
