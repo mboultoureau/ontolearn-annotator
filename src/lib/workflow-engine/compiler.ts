@@ -506,9 +506,6 @@ function compileActions(workflow: WorkflowDefinition): Record<string, any> {
         // Action for YES response
         actions[`store_${state.id}_yes`] = assign({
           data: ({ context }: { context: WorkflowContext }) => {
-            console.log(`🎬 [Action store_${state.id}_yes] Storing YES (true) in "${yesNoState.storeAs}"`);
-            console.log(`   Before:`, JSON.stringify(context.data, null, 2));
-            
             const newData = JSON.parse(JSON.stringify(context.data || {}));
             const path = yesNoState.storeAs!.split('.');
             let current: any = newData;
@@ -522,17 +519,13 @@ function compileActions(workflow: WorkflowDefinition): Record<string, any> {
             
             current[path[path.length - 1]] = true;
             
-            console.log(`   After:`, JSON.stringify(newData, null, 2));
             return newData;
           },
         });
         
         // Action for NO response
         actions[`store_${state.id}_no`] = assign({
-          data: ({ context }: { context: WorkflowContext }) => {
-            console.log(`🎬 [Action store_${state.id}_no] Storing NO (false) in "${yesNoState.storeAs}"`);
-            console.log(`   Before:`, JSON.stringify(context.data, null, 2));
-            
+          data: ({ context }: { context: WorkflowContext }) => {            
             const newData = JSON.parse(JSON.stringify(context.data || {}));
             const path = yesNoState.storeAs!.split('.');
             let current: any = newData;
@@ -545,8 +538,6 @@ function compileActions(workflow: WorkflowDefinition): Record<string, any> {
             }
             
             current[path[path.length - 1]] = false;
-            
-            console.log(`   After:`, JSON.stringify(newData, null, 2));
             return newData;
           },
         });

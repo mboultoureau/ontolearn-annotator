@@ -25,9 +25,9 @@ function parseAnnotationGeometry(annotation: any) {
   const selector = annotation?.target?.selector;
   if (!selector) return { type: 'unknown', raw: annotation };
 
-  // Rectangle via Media Fragment: xywh=pixel:x,y,w,h
+  // Rectangle via Media Fragment: xywh=pixel:x,y,w,h (allow floats)
   if (selector.type === 'FragmentSelector' && typeof selector.value === 'string') {
-    const m = selector.value.match(/xywh=pixel:(\d+),(\d+),(\d+),(\d+)/);
+    const m = selector.value.match(/xywh=pixel:([0-9.]+),([0-9.]+),([0-9.]+),([0-9.]+)/);
     if (m) {
       return {
         type: 'rectangle',
@@ -72,6 +72,7 @@ export function ImageSegmentation({
   const [selectedTool, setSelectedTool] = useState<'mouse' | 'rectangle' | 'polygon'>(
     toolType === 'rectangle' ? 'rectangle' : 'polygon'
   );
+  // Store only raw coordinates (rectangle object or polygon points array)
   const [areas, setAreas] = useState<any[]>([]);
   const lastAnnotationRef = useRef<any>(null);
 
@@ -112,12 +113,13 @@ export function ImageSegmentation({
       // Add to Annotorious so it stays visible
       annotorious.addAnnotation(annotation, true);
 
-      // Parse and store in React state for upstream consumer
+      // Parse and store only raw coordinates for upstream consumer
       const parsed = parseAnnotationGeometry(annotation);
+      const coords = parsed.coordinates ?? parsed; // fallback just in case
       if (allowMultiple) {
-        setAreas(prev => [...prev, parsed]);
+        setAreas(prev => [...prev, coords]);
       } else {
-        setAreas([parsed]);
+        setAreas([coords]);
         lastAnnotationRef.current = annotation;
       }
 

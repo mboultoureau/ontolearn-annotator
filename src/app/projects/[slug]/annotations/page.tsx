@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import AoiPreviewModal from "@/app/_components/annotations/aoi-preview-modal";
+import { Button } from "@/app/_components/ui/button";
 
 async function fetchDataFiles(projectId: string) {
   return prisma.dataFile.findMany({
@@ -60,14 +62,60 @@ function DataFilesTable({ slug, dataFiles }: { slug: string; dataFiles: Awaited<
                     Annotate
                   </Link>
                 )}
-                {annotated && (
-                  <details className="inline-block">
-                    <summary className="cursor-pointer text-gray-700 underline">View</summary>
-                    <pre className="mt-2 max-h-48 overflow-auto bg-gray-50 p-2 border text-xs text-gray-800">
-                      {JSON.stringify(df.annotations, null, 2)}
-                    </pre>
-                  </details>
-                )}
+                {annotated && (() => {
+                  // Build AOIs from unique AreaOfInterest ids and attach annotation details
+                  type NormalizedAoi = { type: 'polygon' | 'rectangle'; coordinates: any; meta?: { id?: string; annotations?: Array<{ author?: string; userId?: string | null; confidence?: number | null; quality?: string | null; createdAt?: string | Date; classes?: Array<{ value: string; label?: string; rank: number }> }> } };
+                  const aoiMap = new Map<string, NormalizedAoi>();
+                  // First pass: create AOI entries
+                  for (const ann of df.annotations) {
+                    const aoi = ann.areaOfInterest as any;
+                    if (!aoi?.area || !aoi?.id) continue;
+                    if (!aoiMap.has(aoi.id)) {
+                      const area = aoi.area as any;
+                      const normalized: NormalizedAoi = Array.isArray(area)
+                        ? { type: "polygon", coordinates: area, meta: { id: aoi.id, annotations: [] } }
+                        : { type: "rectangle", coordinates: area, meta: { id: aoi.id, annotations: [] } };
+                      aoiMap.set(aoi.id, normalized);
+                    }
+                  }
+                  // Second pass: attach annotation info
+                  for (const ann of df.annotations) {
+                    const aoi = ann.areaOfInterest as any;
+                    if (!aoi?.id) continue;
+                    const entry = aoiMap.get(aoi.id);
+                    if (!entry) continue;
+                    const classes = (ann.annotationTypes || [])
+                      .map(at => {
+                        const ct: any = at.classType;
+                        const value = ct?.value ?? ct?.name ?? String(ct?.id ?? '');
+                        return { value, label: ct?.name ?? ct?.label ?? undefined, rank: at.rank };
+                      });
+                    entry.meta!.annotations!.push({
+                      author: ann.author,
+                      userId: ann.userId,
+                      confidence: ann.confidence,
+                      quality: ann.quality,
+                      createdAt: ann.createdAt as any,
+                      classes,
+                    });
+                  }
+
+                  const aois = Array.from(aoiMap.values());
+                  return (
+                    <AoiPreviewModal
+                      trigger={<Button variant="outline" size="sm">View</Button>}
+                      imageUrl={df.filePath || ""}
+                      aois={aois as any}
+                      title={df.name || "Annotation Preview"}
+                      details={
+                        <div className="text-xs text-gray-700 space-y-1">
+                          <div>Annotations: {df.annotations.length}</div>
+                          <div>AOIs: {aois.length}</div>
+                        </div>
+                      }
+                    />
+                  );
+                })()}
               </td>
             </tr>
           );
