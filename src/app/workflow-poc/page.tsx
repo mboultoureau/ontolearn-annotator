@@ -95,6 +95,8 @@ workflow:
           type: area_select
           name: Select sub-section area
           toolType: polygon
+          allowMultiple: false
+          imageSource: `+"${dataSources.images.data[0].url}"+`
           storeAs: subsection.area
 
         - id: select_subsection_classes

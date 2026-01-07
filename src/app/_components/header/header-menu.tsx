@@ -39,6 +39,7 @@ export default async function HeaderMenu({ project }: { project?: Project }) {
             {canReadTask && (
               <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
             )}
+            <HeaderLink href={`/projects/${project.slug}/annotations`}>{t('annotations')}</HeaderLink>
             <HeaderLink href={`/projects/${project.slug}/settings`}>{t('settings')}</HeaderLink>
           </>
         )}
@@ -69,6 +70,7 @@ export default async function HeaderMenu({ project }: { project?: Project }) {
                 <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
                 <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
                 <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
+                <HeaderLink href={`/projects/${project.slug}/annotations`}>{t('annotations')}</HeaderLink>
                 <HeaderLink href={`/projects/${project.slug}/settings`}>{t('settings')}</HeaderLink>
               </>
             )}

@@ -53,6 +53,9 @@ export default async function Layout({
                             <SettingLink href={`/projects/${project.slug}/settings/tasks`}>
                                 {t('tasks')}
                             </SettingLink>
+                            <SettingLink href={`/projects/${project.slug}/settings/annotations`}>
+                                {t('annotations')}
+                            </SettingLink>
                         </>
                     )}
                     {canListUsers && (

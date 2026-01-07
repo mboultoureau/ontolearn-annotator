@@ -32,24 +32,57 @@ function createNestedObject(path: string, value: any): any {
 }
 
 /**
- * Utility: Resolves template strings like "${dataSources.images[0].url}" from context
+ * Utility: Resolve a dotted/bracket path (e.g., "dataSources.images.data[0].url") from an object
  */
-function resolveTemplateString(template: string, context: any): string {
-  if (!template || !template.includes('dataSources')) {
-    return template;
+function resolvePath(obj: any, path: string): any {
+  if (!obj || !path) return undefined;
+  // Tokenize: words between dots or indexes in brackets
+  const tokens: Array<string | number> = [];
+  const regex = /([^.[\]]+)|\[(\d+)\]/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(path)) !== null) {
+    if (match[1] !== undefined) tokens.push(match[1]);
+    else if (match[2] !== undefined) tokens.push(Number(match[2]));
   }
 
+  let current: any = obj;
+  for (const token of tokens) {
+    if (current == null) return undefined;
+    current = current[token as any];
+  }
+  return current;
+}
+
+/**
+ * Utility: Resolves imageSource from context for both "${...}" and plain paths
+ */
+function resolveTemplateString(template: string, context: any): string {
+  if (typeof template !== 'string' || template.length === 0) return template as any;
+
   try {
-    const match = template.match(/\$\{(.+)\}/);
-    if (match) {
-      const path = match[1];
-      // Simple path resolution - in production, use a proper path resolver
-      return eval(`context.${path}`);
+    // Case 1: Template form ${...}
+    const m = template.match(/\$\{(.+)\}/);
+    if (m) {
+      let path = m[1].trim();
+      // Allow starting with "context." or not
+      if (path.startsWith('context.')) path = path.slice('context.'.length);
+      const value = resolvePath(context, path);
+      return typeof value === 'string' ? value : template;
+    }
+
+    // Case 2: Plain path like "dataSources.images.data[0].url" or "context.dataSources..."
+    if (template.startsWith('context.')) {
+      const value = resolvePath({ context }, template); // resolve against { context }
+      return typeof value === 'string' ? value : template;
+    }
+    if (template.startsWith('dataSources.') || template.startsWith('metadata.') || template.startsWith('data.')) {
+      const value = resolvePath(context, template);
+      return typeof value === 'string' ? value : template;
     }
   } catch (error) {
     console.error('[resolveTemplateString] Failed to resolve:', template, error);
   }
-  
+
   return template;
 }
 

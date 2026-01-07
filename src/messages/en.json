@@ -159,6 +159,7 @@
       "playground": "Playground",
       "settings": "Settings",
       "tasks": "Tasks",
+      "annotations": "Annotations",
       "title": "OntoLearn Annotator",
       "toggleNavigation": "Toggle navigation"
     },
@@ -193,6 +194,7 @@
       "title": "Project Settings",
       "useHeadwork": "Use Headwork",
       "users": "Users",
+      "annotations": "Annotations",
       "noAccess": "You do not have access to these settings: {settings}."
     },
     "Statistics": {

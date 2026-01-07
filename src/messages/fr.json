@@ -159,6 +159,7 @@
       "playground": "Terrain de jeu",
       "settings": "Paramètres",
       "tasks": "Tâches",
+      "annotations": "Annotations",
       "title": "OntoLearn Annotator",
       "toggleNavigation": "Afficher/Masquer la navigation"
     },
@@ -193,6 +194,7 @@
       "title": "Paramètres du projet",
       "useHeadwork": "Utiliser Headwork",
       "users": "Utilisateurs",
+      "annotations": "Annotations",
       "noAccess": "Vous n'avez pas accès à ces paramètres : {settings}."
     },
     "Statistics": {
