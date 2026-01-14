@@ -3,7 +3,7 @@
 import { createData } from "@/actions/data";
 import { createDataInputSchema } from "@/lib/validation-schemas/data";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Prisma, Project } from "@prisma/client";
+import { Prisma, Project, DataFileDestination } from "@prisma/client";
 import { AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { redirect } from "next/navigation";
@@ -36,6 +36,7 @@ export default function UploadForm({ project, sourceTypes }: Props) {
         resolver: zodResolver(createDataInputSchema),
         defaultValues: {
             sourceTypeId: '',
+            destination: 'MANUAL',
             fields: []
         }
     })
@@ -73,7 +74,7 @@ export default function UploadForm({ project, sourceTypes }: Props) {
     const onSubmit = form.handleSubmit(async (data) => {
         const formData = new FormData();
         formData.append('sourceTypeId', data.sourceTypeId); 
-        formData.append('test', data.sourceTypeId);                
+        formData.append('destination', data.destination);
 
         data.fields.forEach((field: any) => {
             if (field.value instanceof FileList) {
@@ -82,8 +83,6 @@ export default function UploadForm({ project, sourceTypes }: Props) {
             }
             formData.append(`fields[${field.id}]`, field.value);
         });
-        
-        console.log(formData)
 
         execute(formData);
     })
@@ -115,6 +114,27 @@ export default function UploadForm({ project, sourceTypes }: Props) {
                                     });
                                     field.onChange(value);
                                 }} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="destination"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Destination</FormLabel>
+                            <FormControl>
+                                <select
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                >
+                                    <option value="MANUAL">Manual Annotation</option>
+                                    <option value="ML">Machine Learning</option>
+                                    <option value="HEADWORK">Headwork</option>
+                                </select>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
