@@ -64,7 +64,6 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       
       const workflow = parseWorkflowDefinition(finalYaml);
       
-      console.log('[Workflow] Parsed workflow, setting workflowDef');
       setWorkflowDef(workflow); // ← FIX: Store workflow definition
       
       // Load fetch-type data sources
@@ -87,7 +86,6 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       newActor.start();
       setActor(newActor);
       
-      console.log('[Workflow] Workflow started successfully');
     } catch (err) {
       console.error('[Workflow] Error:', err);
       setError(err instanceof Error ? err.message : String(err));
@@ -98,7 +96,6 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
 
   const handleGoBack = async () => {
     if (!history.canGoBack) {
-      console.log('[History] Cannot go back - at beginning');
       return;
     }
 
@@ -108,17 +105,11 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
     
     if (!confirmed) return;
 
-    try {
-      console.log('[History] Going back from step', history.currentIndex);
-      
+    try {      
       // We want to go back to REDO the last completed step
       // So we remove it from history and replay everything BEFORE it
       const targetIndex = history.currentIndex - 1; // Index of the last step to keep
       const targetStepToEdit = history.steps[history.currentIndex]; // The step we want to edit
-      
-      console.log('[History] Going back to edit step:', targetStepToEdit.stateId);
-      console.log('[History] Will replay', targetIndex + 1, 'steps');
-
       // Stop current actor
       if (actor) {
         actor.stop();
@@ -133,9 +124,6 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
         canGoBack: targetIndex > 0,
         canGoForward: false,
       };
-
-      console.log('[History] New history will have', newSteps.length, 'steps');
-
       // Remove annotations after this point
       setAnnotations(prev => 
         prev.filter((_, index) => index < history.currentIndex)
@@ -144,10 +132,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       // Compile new machine with restored state
       if (!workflowDef) {
         throw new Error('No workflow definition available');
-      }
-
-      console.log('[History] Compiling new machine and replaying to:', targetStepToEdit.stateId);
-      
+      }      
       // Load data sources again
       const workflowWithData = await loadDataSources(workflowDef, { 
         projectId,
@@ -159,22 +144,16 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       // Create a new actor starting fresh
       const newActor = createActor(machine);
 
-      newActor.subscribe(snapshot => {
-        console.log('[History] Actor state:', snapshot.value);
-        setCurrentState(snapshot);
+      newActor.subscribe(snapshot => {        setCurrentState(snapshot);
         setContext(snapshot.context as WorkflowContext);
       });
 
       newActor.start();
       
-      // Replay all events up to (but not including) the step we want to edit
-      console.log('[History] Replaying', newSteps.length, 'steps');
-      
+      // Replay all events up to (but not including) the step we want to edit      
       // Replay events with small delays to allow state machine to process
       for (let i = 0; i < newSteps.length; i++) {
-        const step = newSteps[i];
-        console.log('[History] Replaying step:', step.stateId, 'with payload:', step.annotation.payload);
-        
+        const step = newSteps[i];        
         // Extract the actual data from the payload
         let eventData = step.annotation.payload;
         
@@ -197,9 +176,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
             return obj;
           };
           
-          eventData = extractDeepValue(eventData);
-          console.log('[History] Extracted raw value for choice:', eventData);
-        } else if (step.stateType === 'area_select') {
+          eventData = extractDeepValue(eventData);        } else if (step.stateType === 'area_select') {
           // For area select, keep the full coordinates structure
           // Don't unwrap
           eventData = step.annotation.payload;
@@ -217,10 +194,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
           const answer = step.annotation.payload?.answer ?? step.annotation.payload;
           eventType = answer === true ? 'YES' : 'NO';
         }
-        // choice and multi_choice use NEXT with data
-        
-        console.log('[History] Sending event:', eventType, 'with data:', eventData);
-        
+        // choice and multi_choice use NEXT with data        
         // Get current state before sending
         const stateBefore = newActor.getSnapshot().value;
         console.log('[History] State before event:', JSON.stringify(stateBefore));
@@ -257,32 +231,20 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
           const currentTop = getTopLevelState(currentState);
           
           // If we've moved to a different state, we're done
-          if (beforeTop !== currentTop) {
-            console.log('[History] State transitioned from', beforeTop, 'to', currentTop);
-            break;
+          if (beforeTop !== currentTop) {            break;
           }
           
           attempts++;
         }
         
         if (attempts >= maxAttempts) {
-          const finalState = newActor.getSnapshot();
-          console.warn('[History] State did not stabilize after', attempts * 10, 'ms');
-          console.warn('[History] Final state:', JSON.stringify(finalState.value));
-          console.warn('[History] Final context:', finalState.context);
-        }
-      }
-      
-      console.log('[History] Replay complete, should be at:', targetStepToEdit.stateId);
-      
+          const finalState = newActor.getSnapshot();          console.warn('[History] Final state:', JSON.stringify(finalState.value));        }
+      }      
       setActor(newActor);
       setMachine(machine);
       
       // Update history
-      setHistory(newHistory);
-
-      console.log('[History] Successfully restored to edit step:', targetStepToEdit.stateId);
-      
+      setHistory(newHistory);      
     } catch (err) {
       console.error('[History] Error going back:', err);
       setError(`Failed to go back: ${err instanceof Error ? err.message : String(err)}`);
@@ -390,24 +352,13 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
     }
 
     if (annotation) {
-      setAnnotations((prev) => [...prev, annotation]);
-      
-      console.log('[History Debug] Annotation created:', {
-        stateId,
-        hasContext: !!context,
-        hasWorkflowDef: !!workflowDef,
-        annotationId: annotation.id
-      });
-      
+      setAnnotations((prev) => [...prev, annotation]);      
       // Capture this step in history
       if (context && workflowDef) {
         try {
           const stateMeta = workflowDef.workflow.states.find(
             (s: WorkflowState) => s.id === stateId
-          );
-          
-          console.log('[History Debug] Looking for state:', stateId, 'Found:', !!stateMeta);
-          
+          );          
           if (stateMeta) {
             const historyStep = createHistoryStep(
               stateId,
@@ -420,26 +371,11 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
               history.steps[history.currentIndex]?.stateId
             );
             
-            setHistory((prev) => addHistoryStep(prev, historyStep));
-            
-            console.log('[History] Step captured:', {
-              stateId,
-              stateName: stateMeta.name,
-              payload: annotation.payload,
-              totalSteps: history.steps.length + 1
-            });
-          } else {
-            console.warn('[History] State meta not found for:', stateId);
-          }
+            setHistory((prev) => addHistoryStep(prev, historyStep));          } else {          }
         } catch (err) {
           console.error('[History] Failed to capture step:', err);
         }
-      } else {
-        console.warn('[History] Missing context or workflowDef:', {
-          hasContext: !!context,
-          hasWorkflowDef: !!workflowDef
-        });
-      }
+      } else {      }
     }
 
     if (actor) {
@@ -507,9 +443,6 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
                 ? `${history.steps.length} step${history.steps.length > 1 ? 's' : ''} completed`
                 : 'No steps completed yet'}
             </span>
-            <span className="text-xs text-gray-500">
-              (canGoBack: {history.canGoBack ? 'YES' : 'NO'}, currentIndex: {history.currentIndex})
-            </span>
           </div>
 
           {/* Workflow History Container */}
@@ -526,13 +459,10 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
             ))}
 
             {/* Render active step (interactive) */}
-            <div className="mb-4 p-4 border-2 border-blue-500 rounded-lg bg-white shadow-sm">
+            <div>
               <div className="mb-3 flex items-center gap-2">
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
                   Current Step
-                </span>
-                <span className="text-sm font-medium text-gray-700">
-                  {typeof currentState.value === 'string' ? currentState.value : JSON.stringify(currentState.value)}
                 </span>
               </div>
               <WorkflowStateRenderer
@@ -551,24 +481,9 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
               />
             </div>
 
-            {/* Debug Info - Collapsible */}
-            <details className="rounded border p-3 bg-gray-50 text-xs">
-              <summary className="font-semibold cursor-pointer">Debug Info</summary>
-              <div className="mt-2 space-y-1 text-gray-700">
-                <div>State: {JSON.stringify(currentState?.value)}</div>
-                <div>Annotations: {annotations.length}</div>
-                <div>History Steps: {history.steps.length}</div>
-                <div>Can Go Back: {history.canGoBack ? 'Yes' : 'No'}</div>
-                <div>Has WorkflowDef: {workflowDef ? 'Yes' : 'No'}</div>
-              </div>
-            </details>
-
-            {/* Original control buttons */}
+            {/* Control buttons */}
             <div className="flex gap-2">
-              <Button variant="default" size="sm" onClick={handleSave}>
-                Save Annotations
-              </Button>
-              <Button variant="ghost" size="sm" onClick={stopWorkflow}>
+              <Button className="bg-red-500 text-white hover:bg-red-600" size="sm" onClick={stopWorkflow}>
                 Stop Workflow
               </Button>
             </div>
