@@ -293,6 +293,10 @@ function ChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; o
           ? { value: item, label: item }
           : item
       );
+    } else if (sourceData?.type === 'fetch') {
+      // Fetch type should have been loaded already, but if not, show warning
+      console.warn(`Data source '${meta.options.source}' is of type 'fetch' but data was not pre-loaded`);
+      options = [];
     }
   }
 
@@ -360,6 +364,10 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
           ? { value: item, label: item }
           : item
       );
+    } else if (sourceData?.type === 'fetch') {
+      // Fetch type should have been loaded already, but if not, show warning
+      console.warn(`Data source '${meta.options.source}' is of type 'fetch' but data was not pre-loaded`);
+      allOptions = [];
     }
   }
 

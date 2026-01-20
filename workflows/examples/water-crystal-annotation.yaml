@@ -1,6 +1,6 @@
 metadata:
-  id: water-crystal-annotation-v1
-  version: 1.0.0
+  id: water_crystal_annotation_v1
+  version: 1.0.1
   name: Water Crystal Annotation
   description: Scientific workflow for annotating water crystals
   author: NII Research Team
@@ -10,12 +10,17 @@ dataSources:
     type: static
     data:
       - id: img1
-        url: /uploads/playground/201310020957.dzi.dzi
+        url: ${imageUrl}
         name: Water Crystal Sample
 
   crystal_classes:
     type: fetch
-    endpoint: /api/projects/{projectId}/classes
+    endpoint: /api/projects/{slug}/classes?exclude=No crystal
+
+  sub_crystal_classes:
+    type: fetch
+    endpoint: /api/projects/{slug}/classes?exclude=Multiple Irregulars,Singular Irregular,No crystal
+
 
   quality_levels:
     type: static
@@ -33,8 +38,8 @@ workflow:
     - id: select_crystal_area
       type: area_select
       name: Select crystal area
-      imageSource: ${dataSources.images[0].url}
-      toolType: polygon
+      imageSource: ${dataSources.images.data[0].url}
+      toolType: rectangle
       allowMultiple: false
       storeAs: crystal.area
 
@@ -52,10 +57,10 @@ workflow:
 
       transitions:
         - target: ask_subsections
-          when: context.data.crystal.class == "irregular"
+          when: data.crystal.class == "Singular Irregular" || data.crystal.class == "Multiple Irregulars"
 
         - target: quality_assessment
-          when: context.data.crystal.class != "irregular"
+          when: data.crystal.class != "Singular Irregular" && data.crystal.class != "Multiple Irregulars"
 
     # 3. Ask for sub-sections (irregular only)
     - id: ask_subsections
@@ -80,14 +85,16 @@ workflow:
         - id: select_subsection_area
           type: area_select
           name: Select sub-section area
-          toolType: polygon
+          toolType: rectangle
+          allowMultiple: false
+          imageSource: ${dataSources.images.data[0].url}
           storeAs: subsection.area
 
         - id: select_subsection_classes
           type: multi_choice
           name: Sub-section classes
           options:
-            source: crystal_classes
+            source: sub_crystal_classes
           storeAs: subsection.classes
 
       storeAs: crystal.subsections

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
   createProjectInputSchema,
   updateUseHeadworkInputSchema,
@@ -70,5 +71,26 @@ export const projectRouter = createTRPCRouter({
           useHeadwork: input.useHeadwork,
         },
       });
+    }),
+
+  // Get classification types for a project
+  getClassTypes: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const classTypes = await ctx.db.classType.findMany({
+        where: {
+          projectId: input.projectId,
+          status: 'ACTIVE',
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      // Return in format expected by workflow: array of { value, label }
+      return classTypes.map((ct: any) => ({
+        value: ct.name,
+        label: ct.name,
+      }));
     }),
 });

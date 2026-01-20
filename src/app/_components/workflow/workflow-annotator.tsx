@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createActor } from "xstate";
 import { parseWorkflowDefinition } from "@/lib/workflow-engine/parser";
 import { compileWorkflowToMachine } from "@/lib/workflow-engine/compiler";
+import { loadDataSources } from "@/lib/workflow-engine/data-source-loader";
 import { WorkflowStateRenderer } from "@/app/_components/workflow/workflow-state-renderer";
 import { Button } from "@/app/_components/ui/button";
 
@@ -17,148 +18,16 @@ interface Annotation {
   iteration?: number;
 }
 
-function buildWorkflowDefinition(imageUrl: string) {
-  return `metadata:
-  id: water-crystal-annotation-v1
-  version: 1.0.0
-  name: Water Crystal Annotation
-  description: Scientific workflow for annotating water crystals
-  author: NII Research Team
-
-dataSources:
-  images:
-    type: static
-    data:
-      - id: img1
-        url: ${imageUrl}
-        name: Water Crystal Sample
-
-  crystal_classes:
-    type: static
-    data:
-      - regular
-      - irregular
-      - dendritic
-      - columnar
-      - plate-like
-
-  quality_levels:
-    type: static
-    data:
-      - low
-      - medium
-      - high
-
-workflow:
-  entry: select_crystal_area
-
-  states:
-
-    # 1. Crystal area selection
-    - id: select_crystal_area
-      type: area_select
-      name: Select crystal area
-      imageSource: ${"${dataSources.images.data[0].url}"}
-      toolType: polygon
-      allowMultiple: false
-      storeAs: crystal.area
-
-      transitions:
-        - target: select_crystal_class
-
-    # 2. Crystal class selection
-    - id: select_crystal_class
-      type: choice
-      name: Crystal class
-      prompt: Select crystal class
-      options:
-        source: crystal_classes
-      storeAs: crystal.class
-
-      transitions:
-        - target: ask_subsections
-          when: context.data.crystal.class == "irregular"
-
-        - target: quality_assessment
-          when: context.data.crystal.class != "irregular"
-
-    # 3. Ask for sub-sections (irregular only)
-    - id: ask_subsections
-      type: yes_no
-      name: Sub-sections
-      question: Do you want to annotate sub-sections?
-      storeAs: crystal.hasSubsections
-      yesTarget: subsection_loop
-      noTarget: ask_more_crystals
-
-    # 4. Sub-section loop
-    - id: subsection_loop
-      type: loop
-      name: Sub-section annotation
-      as: subsection
-
-      repeatWhile:
-        type: yes_no
-        question: Add another sub-section?
-
-      steps:
-        - id: select_subsection_area
-          type: area_select
-          name: Select sub-section area
-          toolType: polygon
-          allowMultiple: false
-          imageSource: ${"${dataSources.images.data[0].url}"}
-          storeAs: subsection.area
-
-        - id: select_subsection_classes
-          type: multi_choice
-          name: Sub-section classes
-          options:
-            source: crystal_classes
-          storeAs: subsection.classes
-
-      storeAs: crystal.subsections
-
-      transitions:
-        - target: ask_more_crystals
-
-    # 5. Quality assessment (non-irregular)
-    - id: quality_assessment
-      type: choice
-      name: Crystal quality
-      prompt: Rate crystal quality
-      options:
-        source: quality_levels
-      storeAs: crystal.quality
-
-      transitions:
-        - target: ask_more_crystals
-
-    # 6. More crystals loop
-    - id: ask_more_crystals
-      type: yes_no
-      name: More crystals
-      question: Are there other crystals to annotate?
-      storeAs: workflow.hasMoreCrystals
-      yesTarget: select_crystal_area
-      noTarget: final
-
-    # 7. End
-    - id: final
-      type: final
-      message: Annotation session completed
-`;
-}
-
 interface WorkflowAnnotatorProps {
   projectId: string;
+  projectSlug: string;
   dataFileId: string;
   userId: string;
   imageUrl: string;
   workflowYaml?: string;
 }
 
-export function WorkflowAnnotator({ projectId, dataFileId, userId, imageUrl, workflowYaml }: WorkflowAnnotatorProps) {
+export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, imageUrl, workflowYaml }: WorkflowAnnotatorProps) {
   const [actor, setActor] = useState<any>(null);
   const [currentState, setCurrentState] = useState<any>(null);
   const [context, setContext] = useState<any>(null);
@@ -167,17 +36,27 @@ export function WorkflowAnnotator({ projectId, dataFileId, userId, imageUrl, wor
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [loopIterations, setLoopIterations] = useState<Record<string, number>>({});
 
-  const startWorkflow = () => {
+  const startWorkflow = async () => {
     try {
       setError(null);
       setAnnotations([]);
       setLoopIterations({});
 
-      const yaml = workflowYaml || buildWorkflowDefinition(imageUrl);
+      const yaml = workflowYaml;
+      if (!yaml) {
+        throw new Error("No workflow definition provided.");
+      }
       const finalYaml = yaml.replace(/\$\{imageUrl\}/g, imageUrl);
       
       const workflow = parseWorkflowDefinition(finalYaml);
-      const { machine } = compileWorkflowToMachine(workflow);
+      
+      // Load fetch-type data sources
+      const workflowWithData = await loadDataSources(workflow, { 
+        projectId,
+        slug: projectSlug
+      });
+      
+      const { machine } = compileWorkflowToMachine(workflowWithData);
 
       setMachine(machine);
 

@@ -634,9 +634,13 @@ function evaluateWhenExpression(expression: string, context: WorkflowContext): b
     const safeExpression = expression.replace(/context\./g, 'ctx.');
     
     // Create evaluation function with context binding
+    // Make 'data', 'dataSources', and other context properties available
     const evaluator = new Function('ctx', `
       'use strict';
       try {
+        const data = ctx.data || {};
+        const dataSources = ctx.dataSources || {};
+        const loopContext = ctx.loopContext;
         return Boolean(${safeExpression});
       } catch (e) {
         console.error('[evaluateWhenExpression] Error:', e);
