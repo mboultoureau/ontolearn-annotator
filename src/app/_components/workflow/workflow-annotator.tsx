@@ -5,7 +5,16 @@ import { createActor } from "xstate";
 import { parseWorkflowDefinition } from "@/lib/workflow-engine/parser";
 import { compileWorkflowToMachine } from "@/lib/workflow-engine/compiler";
 import { loadDataSources } from "@/lib/workflow-engine/data-source-loader";
+import { 
+  initializeHistory, 
+  addHistoryStep, 
+  createHistoryStep,
+  goBackInHistory,
+  getCompletedSteps
+} from "@/lib/workflow-engine/history-manager";
+import type { WorkflowHistory, WorkflowState, WorkflowDefinition, WorkflowContext } from "@/lib/workflow-engine/types";
 import { WorkflowStateRenderer } from "@/app/_components/workflow/workflow-state-renderer";
+import { HistoryStepRenderer } from "@/app/_components/workflow/history-step-renderer";
 import { Button } from "@/app/_components/ui/button";
 
 interface Annotation {
@@ -35,12 +44,17 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
   const [machine, setMachine] = useState<any>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [loopIterations, setLoopIterations] = useState<Record<string, number>>({});
+  const [workflowDef, setWorkflowDef] = useState<WorkflowDefinition | null>(null);
+  
+  // History management
+  const [history, setHistory] = useState<WorkflowHistory>(initializeHistory());
 
   const startWorkflow = async () => {
     try {
       setError(null);
       setAnnotations([]);
       setLoopIterations({});
+      setHistory(initializeHistory()); // Reset history
 
       const yaml = workflowYaml;
       if (!yaml) {
@@ -49,6 +63,9 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       const finalYaml = yaml.replace(/\$\{imageUrl\}/g, imageUrl);
       
       const workflow = parseWorkflowDefinition(finalYaml);
+      
+      console.log('[Workflow] Parsed workflow, setting workflowDef');
+      setWorkflowDef(workflow); // ← FIX: Store workflow definition
       
       // Load fetch-type data sources
       const workflowWithData = await loadDataSources(workflow, { 
@@ -69,10 +86,206 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
 
       newActor.start();
       setActor(newActor);
+      
+      console.log('[Workflow] Workflow started successfully');
     } catch (err) {
+      console.error('[Workflow] Error:', err);
       setError(err instanceof Error ? err.message : String(err));
       setCurrentState(null);
       setContext(null);
+    }
+  };
+
+  const handleGoBack = async () => {
+    if (!history.canGoBack) {
+      console.log('[History] Cannot go back - at beginning');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Going back will discard all progress after this step. Continue?'
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      console.log('[History] Going back from step', history.currentIndex);
+      
+      // We want to go back to REDO the last completed step
+      // So we remove it from history and replay everything BEFORE it
+      const targetIndex = history.currentIndex - 1; // Index of the last step to keep
+      const targetStepToEdit = history.steps[history.currentIndex]; // The step we want to edit
+      
+      console.log('[History] Going back to edit step:', targetStepToEdit.stateId);
+      console.log('[History] Will replay', targetIndex + 1, 'steps');
+
+      // Stop current actor
+      if (actor) {
+        actor.stop();
+        setActor(null);
+      }
+
+      // Keep only the steps BEFORE the one we want to edit
+      const newSteps = history.steps.slice(0, history.currentIndex); // Remove last step
+      const newHistory: WorkflowHistory = {
+        steps: newSteps,
+        currentIndex: Math.max(0, targetIndex),
+        canGoBack: targetIndex > 0,
+        canGoForward: false,
+      };
+
+      console.log('[History] New history will have', newSteps.length, 'steps');
+
+      // Remove annotations after this point
+      setAnnotations(prev => 
+        prev.filter((_, index) => index < history.currentIndex)
+      );
+
+      // Compile new machine with restored state
+      if (!workflowDef) {
+        throw new Error('No workflow definition available');
+      }
+
+      console.log('[History] Compiling new machine and replaying to:', targetStepToEdit.stateId);
+      
+      // Load data sources again
+      const workflowWithData = await loadDataSources(workflowDef, { 
+        projectId,
+        slug: projectSlug
+      });
+
+      const { machine } = compileWorkflowToMachine(workflowWithData);
+      
+      // Create a new actor starting fresh
+      const newActor = createActor(machine);
+
+      newActor.subscribe(snapshot => {
+        console.log('[History] Actor state:', snapshot.value);
+        setCurrentState(snapshot);
+        setContext(snapshot.context as WorkflowContext);
+      });
+
+      newActor.start();
+      
+      // Replay all events up to (but not including) the step we want to edit
+      console.log('[History] Replaying', newSteps.length, 'steps');
+      
+      // Replay events with small delays to allow state machine to process
+      for (let i = 0; i < newSteps.length; i++) {
+        const step = newSteps[i];
+        console.log('[History] Replaying step:', step.stateId, 'with payload:', step.annotation.payload);
+        
+        // Extract the actual data from the payload
+        let eventData = step.annotation.payload;
+        
+        // For choice/multi_choice states, extract the raw selection value
+        if (step.stateType === 'choice' || step.stateType === 'multi_choice') {
+          // Payload structure: { data: { crystal: { class: "Hexagon" } } }
+          // We need to extract "Hexagon"
+          if (eventData?.data) {
+            eventData = eventData.data;
+          }
+          
+          // Now eventData is { crystal: { class: "Hexagon" } }
+          // Find the deepest value
+          const extractDeepValue = (obj: any): any => {
+            if (typeof obj !== 'object' || obj === null) return obj;
+            const keys = Object.keys(obj);
+            if (keys.length === 1) {
+              return extractDeepValue(obj[keys[0]]);
+            }
+            return obj;
+          };
+          
+          eventData = extractDeepValue(eventData);
+          console.log('[History] Extracted raw value for choice:', eventData);
+        } else if (step.stateType === 'area_select') {
+          // For area select, keep the full coordinates structure
+          // Don't unwrap
+          eventData = step.annotation.payload;
+        } else if (step.stateType === 'yes_no') {
+          // Yes/No events don't need data
+          eventData = undefined;
+        }
+        
+        // Send the event that was used to complete this step
+        let eventType = 'NEXT'; // Default for most states
+        if (step.stateType === 'area_select') {
+          eventType = 'AREA_SELECTED';
+        } else if (step.stateType === 'yes_no') {
+          // Extract the answer from payload (could be { answer: true } or just true)
+          const answer = step.annotation.payload?.answer ?? step.annotation.payload;
+          eventType = answer === true ? 'YES' : 'NO';
+        }
+        // choice and multi_choice use NEXT with data
+        
+        console.log('[History] Sending event:', eventType, 'with data:', eventData);
+        
+        // Get current state before sending
+        const stateBefore = newActor.getSnapshot().value;
+        console.log('[History] State before event:', JSON.stringify(stateBefore));
+        
+        newActor.send({ 
+          type: eventType, 
+          ...(eventData !== undefined && { data: eventData })
+        } as any);
+        
+        // Immediately check state after send
+        await new Promise(resolve => setTimeout(resolve, 50));
+        const stateAfterSend = newActor.getSnapshot().value;
+        console.log('[History] State after send:', JSON.stringify(stateAfterSend));
+        
+        // Wait for state to stabilize (transition to complete)
+        // The compound state pattern needs time to go: __processing -> __route -> next state
+        let attempts = 0;
+        const maxAttempts = 50; // 500ms max wait
+        
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+          const currentState = newActor.getSnapshot().value;
+          
+          // Check if we've moved to a different top-level state
+          const getTopLevelState = (state: any): string => {
+            if (typeof state === 'string') return state;
+            if (typeof state === 'object' && state !== null) {
+              return Object.keys(state)[0] || '';
+            }
+            return '';
+          };
+          
+          const beforeTop = getTopLevelState(stateBefore);
+          const currentTop = getTopLevelState(currentState);
+          
+          // If we've moved to a different state, we're done
+          if (beforeTop !== currentTop) {
+            console.log('[History] State transitioned from', beforeTop, 'to', currentTop);
+            break;
+          }
+          
+          attempts++;
+        }
+        
+        if (attempts >= maxAttempts) {
+          const finalState = newActor.getSnapshot();
+          console.warn('[History] State did not stabilize after', attempts * 10, 'ms');
+          console.warn('[History] Final state:', JSON.stringify(finalState.value));
+          console.warn('[History] Final context:', finalState.context);
+        }
+      }
+      
+      console.log('[History] Replay complete, should be at:', targetStepToEdit.stateId);
+      
+      setActor(newActor);
+      setMachine(machine);
+      
+      // Update history
+      setHistory(newHistory);
+
+      console.log('[History] Successfully restored to edit step:', targetStepToEdit.stateId);
+      
+    } catch (err) {
+      console.error('[History] Error going back:', err);
+      setError(`Failed to go back: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -178,6 +391,55 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
 
     if (annotation) {
       setAnnotations((prev) => [...prev, annotation]);
+      
+      console.log('[History Debug] Annotation created:', {
+        stateId,
+        hasContext: !!context,
+        hasWorkflowDef: !!workflowDef,
+        annotationId: annotation.id
+      });
+      
+      // Capture this step in history
+      if (context && workflowDef) {
+        try {
+          const stateMeta = workflowDef.workflow.states.find(
+            (s: WorkflowState) => s.id === stateId
+          );
+          
+          console.log('[History Debug] Looking for state:', stateId, 'Found:', !!stateMeta);
+          
+          if (stateMeta) {
+            const historyStep = createHistoryStep(
+              stateId,
+              stateMeta,
+              {
+                id: annotation.id,
+                payload: annotation.payload
+              },
+              context,
+              history.steps[history.currentIndex]?.stateId
+            );
+            
+            setHistory((prev) => addHistoryStep(prev, historyStep));
+            
+            console.log('[History] Step captured:', {
+              stateId,
+              stateName: stateMeta.name,
+              payload: annotation.payload,
+              totalSteps: history.steps.length + 1
+            });
+          } else {
+            console.warn('[History] State meta not found for:', stateId);
+          }
+        } catch (err) {
+          console.error('[History] Failed to capture step:', err);
+        }
+      } else {
+        console.warn('[History] Missing context or workflowDef:', {
+          hasContext: !!context,
+          hasWorkflowDef: !!workflowDef
+        });
+      }
     }
 
     if (actor) {
@@ -219,37 +481,97 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
   };
 
   return (
-    <div className="space-y-6">
-      {!actor ? (
+    <div className="space-y-4">
+      {!actor && (
         <div className="text-center py-6">
           <div className="text-5xl mb-4">🧊</div>
           <p className="text-gray-700 mb-4">Start the annotation workflow for this image.</p>
-          <Button onClick={startWorkflow}>Start</Button>
+          <Button onClick={startWorkflow}>Start Workflow</Button>
         </div>
-      ) : (
-        <div className="space-y-6">
-          <WorkflowStateRenderer
-            state={currentState}
-            machine={machine}
-            onEvent={(eventType, data) => {
-              if (eventType === "SAVE") {
-                handleSave();
-              } else {
-                handleEvent(eventType, data);
-              }
-            }}
-            projectId={projectId}
-            dataFileId={dataFileId}
-            userId={userId}
-          />
+      )}
 
-          <div className="rounded border p-4 bg-gray-50 space-y-2">
-            <div className="text-sm font-semibold">Debug</div>
-            <div className="text-xs text-gray-700">State: {JSON.stringify(currentState?.value)}</div>
-            <div className="text-xs text-gray-700">Annotations: {annotations.length}</div>
-            <Button variant="ghost" size="sm" onClick={stopWorkflow}>
-              Stop workflow
+      {currentState && context && (
+        <div className="space-y-4">
+          {/* History Navigation Bar */}
+          <div className="flex items-center gap-3 p-3 bg-gray-50 border rounded-lg">
+            <Button
+              onClick={handleGoBack}
+              disabled={!history.canGoBack}
+              variant="outline"
+              size="sm"
+            >
+              ← Previous Step
             </Button>
+            <span className="text-sm text-gray-600">
+              {history.steps.length > 0 
+                ? `${history.steps.length} step${history.steps.length > 1 ? 's' : ''} completed`
+                : 'No steps completed yet'}
+            </span>
+            <span className="text-xs text-gray-500">
+              (canGoBack: {history.canGoBack ? 'YES' : 'NO'}, currentIndex: {history.currentIndex})
+            </span>
+          </div>
+
+          {/* Workflow History Container */}
+          <div className="space-y-4">
+            {/* Render completed steps (read-only) */}
+            {getCompletedSteps(history).map((step, index) => (
+              <HistoryStepRenderer
+                key={step.id}
+                step={step}
+                stepNumber={index + 1}
+                isActive={false}
+                isReadOnly={true}
+              />
+            ))}
+
+            {/* Render active step (interactive) */}
+            <div className="mb-4 p-4 border-2 border-blue-500 rounded-lg bg-white shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                  Current Step
+                </span>
+                <span className="text-sm font-medium text-gray-700">
+                  {typeof currentState.value === 'string' ? currentState.value : JSON.stringify(currentState.value)}
+                </span>
+              </div>
+              <WorkflowStateRenderer
+                state={currentState}
+                machine={machine}
+                onEvent={(eventType, data) => {
+                  if (eventType === "SAVE") {
+                    handleSave();
+                  } else {
+                    handleEvent(eventType, data);
+                  }
+                }}
+                projectId={projectId}
+                dataFileId={dataFileId}
+                userId={userId}
+              />
+            </div>
+
+            {/* Debug Info - Collapsible */}
+            <details className="rounded border p-3 bg-gray-50 text-xs">
+              <summary className="font-semibold cursor-pointer">Debug Info</summary>
+              <div className="mt-2 space-y-1 text-gray-700">
+                <div>State: {JSON.stringify(currentState?.value)}</div>
+                <div>Annotations: {annotations.length}</div>
+                <div>History Steps: {history.steps.length}</div>
+                <div>Can Go Back: {history.canGoBack ? 'Yes' : 'No'}</div>
+                <div>Has WorkflowDef: {workflowDef ? 'Yes' : 'No'}</div>
+              </div>
+            </details>
+
+            {/* Original control buttons */}
+            <div className="flex gap-2">
+              <Button variant="default" size="sm" onClick={handleSave}>
+                Save Annotations
+              </Button>
+              <Button variant="ghost" size="sm" onClick={stopWorkflow}>
+                Stop Workflow
+              </Button>
+            </div>
           </div>
         </div>
       )}

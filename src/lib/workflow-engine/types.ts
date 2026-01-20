@@ -441,6 +441,71 @@ export interface WorkflowContext {
 }
 
 // =============================================================================
+// HISTORY NAVIGATION TYPES
+// =============================================================================
+
+/**
+ * A single step in the workflow history
+ * Captures everything needed to display and restore this step
+ */
+export interface HistoryStep {
+  /** Unique identifier for this history step */
+  id: string;
+  
+  /** State identification */
+  stateId: string;
+  stateName: string;
+  stateType: 'area_select' | 'choice' | 'multi_choice' | 'yes_no' | 'loop' | 'final' | 'task' | 'branch';
+  
+  /** Timing */
+  timestamp: string;
+  
+  /** Context snapshot at this point in time */
+  contextSnapshot: {
+    data: Record<string, unknown>;
+    dataSources?: Record<string, unknown>;
+    currentState: string;
+  };
+  
+  /** User input/annotation for this step */
+  annotation: {
+    id: string;
+    payload: any; // The actual user input
+  };
+  
+  /** State metadata (for rendering) */
+  stateMeta: WorkflowState;
+  
+  /** Navigation links */
+  previousStateId?: string;
+  nextStateId?: string;
+  
+  /** Loop context if inside a loop */
+  loopContext?: {
+    parentStateId: string;
+    iteration: number;
+  };
+}
+
+/**
+ * Workflow history manager
+ * Tracks all completed steps and current position
+ */
+export interface WorkflowHistory {
+  /** All completed steps */
+  steps: HistoryStep[];
+  
+  /** Index of currently active step (last step = current) */
+  currentIndex: number;
+  
+  /** Whether user can go back */
+  canGoBack: boolean;
+  
+  /** Whether user can go forward (if they went back) */
+  canGoForward: boolean;
+}
+
+// =============================================================================
 // WORKFLOW EVENTS (XState Events)
 // =============================================================================
 
