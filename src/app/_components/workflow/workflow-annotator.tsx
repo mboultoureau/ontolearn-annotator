@@ -471,10 +471,32 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       // Capture this step in history
       if (context && workflowDef) {
         try {
-          const stateMeta = workflowDef.workflow.states.find(
+          // Find state meta - check both top-level states and nested loop steps
+          let stateMeta = workflowDef.workflow.states.find(
             (s: WorkflowState) => s.id === stateId
-          );          
+          );
+          
+          // If not found in top-level, search inside loop steps
+          if (!stateMeta && parentState) {
+            console.log('[History] Looking for nested step:', stateId, 'in parent:', parentState);
+            const parentMeta = workflowDef.workflow.states.find(
+              (s: WorkflowState) => s.id === parentState
+            );
+            console.log('[History] Parent meta found:', !!parentMeta, 'type:', parentMeta?.type);
+            
+            if (parentMeta && parentMeta.type === 'loop' && Array.isArray(parentMeta.steps)) {
+              console.log('[History] Searching in', parentMeta.steps.length, 'loop steps');
+              stateMeta = parentMeta.steps.find(
+                (s: WorkflowState) => s.id === stateId
+              );
+              console.log('[History] Nested step found:', !!stateMeta);
+            }
+          }
+          
           if (stateMeta) {
+            console.log('[History] Creating history step for:', stateId, 'type:', stateMeta.type);
+            console.log('[History] Annotation payload:', annotation.payload);
+            
             const historyStep = createHistoryStep(
               stateId,
               stateMeta,
@@ -486,11 +508,27 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
               history.steps[history.currentIndex]?.stateId
             );
             
-            setHistory((prev) => addHistoryStep(prev, historyStep));          } else {          }
+            console.log('[History] History step created successfully');
+            setHistory((prev) => addHistoryStep(prev, historyStep));
+          } else {
+            console.warn('[History] Could not find state meta for:', stateId, 'parent:', parentState);
+          }
         } catch (err) {
           console.error('[History] Failed to capture step:', err);
+          console.error('[History] Error details:', {
+            stateId,
+            parentState,
+            hasContext: !!context,
+            hasWorkflowDef: !!workflowDef,
+            annotationId: annotation.id
+          });
         }
-      } else {      }
+      } else {
+        console.warn('[History] Missing context or workflowDef:', {
+          hasContext: !!context,
+          hasWorkflowDef: !!workflowDef
+        });
+      }
     }
 
     if (actor) {

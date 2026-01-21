@@ -8,9 +8,19 @@ import type { HistoryStep, WorkflowContext, WorkflowState, WorkflowHistory } fro
 
 /**
  * Deep clone an object to prevent mutations
+ * Safe version that handles circular references and non-serializable objects
  */
 function deepClone<T>(obj: T): T {
-  return JSON.parse(JSON.stringify(obj));
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch (err) {
+    console.error('[History] Failed to deep clone object:', err);
+    // Fallback: return a shallow copy
+    if (typeof obj === 'object' && obj !== null) {
+      return { ...obj } as T;
+    }
+    return obj;
+  }
 }
 
 /**
@@ -23,21 +33,31 @@ export function createHistoryStep(
   context: WorkflowContext,
   previousStateId?: string
 ): HistoryStep {
-  return {
-    id: `history-${stateId}-${Date.now()}`,
-    stateId,
-    stateName: stateMeta.name || stateId,
-    stateType: stateMeta.type,
-    timestamp: new Date().toISOString(),
-    contextSnapshot: {
-      data: deepClone(context.data),
-      dataSources: context.dataSources,
-      currentState: stateId,
-    },
-    annotation,
-    stateMeta: deepClone(stateMeta),
-    previousStateId,
-  };
+  console.log('[createHistoryStep] Creating step for:', stateId, 'type:', stateMeta.type);
+  
+  try {
+    const step: HistoryStep = {
+      id: `history-${stateId}-${Date.now()}`,
+      stateId,
+      stateName: stateMeta.name || stateId,
+      stateType: stateMeta.type,
+      timestamp: new Date().toISOString(),
+      contextSnapshot: {
+        data: deepClone(context.data),
+        dataSources: context.dataSources,
+        currentState: stateId,
+      },
+      annotation,
+      stateMeta: deepClone(stateMeta),
+      previousStateId,
+    };
+    
+    console.log('[createHistoryStep] Step created successfully');
+    return step;
+  } catch (err) {
+    console.error('[createHistoryStep] Error creating history step:', err);
+    throw err;
+  }
 }
 
 /**

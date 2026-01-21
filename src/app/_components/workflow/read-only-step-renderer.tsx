@@ -190,26 +190,64 @@ export function ReadOnlyChoice({ step, stepNumber }: ReadOnlyStepProps) {
  * Read-only multi-choice display
  */
 export function ReadOnlyMultiChoice({ step, stepNumber }: ReadOnlyStepProps) {
-  const selections = Array.isArray(step.annotation.payload) 
-    ? step.annotation.payload 
-    : [step.annotation.payload];
+  let selections: any[] = [];
+  
+  // Extract the actual selections from the payload
+  if (Array.isArray(step.annotation.payload)) {
+    selections = step.annotation.payload;
+  } else if (typeof step.annotation.payload === 'object' && step.annotation.payload !== null) {
+    // Handle nested structure like { subsection: { classes: [...] } }
+    const payload = step.annotation.payload;
+    
+    // Try to find the array in the nested structure
+    const findArray = (obj: any): any[] => {
+      if (Array.isArray(obj)) return obj;
+      for (const key in obj) {
+        if (typeof obj[key] === 'object') {
+          const result = findArray(obj[key]);
+          if (result.length > 0) return result;
+        }
+      }
+      return [];
+    };
+    
+    selections = findArray(payload);
+  } else {
+    selections = [step.annotation.payload];
+  }
   
   return (
     <ReadOnlyStepWrapper step={step} stepNumber={stepNumber}>
       <div className="space-y-2">
         <div className="text-sm text-gray-700 font-medium">Selections:</div>
-        <ul className="space-y-1">
-          {selections.map((item: any, index: number) => (
-            <li key={index} className="flex items-center gap-2 text-sm">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold">
-                {item.rank || index + 1}
-              </span>
-              <span className="text-gray-700">
-                {item.value || item.label || item}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {selections.length > 0 ? (
+          <ul className="space-y-1">
+            {selections.map((item: any, index: number) => {
+              // Safe rendering: ensure we always get a string
+              let displayValue: string;
+              if (typeof item === 'string') {
+                displayValue = item;
+              } else if (typeof item === 'object' && item !== null) {
+                displayValue = item.value || item.label || JSON.stringify(item);
+              } else {
+                displayValue = String(item);
+              }
+              
+              return (
+                <li key={index} className="flex items-center gap-2 text-sm">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-800 text-xs font-semibold">
+                    {(typeof item === 'object' && item?.rank) || index + 1}
+                  </span>
+                  <span className="text-gray-700">
+                    {displayValue}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="text-sm text-gray-500">No selections</div>
+        )}
       </div>
     </ReadOnlyStepWrapper>
   );
