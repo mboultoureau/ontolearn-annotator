@@ -128,6 +128,34 @@ export function ImageSegmentation({
       annotorious.setDrawingEnabled(true);
     });
 
+    // Listen for annotation updates (when user edits existing annotation)
+    annotorious.on('updateAnnotation', (annotation: any, previous: any) => {      
+      // Parse the updated coordinates
+      const parsed = parseAnnotationGeometry(annotation);
+      const coords = parsed.coordinates ?? parsed;
+
+      if (allowMultiple) {
+        // Find and update the specific annotation
+        setAreas(prev => {
+          const idx = prev.findIndex((a: any) => {
+            // Try to match by comparing coordinates (rough match)
+            return JSON.stringify(a) === JSON.stringify(parseAnnotationGeometry(previous).coordinates ?? parseAnnotationGeometry(previous));
+          });
+          if (idx >= 0) {
+            const updated = [...prev];
+            updated[idx] = coords;
+            console.log('[ImageSegmentation] Updated areas (multiple):', updated);
+            return updated;
+          }
+          return prev;
+        });
+      } else {
+        // Single selection: just replace
+        setAreas([coords]);
+        lastAnnotationRef.current = annotation;
+      }
+    });
+
     annotorious.on('cancelSelected', () => {
       // Keep drawing enabled
       annotorious.setDrawingEnabled(true);
@@ -151,6 +179,27 @@ export function ImageSegmentation({
   }, [selectedTool, annotate]);
 
   const handleConfirm = () => {
+    // Get fresh annotations from Annotorious in case they were edited
+    if (annotate && typeof annotate.getAnnotations === 'function') {
+      const currentAnnotations = annotate.getAnnotations();
+      
+      if (currentAnnotations && currentAnnotations.length > 0) {
+        // Parse all current annotations fresh
+        const freshAreas = currentAnnotations.map((ann: any) => {
+          const parsed = parseAnnotationGeometry(ann);
+          return parsed.coordinates ?? parsed;
+        });
+        
+        if (allowMultiple) {
+          onAreaSelected(freshAreas);
+        } else if (freshAreas[0]) {
+          onAreaSelected(freshAreas[0]);
+        }
+        return;
+      }
+    }
+    
+    // Fallback to cached state if Annotorious doesn't have getAnnotations
     if (allowMultiple) {
       onAreaSelected(areas);
     } else if (areas[0]) {
@@ -197,6 +246,9 @@ export function ImageSegmentation({
         >
           Mouse
         </Button>
+        {selectedTool === 'mouse' && (
+          <span className="ml-2 text-gray-600 italic">To confirm the edits click elsewhere to unselect the area</span>
+        )}
         {allowMultiple && (
           <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 rounded">
             Multiple areas allowed

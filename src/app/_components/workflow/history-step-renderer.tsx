@@ -18,6 +18,7 @@ interface HistoryStepRendererProps {
   currentState?: any;
   context?: any;
   onEvent?: (eventType: string, data?: any) => void;
+  imageUrl?: string;
 }
 
 /**
@@ -35,7 +36,8 @@ export function HistoryStepRenderer({
   machine,
   projectId,
   dataFileId,
-  userId
+  userId,
+  imageUrl,
 }: HistoryStepRendererProps & {
   machine?: any;
   projectId?: string;
@@ -44,7 +46,7 @@ export function HistoryStepRenderer({
 }) {
   // Read-only mode for completed steps
   if (isReadOnly) {
-    return <ReadOnlyStepRenderer step={step} stepNumber={stepNumber} />;
+    return <ReadOnlyStepRenderer step={step} stepNumber={stepNumber} imageUrl={imageUrl} />;
   }
 
   // Active mode - show interactive form

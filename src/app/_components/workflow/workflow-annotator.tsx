@@ -650,6 +650,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
                       stepNumber={stepCounter}
                       isActive={false}
                       isReadOnly={true}
+                      imageUrl={imageUrl}
                     />
                   </div>
                 );

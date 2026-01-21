@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/app/_components/ui/button";
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/app/_components/ui/dialog";
+import { ImageWithMultipleAreas, type AreaOverlay } from "@/app/_components/common/image-with-multiple-areas";
 
 type Rectangle = { x: number; y: number; width: number; height: number };
 
@@ -35,20 +36,59 @@ interface AoiPreviewModalProps {
 
 export default function AoiPreviewModal({ trigger, imageUrl, aois, title = "Annotation Preview", details }: AoiPreviewModalProps) {
   const [open, setOpen] = useState(false);
-  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
 
-  const handleImgLoad = useCallback(() => {
-    const el = imgRef.current;
-    if (!el) return;
-    // Capture intrinsic size; overlay will use it as viewBox to scale shapes correctly
-    setNaturalSize({ w: el.naturalWidth, h: el.naturalHeight });
-  }, []);
+  // Convert AOIs to AreaOverlay format
+  const areas: AreaOverlay[] = aois.map((aoi, idx) => {
+    let coordinates;
+    let strokeColor;
+    let fillColor;
+    
+    if (aoi.type === "polygon") {
+      coordinates = aoi.coordinates.map(([x, y]) => ({ x, y }));
+      strokeColor = "#10b981"; // green
+      fillColor = "rgba(16,185,129,0.15)";
+    } else if (aoi.type === "rectangle") {
+      const { x, y, width, height } = aoi.coordinates;
+      coordinates = [
+        { x, y },
+        { x: x + width, y },
+        { x: x + width, y: y + height },
+        { x, y: y + height }
+      ];
+      strokeColor = "#3b82f6"; // blue
+      fillColor = "rgba(59,130,246,0.15)";
+    } else {
+      return null;
+    }
+
+    // Extract classes from annotations
+    const classes: string[] = [];
+    if (aoi.meta?.annotations) {
+      aoi.meta.annotations.forEach(ann => {
+        if (ann.classes) {
+          ann.classes.forEach(cls => {
+            if (!classes.includes(cls.value)) {
+              classes.push(cls.value);
+            }
+          });
+        }
+      });
+    }
+
+    return {
+      id: aoi.meta?.id || `aoi-${idx}`,
+      coordinates,
+      label: `AOI #${idx + 1}`,
+      classes,
+      strokeColor,
+      fillColor,
+    };
+  }).filter(Boolean) as AreaOverlay[];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-5xl">
+      <DialogContent className="max-w-5xl" aria-describedby="aoi-preview-modal-description">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -56,48 +96,11 @@ export default function AoiPreviewModal({ trigger, imageUrl, aois, title = "Anno
         <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
           {/* Image + AOIs overlay */}
           <div className="relative w-full">
-            <div className="relative w-full border rounded overflow-hidden">
-              <img ref={imgRef} src={imageUrl} alt="Preview" className="w-full h-auto block" onLoad={handleImgLoad} />
-              {/* Overlay canvas using SVG with viewBox matching natural image size */}
-              {naturalSize && (
-                <svg
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  viewBox={`0 0 ${naturalSize.w} ${naturalSize.h}`}
-                  preserveAspectRatio="xMidYMid meet"
-                >
-                {aois.map((aoi, idx) => {
-                  if (aoi.type === "rectangle") {
-                    const { x, y, width, height } = aoi.coordinates;
-                    return (
-                      <rect
-                        key={`rect-${idx}`}
-                        x={x}
-                        y={y}
-                        width={width}
-                        height={height}
-                        fill="rgba(59,130,246,0.15)"
-                        stroke="#3b82f6"
-                        strokeWidth={Math.max(1, Math.min(naturalSize.w, naturalSize.h) / 500)}
-                      />
-                    );
-                  }
-                  if (aoi.type === "polygon") {
-                    const points = aoi.coordinates.map(([px, py]) => `${px},${py}`).join(" ");
-                    return (
-                      <polygon
-                        key={`poly-${idx}`}
-                        points={points}
-                        fill="rgba(16,185,129,0.15)"
-                        stroke="#10b981"
-                        strokeWidth={Math.max(1, Math.min(naturalSize.w, naturalSize.h) / 500)}
-                      />
-                    );
-                  }
-                  return null;
-                })}
-              </svg>
-              )}
-            </div>
+            <ImageWithMultipleAreas
+              imageUrl={imageUrl}
+              areas={areas}
+              coordinateSystem="pixel"
+            />
           </div>
 
           {/* Details */}

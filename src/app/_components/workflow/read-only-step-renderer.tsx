@@ -8,10 +8,12 @@
 
 import type { HistoryStep } from "@/lib/workflow-engine/types";
 import { CheckCircle2 } from "lucide-react";
+import { ImageWithAreaOverlay } from "@/app/_components/common/image-with-area-overlay";
 
 interface ReadOnlyStepProps {
   step: HistoryStep;
   stepNumber: number;
+  imageUrl?: string;
 }
 
 /**
@@ -45,19 +47,74 @@ export function ReadOnlyStepWrapper({
 /**
  * Read-only area selection display
  */
-export function ReadOnlyAreaSelect({ step, stepNumber }: ReadOnlyStepProps) {
+export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepProps) {
   const payload = step.annotation.payload;
   
+  console.log('[ReadOnlyAreaSelect] Payload:', payload);
+  console.log('[ReadOnlyAreaSelect] imageUrl:', imageUrl);
+  
   // Handle different payload formats
-  let coordinates;
+  let coordinates: Array<{x: number; y: number}> | undefined;
+  
   if (payload && typeof payload === 'object') {
-    coordinates = payload.coordinates || payload;
-  } else {
-    coordinates = payload;
+    // Case 1: payload.coordinates exists - could be rectangle or array of points
+    if (payload.coordinates) {
+      const coords = payload.coordinates;
+      
+      // Case 1a: coordinates is a rectangle {x, y, width, height}
+      if (typeof coords === 'object' && 'x' in coords && 'y' in coords && 'width' in coords && 'height' in coords) {
+        const { x, y, width, height } = coords as any;
+        coordinates = [
+          { x, y },
+          { x: x + width, y },
+          { x: x + width, y: y + height },
+          { x, y: y + height }
+        ];
+        console.log('[ReadOnlyAreaSelect] Converted nested rectangle to polygon:', coordinates);
+      }
+      // Case 1b: coordinates is an array of points
+      else if (Array.isArray(coords)) {
+        const parsed = coords.map((c: any) => {
+          if (typeof c === 'object' && 'x' in c && 'y' in c) {
+            return { x: c.x, y: c.y };
+          }
+          return null;
+        }).filter((c: any): c is {x: number; y: number} => c !== null);
+        
+        if (parsed.length >= 3) coordinates = parsed;
+      }
+    }
+    // Case 2: payload itself is a rectangle {x, y, width, height}
+    else if ('x' in payload && 'y' in payload && 'width' in payload && 'height' in payload) {
+      const { x, y, width, height } = payload as any;
+      coordinates = [
+        { x, y },
+        { x: x + width, y },
+        { x: x + width, y: y + height },
+        { x, y: y + height }
+      ];
+      console.log('[ReadOnlyAreaSelect] Converted rectangle to polygon:', coordinates);
+    }
+    // Case 3: payload itself is the coordinates array
+    else if (Array.isArray(payload)) {
+      const parsed = payload.map((c: any) => {
+        if (typeof c === 'object' && 'x' in c && 'y' in c) {
+          return { x: c.x, y: c.y };
+        }
+        return null;
+      }).filter((c: any): c is {x: number; y: number} => c !== null);
+      
+      if (parsed.length >= 3) coordinates = parsed;
+    }
   }
   
-  // Extract image URL from state meta (with type safety)
-  const imageSource = (step.stateMeta as any)?.imageSource;
+  console.log('[ReadOnlyAreaSelect] Final coordinates:', coordinates);
+  
+  // Detect if coordinates are pixel (values > 100) or normalized (0-100)
+  const isPixelCoordinates = coordinates && coordinates.some(c => c.x > 100 || c.y > 100);
+  const coordinateSystem = isPixelCoordinates ? "pixel" : "normalized";
+  
+  console.log('[ReadOnlyAreaSelect] Detected coordinate system:', coordinateSystem);
   
   return (
     <ReadOnlyStepWrapper step={step} stepNumber={stepNumber}>
@@ -66,14 +123,22 @@ export function ReadOnlyAreaSelect({ step, stepNumber }: ReadOnlyStepProps) {
           <span className="font-medium">Area selected</span>
         </div>
         
-        {imageSource && typeof imageSource === 'string' && !imageSource.includes('${') && (
-          <div className="relative w-full h-48 bg-gray-100 rounded border">
-            <img 
-              src={imageSource} 
-              alt="Selected area" 
-              className="w-full h-full object-contain"
+        {imageUrl && coordinates && coordinates.length >= 3 ? (
+          <>
+            <ImageWithAreaOverlay
+              imageUrl={imageUrl}
+              coordinates={coordinates}
+              coordinateSystem={coordinateSystem}
+              alt="Selected area"
             />
-            {/* TODO: Overlay the polygon/rectangle */}
+            <div className="text-xs text-gray-500 mt-1">
+              Coordinate system: {coordinateSystem} (auto-detected)
+            </div>
+          </>
+        ) : (
+          <div className="p-4 bg-gray-100 border rounded text-sm text-gray-600">
+            {!imageUrl && "No image URL provided"}
+            {imageUrl && (!coordinates || coordinates.length < 3) && "Invalid coordinates"}
           </div>
         )}
         
@@ -191,10 +256,10 @@ export function ReadOnlyYesNo({ step, stepNumber }: ReadOnlyStepProps) {
 /**
  * Main router for read-only step rendering
  */
-export function ReadOnlyStepRenderer({ step, stepNumber }: ReadOnlyStepProps) {
+export function ReadOnlyStepRenderer({ step, stepNumber, imageUrl }: ReadOnlyStepProps) {
   switch (step.stateType) {
     case 'area_select':
-      return <ReadOnlyAreaSelect step={step} stepNumber={stepNumber} />;
+      return <ReadOnlyAreaSelect step={step} stepNumber={stepNumber} imageUrl={imageUrl} />;
     
     case 'choice':
       return <ReadOnlyChoice step={step} stepNumber={stepNumber} />;
