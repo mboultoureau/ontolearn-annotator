@@ -34,18 +34,18 @@ export async function POST(request: NextRequest) {
      */
     function extractClassesFromPayload(payload: any): string[] {
         // For multi_choice (subsections), classes are in an ordered array
-        if (Array.isArray(payload?.data?.subsection?.classes)) {
-            return payload.data.subsection.classes;
+        if (Array.isArray(payload?.subsection?.classes)) {
+            return payload.subsection.classes;
         }
 
         // For single crystal class selection
-        if (payload?.data?.crystal?.class && typeof payload.data.crystal.class === 'string') {
-            return [payload.data.crystal.class];
+        if (payload?.crystal?.class && typeof payload.crystal.class === 'string') {
+            return [payload.crystal.class];
         }
 
         // Fallback: check for direct class value
-        if (payload?.data?.class && typeof payload.data.class === 'string') {
-            return [payload.data.class];
+        if (payload?.class && typeof payload.class === 'string') {
+            return [payload.class];
         }
 
         return [];
@@ -136,8 +136,8 @@ export async function POST(request: NextRequest) {
             // Create AnnotationType records for all collected classes
             const annotationTypes = [];
             for (const { className, rank } of allClassValues) {
-                // Find or create the ClassType
-                let classType = await prisma.classType.findFirst({
+                // Find the existing ClassType - DO NOT create if missing
+                const classType = await prisma.classType.findFirst({
                     where: {
                         projectId,
                         name: className,
@@ -145,12 +145,9 @@ export async function POST(request: NextRequest) {
                 });
 
                 if (!classType) {
-                    classType = await prisma.classType.create({
-                        data: {
-                            projectId,
-                            name: className,
-                        },
-                    });
+                    // Log warning but don't fail - just skip this class
+                    console.warn(`[POST /api/workflow/save] ClassType "${className}" not found for project ${projectId}. Skipping.`);
+                    continue;
                 }
 
                 // Create AnnotationType with rank
@@ -238,8 +235,9 @@ function groupAnnotationsByContext(annotations: WorkflowAnnotation[]): Annotatio
 }
 
 function extractQualityFromPayload(payload: any): string | null {
-    if (payload?.data?.crystal?.quality && typeof payload.data.crystal.quality === 'string') {
-        return payload.data.crystal.quality;
+    // Quality is stored at payload.crystal.quality
+    if (payload?.crystal?.quality && typeof payload.crystal.quality === 'string') {
+        return payload.crystal.quality;
     }
     return null;
 }

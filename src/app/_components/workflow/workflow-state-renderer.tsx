@@ -243,11 +243,8 @@ function YesNoRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: stri
  */
 function AreaSelectRenderer({ meta, context, onEvent }: { meta: any; context: any; onEvent: (eventType: string, data?: any) => void }) {
   const handleAreaSelected = (coordinates: any) => {
-    const data = meta.storeAs 
-      ? createNestedObject(meta.storeAs, coordinates)
-      : { area: coordinates };
-    
-    onEvent('AREA_SELECTED', data);
+    // Send ONLY the raw coordinates - the compiler will handle nesting via storeAs
+    onEvent('AREA_SELECTED', coordinates);
   };
 
   const imageUrl = resolveTemplateString(meta.imageSource, context);
@@ -301,11 +298,8 @@ function ChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; o
   }
 
   const handleSubmit = () => {
-    const data = meta.storeAs
-      ? createNestedObject(meta.storeAs, selectedValue)
-      : { value: selectedValue };
-    
-    onEvent('NEXT', data);
+    // Send ONLY the raw value - the compiler will handle nesting via storeAs
+    onEvent('NEXT', selectedValue);
   };
 
   return (
@@ -402,11 +396,8 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
   const handleSubmit = () => {
     const rankedValues = selectedOptions.map(opt => opt.value);
     
-    const data = meta.storeAs
-      ? createNestedObject(meta.storeAs, rankedValues)
-      : { values: rankedValues };
-    
-    onEvent('NEXT', data);
+    // Send ONLY the raw ranked values - the compiler will handle nesting via storeAs
+    onEvent('NEXT', rankedValues);
   };
 
   return (

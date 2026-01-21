@@ -472,11 +472,34 @@ function compileGuards(
         
         // Compile the 'when' expression into a guard function
         guards[guardName] = ({ context, event }: { context: WorkflowContext; event: any }) => {
-          // Merge event data into context for evaluation
-          // This allows guards to check against data being submitted
+          // For guards to work correctly with storeAs, we need to simulate 
+          // what the context would look like AFTER the store action runs
+          
+          const storeAs = (state as any).storeAs;
+          let mergedData = { ...(context.data || {}) };
+          
+          if (storeAs && event.data !== undefined) {
+            // Manually apply the storeAs logic to create the future state
+            const path = storeAs.split('.');
+            let current: any = mergedData;
+            
+            for (let i = 0; i < path.length - 1; i++) {
+              if (!current[path[i]]) {
+                current[path[i]] = {};
+              }
+              current = current[path[i]];
+            }
+            
+            const finalKey = path[path.length - 1];
+            current[finalKey] = event.data;
+          } else if (event.data && typeof event.data === 'object') {
+            // If no storeAs but event.data is an object, merge it
+            mergedData = mergeDeep(mergedData, event.data);
+          }
+          
           const mergedContext = {
             ...context,
-            data: mergeDeep(context.data || {}, event.data || {}),
+            data: mergedData,
           };
           
           return evaluateWhenExpression(whenExpression, mergedContext);

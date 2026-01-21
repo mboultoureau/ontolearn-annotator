@@ -95,7 +95,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
   };
 
   const handleGoBack = async () => {
-    if (!history.canGoBack) {
+    if (!history.canGoBack || history.currentIndex < 0) {
       return;
     }
 
@@ -103,13 +103,19 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       'Going back will discard all progress after this step. Continue?'
     );
     
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {      
+      // ====================================================================
+      // STEP 1: PREPARE FOR GOING BACK
+      // ====================================================================
       // We want to go back to REDO the last completed step
       // So we remove it from history and replay everything BEFORE it
       const targetIndex = history.currentIndex - 1; // Index of the last step to keep
       const targetStepToEdit = history.steps[history.currentIndex]; // The step we want to edit
+      
       // Stop current actor
       if (actor) {
         actor.stop();
@@ -121,19 +127,23 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       const newHistory: WorkflowHistory = {
         steps: newSteps,
         currentIndex: Math.max(0, targetIndex),
-        canGoBack: targetIndex > 0,
+        canGoBack: newSteps.length > 0, // Fixed: can go back if any steps remain
         canGoForward: false,
       };
+      
       // Remove annotations after this point
       setAnnotations(prev => 
         prev.filter((_, index) => index < history.currentIndex)
       );
 
-      // Compile new machine with restored state
+      // ====================================================================
+      // STEP 2: CREATE FRESH STATE MACHINE
+      // ====================================================================
       if (!workflowDef) {
         throw new Error('No workflow definition available');
-      }      
-      // Load data sources again
+      }
+      
+      // Load data sources again (needed for dynamic data)
       const workflowWithData = await loadDataSources(workflowDef, { 
         projectId,
         slug: projectSlug
@@ -144,17 +154,53 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       // Create a new actor starting fresh
       const newActor = createActor(machine);
 
-      newActor.subscribe(snapshot => {        setCurrentState(snapshot);
+      newActor.subscribe(snapshot => {
+        setCurrentState(snapshot);
         setContext(snapshot.context as WorkflowContext);
       });
 
       newActor.start();
       
-      // Replay all events up to (but not including) the step we want to edit      
-      // Replay events with small delays to allow state machine to process
+      // ====================================================================
+      // STEP 3: REPLAY EVENTS WITH LOOP AWARENESS
+      // ====================================================================
+      /*
+        LOOP REPLAY STRATEGY:
+        
+        The challenge: Loop steps are nested, and loop continuation is implicit.
+        
+        Example history:
+        0. select_crystal_area (regular)
+        1. select_crystal_class (regular) 
+        2. ask_subsections (regular, answer: YES) → enters subsection_loop
+        3. select_subsection_area (loop: subsection_loop, iteration: 0)
+        4. select_subsection_classes (loop: subsection_loop, iteration: 0)
+        5. select_subsection_area (loop: subsection_loop, iteration: 1)
+        6. select_subsection_classes (loop: subsection_loop, iteration: 1)
+        7. ask_more_crystals (regular) → exited loop by answering NO
+        
+        Key insight: Between step 4 and 5, user answered YES to "Add another subsection?"
+        This YES event is NOT stored in history! We must infer it.
+        
+        Detection rule:
+        - If step N has loopContext (parentStateId: X, iteration: I)
+        - And step N+1 has loopContext (parentStateId: X, iteration: I+1)
+        - Then after step N, we must send YES to loop continuation
+        
+        Implementation:
+        1. Iterate through steps sequentially
+        2. Send the stored event for each step
+        3. After each step, check if next step is in a new iteration of same loop
+        4. If yes, send YES to loop continuation prompt
+      */
+      
       for (let i = 0; i < newSteps.length; i++) {
-        const step = newSteps[i];        
-        // Extract the actual data from the payload
+        const step = newSteps[i];
+        const nextStep = i < newSteps.length - 1 ? newSteps[i + 1] : null;
+        
+        // ------------------------------------------------------------------
+        // 3A. EXTRACT EVENT DATA FROM STEP PAYLOAD
+        // ------------------------------------------------------------------
         let eventData = step.annotation.payload;
         
         // For choice/multi_choice states, extract the raw selection value
@@ -176,16 +222,18 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
             return obj;
           };
           
-          eventData = extractDeepValue(eventData);        } else if (step.stateType === 'area_select') {
+          eventData = extractDeepValue(eventData);
+        } else if (step.stateType === 'area_select') {
           // For area select, keep the full coordinates structure
-          // Don't unwrap
           eventData = step.annotation.payload;
         } else if (step.stateType === 'yes_no') {
           // Yes/No events don't need data
           eventData = undefined;
         }
         
-        // Send the event that was used to complete this step
+        // ------------------------------------------------------------------
+        // 3B. DETERMINE EVENT TYPE
+        // ------------------------------------------------------------------
         let eventType = 'NEXT'; // Default for most states
         if (step.stateType === 'area_select') {
           eventType = 'AREA_SELECTED';
@@ -194,23 +242,22 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
           const answer = step.annotation.payload?.answer ?? step.annotation.payload;
           eventType = answer === true ? 'YES' : 'NO';
         }
-        // choice and multi_choice use NEXT with data        
-        // Get current state before sending
+        // choice and multi_choice use NEXT with data
+        
+        // ------------------------------------------------------------------
+        // 3C. SEND THE EVENT AND WAIT FOR STABILIZATION
+        // ------------------------------------------------------------------
         const stateBefore = newActor.getSnapshot().value;
-        console.log('[History] State before event:', JSON.stringify(stateBefore));
         
         newActor.send({ 
           type: eventType, 
           ...(eventData !== undefined && { data: eventData })
         } as any);
         
-        // Immediately check state after send
-        await new Promise(resolve => setTimeout(resolve, 50));
-        const stateAfterSend = newActor.getSnapshot().value;
-        console.log('[History] State after send:', JSON.stringify(stateAfterSend));
-        
         // Wait for state to stabilize (transition to complete)
         // The compound state pattern needs time to go: __processing -> __route -> next state
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
         let attempts = 0;
         const maxAttempts = 50; // 500ms max wait
         
@@ -231,20 +278,64 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
           const currentTop = getTopLevelState(currentState);
           
           // If we've moved to a different state, we're done
-          if (beforeTop !== currentTop) {            break;
+          if (beforeTop !== currentTop) {
+            break;
           }
           
           attempts++;
         }
         
-        if (attempts >= maxAttempts) {
-          const finalState = newActor.getSnapshot();          console.warn('[History] Final state:', JSON.stringify(finalState.value));        }
-      }      
+        // ------------------------------------------------------------------
+        // 3D. CHECK FOR LOOP CONTINUATION (THE CRITICAL PART)
+        // ------------------------------------------------------------------
+        /*
+          After sending the event for step i, check if we need to send a
+          loop continuation event before proceeding to step i+1.
+          
+          Rule: If current step is in a loop iteration I, and next step is
+          in the same loop but iteration I+1, then we must send YES to the
+          loop's repeatWhile prompt.
+        */
+        
+        if (nextStep) {
+          const currentLoop = step.loopContext?.parentStateId;
+          const currentIteration = step.loopContext?.iteration;
+          const nextLoop = nextStep.loopContext?.parentStateId;
+          const nextIteration = nextStep.loopContext?.iteration;
+          
+          // Check if next step is a new iteration of the same loop
+          const isNewIteration = (
+            currentLoop !== undefined &&
+            nextLoop !== undefined &&
+            currentLoop === nextLoop &&
+            nextIteration !== undefined &&
+            currentIteration !== undefined &&
+            nextIteration === currentIteration + 1
+          );
+          
+          if (isNewIteration) {
+            // We've completed an iteration and need to continue the loop
+            // The loop's repeatWhile will ask "Add another?" and we answer YES
+            
+            // Important: The loop state machine expects a YES/NO event
+            // Wait a bit for the repeatWhile prompt to be ready
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            newActor.send({ type: 'YES' });
+            
+            // Wait for loop to re-enter first step of next iteration
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
+      }
+      
+      // ====================================================================
+      // STEP 4: UPDATE APPLICATION STATE
+      // ====================================================================
       setActor(newActor);
       setMachine(machine);
+      setHistory(newHistory);
       
-      // Update history
-      setHistory(newHistory);      
     } catch (err) {
       console.error('[History] Error going back:', err);
       setError(`Failed to go back: ${err instanceof Error ? err.message : String(err)}`);
@@ -307,7 +398,8 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
 
     switch (eventType) {
       case "AREA_SELECTED": {
-        const coordinates = data?.crystal?.area || data?.subsection?.area || data?.area || data;
+        // Data is now the raw coordinates object
+        const coordinates = data;
 
         annotation = {
           id: `${stateId}-${Date.now()}`,
@@ -324,12 +416,35 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
         const stateMeta = findMeta(stateValue, machine.config);
 
         if (stateMeta?.type === "choice" || stateMeta?.type === "multi_choice") {
+          // Data is now the raw value (e.g., "Singular Irregular" or ["value1", "value2"])
+          // We need to get the storeAs path from the state meta to save it properly
+          const storeAs = stateMeta?.storeAs;
+          
+          let payload;
+          if (storeAs) {
+            // Create nested structure for storage based on storeAs
+            // E.g., storeAs="crystal.class" and data="Singular Irregular"
+            // Creates: { crystal: { class: "Singular Irregular" } }
+            const path = storeAs.split('.');
+            payload = {};
+            let current: any = payload;
+            
+            for (let i = 0; i < path.length - 1; i++) {
+              current[path[i]] = {};
+              current = current[path[i]];
+            }
+            current[path[path.length - 1]] = data;
+          } else {
+            // No storeAs, just save the raw data
+            payload = { data };
+          }
+          
           annotation = {
             id: `${stateId}-${Date.now()}`,
             stateId,
             type: stateMeta.type,
             timestamp: new Date().toISOString(),
-            payload: { data },
+            payload,
             parentState,
             iteration: parentState ? loopIterations[parentState] : undefined,
           };
@@ -447,16 +562,101 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
 
           {/* Workflow History Container */}
           <div className="space-y-4">
-            {/* Render completed steps (read-only) */}
-            {getCompletedSteps(history).map((step, index) => (
-              <HistoryStepRenderer
-                key={step.id}
-                step={step}
-                stepNumber={index + 1}
-                isActive={false}
-                isReadOnly={true}
-              />
-            ))}
+            {/* 
+              LOOP HISTORY DISPLAY STRATEGY:
+              
+              We need to group steps by loop context to show a clear hierarchy:
+              
+              Example structure:
+              - Step 1: Regular step
+              - Step 2: Regular step  
+              - Step 3: Loop entry (ask_subsections: YES)
+                - Iteration 1:
+                  - Step 4: select_subsection_area
+                  - Step 5: select_subsection_classes
+                - Iteration 2:
+                  - Step 6: select_subsection_area
+                  - Step 7: select_subsection_classes
+              - Step 8: quality_assessment
+              
+              Implementation:
+              1. Track current loop context and iteration
+              2. When loop context changes, show loop header
+              3. When iteration changes within same loop, show iteration divider
+              4. Indent loop steps visually
+            */}
+            
+            {(() => {
+              const completedSteps = getCompletedSteps(history);
+              const elements: JSX.Element[] = [];
+              let currentLoop: string | null = null;
+              let currentIteration = -1;
+              let stepCounter = 0; // Global step counter across all contexts
+              
+              completedSteps.forEach((step, index) => {
+                stepCounter++;
+                
+                // Check if this step is inside a loop
+                const isInLoop = !!step.loopContext;
+                const loopParent = step.loopContext?.parentStateId ?? null;
+                const iteration = step.loopContext?.iteration ?? -1;
+                
+                // ============================================================
+                // LOOP CONTEXT CHANGE DETECTION
+                // ============================================================
+                
+                // Case 1: Entering a loop (was not in loop, now in loop)
+                if (isInLoop && currentLoop !== loopParent) {
+                  // Show loop entry header
+                  elements.push(
+                    <div key={`loop-header-${loopParent}-${index}`} className="ml-4 mt-2 text-sm font-semibold text-gray-700">
+                      📁 Loop: {loopParent}
+                    </div>
+                  );
+                  currentLoop = loopParent;
+                  currentIteration = -1; // Reset iteration counter
+                }
+                
+                // Case 2: Exiting a loop (was in loop, now not in loop)
+                if (!isInLoop && currentLoop !== null) {
+                  currentLoop = null;
+                  currentIteration = -1;
+                }
+                
+                // ============================================================
+                // ITERATION CHANGE DETECTION (within same loop)
+                // ============================================================
+                
+                if (isInLoop && iteration !== currentIteration) {
+                  // Show iteration divider
+                  elements.push(
+                    <div key={`iteration-${loopParent}-${iteration}`} className="ml-8 mt-1 text-xs text-gray-600 border-l-2 border-blue-300 pl-2">
+                      🔄 Iteration {iteration + 1}
+                    </div>
+                  );
+                  currentIteration = iteration;
+                }
+                
+                // ============================================================
+                // RENDER THE STEP (with appropriate indentation)
+                // ============================================================
+                
+                const marginClass = isInLoop ? 'ml-12' : 'ml-0';
+                
+                elements.push(
+                  <div key={step.id} className={marginClass}>
+                    <HistoryStepRenderer
+                      step={step}
+                      stepNumber={stepCounter}
+                      isActive={false}
+                      isReadOnly={true}
+                    />
+                  </div>
+                );
+              });
+              
+              return <>{elements}</>;
+            })()}
 
             {/* Render active step (interactive) */}
             <div>
