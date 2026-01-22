@@ -92,7 +92,7 @@ export function addHistoryStep(
   const newHistory = {
     steps,
     currentIndex: newIndex,
-    canGoBack: steps.length > 0, // Can go back if there's any completed step
+    canGoBack: newIndex > 0, // Can go back if not at first step (index 0)
     canGoForward: false, // Can't go forward after adding new step
   };
   
@@ -112,19 +112,17 @@ export function addHistoryStep(
 export function goBackInHistory(
   history: WorkflowHistory
 ): WorkflowHistory | null {
-  if (!history.canGoBack) {
+  if (!history.canGoBack || history.currentIndex <= 0) {
     return null;
   }
 
-  // Going back means loading the step at currentIndex
-  // (the most recently completed step)
-  // So we don't decrement currentIndex, we just return the history as-is
-  // The consumer will use steps[currentIndex] to restore
+  const newIndex = history.currentIndex - 1;
   
   return {
     ...history,
-    canGoBack: history.currentIndex > 0, // Can go back further if not at step 0
-    canGoForward: false, // No forward after going back
+    currentIndex: newIndex,
+    canGoBack: newIndex > 0, // Can go back further if not at step 0
+    canGoForward: true, // Can go forward after going back
   };
 }
 
