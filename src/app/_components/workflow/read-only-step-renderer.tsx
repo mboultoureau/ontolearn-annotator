@@ -6,6 +6,7 @@
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { HistoryStep } from "@/lib/workflow-engine/types";
 import { CheckCircle2 } from "lucide-react";
 import { ImageWithAreaOverlay } from "@/app/_components/common/image-with-area-overlay";
@@ -24,6 +25,8 @@ export function ReadOnlyStepWrapper({
   stepNumber, 
   children 
 }: ReadOnlyStepProps & { children: React.ReactNode }) {
+  const t = useTranslations("Workflow.history");
+  
   return (
     <div className="mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
       <div className="flex items-start gap-3">
@@ -31,7 +34,7 @@ export function ReadOnlyStepWrapper({
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold text-gray-900">
-              Step {stepNumber}: {step.stateName}
+              {t("stepLabelWithName", { number: stepNumber, name: step.stateName })}
             </h3>
             <span className="text-xs text-gray-500">
               {new Date(step.timestamp).toLocaleTimeString()}
@@ -122,9 +125,6 @@ export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepP
               coordinateSystem={coordinateSystem}
               alt="Selected area"
             />
-            <div className="text-xs text-gray-500 mt-1">
-              Coordinate system: {coordinateSystem} (auto-detected)
-            </div>
           </>
         ) : (
           <div className="p-4 bg-gray-100 border rounded text-sm text-gray-600">
@@ -132,15 +132,6 @@ export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepP
             {imageUrl && (!coordinates || coordinates.length < 3) && "Invalid coordinates"}
           </div>
         )}
-        
-        <details className="text-xs text-gray-600">
-          <summary className="cursor-pointer hover:text-gray-800">
-            View coordinates
-          </summary>
-          <pre className="mt-2 p-2 bg-white rounded border overflow-auto max-h-32">
-            {JSON.stringify(coordinates, null, 2)}
-          </pre>
-        </details>
       </div>
     </ReadOnlyStepWrapper>
   );
@@ -170,7 +161,8 @@ export function ReadOnlyChoice({ step, stepNumber }: ReadOnlyStepProps) {
     displayValue = selectedValue;
   } else if (typeof selectedValue === 'object' && selectedValue !== null) {
     // Handle nested objects or complex payloads
-    displayValue = getNestedValue(selectedValue);
+    const nestedValue = getNestedValue(selectedValue);
+    displayValue = typeof nestedValue === 'string' ? nestedValue : JSON.stringify(nestedValue);
   } else {
     displayValue = String(selectedValue);
   }

@@ -6,6 +6,7 @@
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { HistoryStep } from "@/lib/workflow-engine/types";
 import { WorkflowStateRenderer } from "./workflow-state-renderer";
 import { ReadOnlyStepRenderer } from "./read-only-step-renderer";
@@ -44,6 +45,8 @@ export function HistoryStepRenderer({
   dataFileId?: string;
   userId?: string;
 }) {
+  const t = useTranslations("Workflow.history");
+  
   // Read-only mode for completed steps
   if (isReadOnly) {
     return <ReadOnlyStepRenderer step={step} stepNumber={stepNumber} imageUrl={imageUrl} />;
@@ -55,7 +58,7 @@ export function HistoryStepRenderer({
       <div className="mb-4 p-4 border-2 border-blue-500 rounded-lg bg-white shadow-sm">
         <div className="mb-2 flex items-center gap-2">
           <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
-            Step {stepNumber}
+            {t("stepLabel", { number: stepNumber })}
           </span>
           <span className="text-sm font-medium text-gray-700">
             {step.stateName}

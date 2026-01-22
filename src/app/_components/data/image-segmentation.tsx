@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/app/_components/ui/button';
 import { v4 as uuid } from 'uuid';
 // @ts-ignore
@@ -66,6 +67,7 @@ export function ImageSegmentation({
   allowMultiple = false,
   onAreaSelected,
 }: ImageSegmentationProps) {
+  const t = useTranslations("Workflow.areaSelect");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [viewer, setViewer] = useState<OpenSeadragon.Viewer | null>(null);
   const [annotate, setAnnotate] = useState<any>(null);
@@ -219,14 +221,14 @@ export function ImageSegmentation({
   return (
     <div className="space-y-4">
       <div className="p-2 flex items-center gap-2 text-sm">
-        <span className="font-medium">Tool:</span>
+        <span className="font-medium">{t("toolLabel")}</span>
         {(toolType === 'polygon' || toolType === 'both') && (
           <Button
             variant={selectedTool === 'polygon' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedTool('polygon')}
           >
-            Polygon
+            {t("tools.polygon")}
           </Button>
         )}
         {(toolType === 'rectangle' || toolType === 'both') && (
@@ -235,7 +237,7 @@ export function ImageSegmentation({
             size="sm"
             onClick={() => setSelectedTool('rectangle')}
           >
-            Rectangle
+            {t("tools.rectangle")}
           </Button>
         )}
         <Button
@@ -243,14 +245,14 @@ export function ImageSegmentation({
           size="sm"
           onClick={() => setSelectedTool('mouse')}
         >
-          Mouse
+          {t("tools.mouse")}
         </Button>
         {selectedTool === 'mouse' && (
-          <span className="ml-2 text-gray-600 italic">To confirm the edits click elsewhere to unselect the area</span>
+          <span className="ml-2 text-gray-600 italic">{t("mouseHint")}</span>
         )}
         {allowMultiple && (
           <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 rounded">
-            Multiple areas allowed
+            {t("multipleAllowed")}
           </span>
         )}
       </div>
@@ -260,7 +262,7 @@ export function ImageSegmentation({
 
         {areas.length > 0 && (
           <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs">
-            ✓ {areas.length} selected
+            ✓ {t("selected", { count: areas.length })}
           </div>
         )}
       </div>
@@ -271,10 +273,12 @@ export function ImageSegmentation({
           disabled={areas.length === 0}
           className="flex-1"
         >
-          {allowMultiple ? `Confirm ${areas.length} Area${areas.length !== 1 ? 's' : ''}` : 'Confirm Area Selection'}
+          {allowMultiple 
+            ? t("confirmMultiple", { count: areas.length })
+            : t("confirmSingle")}
         </Button>
         {areas.length > 0 && (
-          <Button onClick={handleClear} variant="outline">Clear</Button>
+          <Button onClick={handleClear} variant="outline">{t("clear")}</Button>
         )}
       </div>
     </div>

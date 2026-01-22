@@ -7,6 +7,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { WorkflowAnnotator } from '../workflow-annotator';
+import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+
+// Add this mock at the top with your other mocks
+vi.mock('next-intl', () => ({
+  useTranslations: vi.fn(() => (key: string) => key),
+}));
 
 // Mock XState
 vi.mock('xstate', () => ({
@@ -26,6 +32,19 @@ vi.mock('xstate', () => ({
     })),
   })),
 }));
+
+// Mock Next.js router
+const mockRouter = {
+  push: vi.fn(),
+  replace: vi.fn(),
+  prefetch: vi.fn(),
+  back: vi.fn(),
+  forward: vi.fn(),
+  refresh: vi.fn(),
+  pathname: '/test',
+  query: {},
+  asPath: '/test',
+};
 
 describe('WorkflowAnnotator', () => {
   const mockWorkflowDef = {
@@ -57,8 +76,16 @@ describe('WorkflowAnnotator', () => {
     vi.clearAllMocks();
   });
 
+  const renderWithRouter = (component: React.ReactElement) => {
+    return render(
+      <AppRouterContext.Provider value={mockRouter as any}>
+        {component}
+      </AppRouterContext.Provider>
+    );
+  };
+
   it('should render workflow annotator', () => {
-    render(
+    renderWithRouter(
       <WorkflowAnnotator
         workflowDef={mockWorkflowDef}
         projectSlug="test-project"
@@ -72,7 +99,7 @@ describe('WorkflowAnnotator', () => {
   });
 
   it('should initialize history on mount', () => {
-    render(
+    renderWithRouter(
       <WorkflowAnnotator
         workflowDef={mockWorkflowDef}
         projectSlug="test-project"
@@ -90,7 +117,7 @@ describe('WorkflowAnnotator', () => {
   });
 
   it('should display current state', async () => {
-    render(
+    renderWithRouter(
       <WorkflowAnnotator
         workflowDef={mockWorkflowDef}
         projectSlug="test-project"

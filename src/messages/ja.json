@@ -316,5 +316,131 @@
     "Index": {
       "dragOrUpload": "ドラッグ アンド ドロップまたはクリックしてファイルをアップロードします。"
     }
+  },
+  "Annotations": {
+    "title": "プロジェクトアノテーション",
+    "subtitle": "{projectName}の画像アノテーションを管理・確認",
+    "stats": {
+      "totalFiles": "総ファイル数",
+      "annotated": "アノテーション済み",
+      "pending": "保留中",
+      "totalAnnotations": "総アノテーション数"
+    },
+    "search": {
+      "placeholder": "ファイル名で検索...",
+      "noResults": "フィルターに一致するファイルが見つかりません。",
+      "clearSearch": "検索をクリア"
+    },
+    "filters": {
+      "all": "すべて",
+      "annotatedBtn": "アノテーション済み",
+      "pendingBtn": "保留中"
+    },
+    "table": {
+      "filename": "ファイル名",
+      "type": "タイプ",
+      "status": "ステータス",
+      "annotations": "アノテーション",
+      "lastAnnotated": "最終アノテーション",
+      "annotators": "アノテーター",
+      "actions": "アクション",
+      "added": "{date}に追加",
+      "noAnnotator": "—"
+    },
+    "status": {
+      "complete": "完了",
+      "pending": "保留中"
+    },
+    "actions": {
+      "annotate": "アノテート",
+      "view": "表示"
+    },
+    "modal": {
+      "title": "アノテーションプレビュー",
+      "close": "閉じる",
+      "tabs": {
+        "overview": "概要",
+        "details": "詳細",
+        "classes": "クラス"
+      },
+      "info": {
+        "annotations": "{count}個のアノテーション",
+        "aois": "{count}個のAOI",
+        "author": "作成者:",
+        "date": "日付:",
+        "confidence": "信頼度:",
+        "quality": "品質:",
+        "classifications": "分類:"
+      },
+      "aoi": {
+        "title": "関心領域",
+        "noDetails": "アノテーション詳細がありません。",
+        "noClasses": "分類が見つかりません"
+      }
+    }
+  },
+  "Workflow": {
+    "loading": "ワークフローを読み込み中...",
+    "navigation": {
+      "previousStep": "前のステップ",
+      "currentStep": "現在のステップ",
+      "stopWorkflow": "ワークフローを停止",
+      "stepsCompleted": "{count, plural, =0 {まだステップが完了していません} other {#ステップ完了}}",
+      "noStepsYet": "まだステップが完了していません"
+    },
+    "history": {
+      "stepLabel": "ステップ {number}",
+      "stepLabelWithName": "ステップ {number}: {name}"
+    },
+    "loops": {
+      "loop": "ループ",
+      "iteration": "反復 {{number}}"
+    },
+    "actions": {
+      "yes": "はい",
+      "no": "いいえ",
+      "continue": "続ける",
+      "next": "次へ",
+      "nextDefault": "次へ（デフォルト）",
+      "save": "保存",
+      "saveAnnotations": "アノテーションを保存",
+      "add": "追加",
+      "remove": "削除"
+    },
+    "placeholders": {
+      "chooseOption": "オプションを選択...",
+      "allSelected": "すべてのオプションが選択されました"
+    },
+    "choice": {
+      "selectLabel": "オプションを選択"
+    },
+    "multiChoice": {
+      "addLabel": "クラスを追加",
+      "selectedLabel": "選択されたクラス（ランク順）",
+      "instructions": "優先順位でクラスを選択して並べ替える（1 = 最も近い）"
+    },
+    "final": {
+      "title": "ワークフロー完了",
+      "message": "すべてのワークフローステップが完了しました。"
+    },
+    "areaSelect": {
+      "toolLabel": "ツール:",
+      "tools": {
+        "polygon": "ポリゴン",
+        "rectangle": "矩形",
+        "mouse": "マウス"
+      },
+      "mouseHint": "編集を確定するには、他の場所をクリックして領域の選択を解除してください",
+      "multipleAllowed": "複数の領域を許可",
+      "selected": "{count, plural, other {#個選択中}}",
+      "confirmSingle": "領域の選択を確定",
+      "confirmMultiple": "{count, plural, other {#個の領域を確定}}",
+      "clear": "クリア"
+    },
+    "errors": {
+      "noMetadata": "状態のメタデータが見つかりません:",
+      "unsupportedType": "サポートされていない状態タイプ:",
+      "networkError": "ネットワークエラー: {{message}}"
+    }
   }
 }

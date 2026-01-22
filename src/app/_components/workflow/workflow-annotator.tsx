@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createActor } from "xstate";
 import { parseWorkflowDefinition } from "@/lib/workflow-engine/parser";
 import { compileWorkflowToMachine } from "@/lib/workflow-engine/compiler";
@@ -39,6 +40,7 @@ interface WorkflowAnnotatorProps {
 
 export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, imageUrl, workflowYaml }: WorkflowAnnotatorProps) {
   const router = useRouter();
+  const t = useTranslations("Workflow");
   const [actor, setActor] = useState<any>(null);
   const [currentState, setCurrentState] = useState<any>(null);
   const [context, setContext] = useState<any>(null);
@@ -578,7 +580,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
         router.push(`/projects/${projectSlug}/annotations`);
       }, 500);
     } catch (error) {
-      alert(`Network error: ${error instanceof Error ? error.message : String(error)}`);
+      alert(t("errors.networkError", { message: error instanceof Error ? error.message : String(error) }));
     }
   };
 
@@ -586,7 +588,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
     <div className="space-y-4">
       {!actor && !error && (
         <div className="text-center py-6">
-          <p className="text-gray-700">Loading workflow...</p>
+          <p className="text-gray-700">{t("loading")}</p>
         </div>
       )}
 
@@ -600,12 +602,12 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
               variant="outline"
               size="sm"
             >
-              ← Previous Step
+              ← {t("navigation.previousStep")}
             </Button>
             <span className="text-sm text-gray-600">
               {history.steps.length > 0 
-                ? `${history.steps.length} step${history.steps.length > 1 ? 's' : ''} completed`
-                : 'No steps completed yet'}
+                ? t("navigation.stepsCompleted", { count: history.steps.length })
+                : t("navigation.noStepsYet")}
             </span>
           </div>
 
@@ -659,7 +661,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
                   // Show loop entry header
                   elements.push(
                     <div key={`loop-header-${loopParent}-${index}`} className="ml-4 mt-2 text-sm font-semibold text-gray-700">
-                      📁 Loop: {loopParent}
+                      📁 {t("loops.loop")}: {loopParent}
                     </div>
                   );
                   currentLoop = loopParent;
@@ -680,7 +682,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
                   // Show iteration divider
                   elements.push(
                     <div key={`iteration-${loopParent}-${iteration}`} className="ml-8 mt-1 text-xs text-gray-600 border-l-2 border-blue-300 pl-2">
-                      🔄 Iteration {iteration + 1}
+                      🔄 {t("loops.iteration", { number: iteration + 1 })}
                     </div>
                   );
                   currentIteration = iteration;
@@ -712,7 +714,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
             <div>
               <div className="mb-3 flex items-center gap-2">
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
-                  Current Step
+                  {t("navigation.currentStep")}
                 </span>
               </div>
               <WorkflowStateRenderer
@@ -734,7 +736,7 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
             {/* Control buttons */}
             <div className="flex gap-2">
               <Button className="bg-red-500 text-white hover:bg-red-600" size="sm" onClick={stopWorkflow}>
-                Stop Workflow
+                {t("navigation.stopWorkflow")}
               </Button>
             </div>
           </div>

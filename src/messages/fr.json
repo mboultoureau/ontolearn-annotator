@@ -295,5 +295,131 @@
       "fullName": "Nom complet",
       "role": "Rôle"
     }
+  },
+  "Annotations": {
+    "title": "Annotations du Projet",
+    "subtitle": "Gérer et examiner les annotations d'images pour {projectName}",
+    "stats": {
+      "totalFiles": "Fichiers Totaux",
+      "annotated": "Annotés",
+      "pending": "En Attente",
+      "totalAnnotations": "Annotations Totales"
+    },
+    "search": {
+      "placeholder": "Rechercher par nom de fichier...",
+      "noResults": "Aucun fichier correspondant à vos filtres.",
+      "clearSearch": "Effacer la recherche"
+    },
+    "filters": {
+      "all": "Tous",
+      "annotatedBtn": "Annotés",
+      "pendingBtn": "En Attente"
+    },
+    "table": {
+      "filename": "Nom du Fichier",
+      "type": "Type",
+      "status": "Statut",
+      "annotations": "Annotations",
+      "lastAnnotated": "Dernière Annotation",
+      "annotators": "Annotateurs",
+      "actions": "Actions",
+      "added": "Ajouté le {date}",
+      "noAnnotator": "—"
+    },
+    "status": {
+      "complete": "Terminé",
+      "pending": "En Attente"
+    },
+    "actions": {
+      "annotate": "Annoter",
+      "view": "Voir"
+    },
+    "modal": {
+      "title": "Aperçu de l'Annotation",
+      "close": "Fermer",
+      "tabs": {
+        "overview": "Aperçu",
+        "details": "Détails",
+        "classes": "Classes"
+      },
+      "info": {
+        "annotations": "{count} annotations",
+        "aois": "{count} ZDI",
+        "author": "Auteur:",
+        "date": "Date:",
+        "confidence": "Confiance:",
+        "quality": "Qualité:",
+        "classifications": "Classifications:"
+      },
+      "aoi": {
+        "title": "Zones d'Intérêt",
+        "noDetails": "Aucun détail d'annotation disponible.",
+        "noClasses": "Aucune classification trouvée"
+      }
+    }
+  },
+  "Workflow": {
+    "loading": "Chargement du flux de travail...",
+    "navigation": {
+      "previousStep": "Étape Précédente",
+      "currentStep": "Étape Actuelle",
+      "stopWorkflow": "Arrêter le Flux",
+      "stepsCompleted": "{count, plural, =0 {Aucune étape complétée} one {# étape complétée} other {# étapes complétées}}",
+      "noStepsYet": "Aucune étape complétée"
+    },
+    "history": {
+      "stepLabel": "Étape {number}",
+      "stepLabelWithName": "Étape {number}: {name}"
+    },
+    "loops": {
+      "loop": "Boucle",
+      "iteration": "Itération {{number}}"
+    },
+    "actions": {
+      "yes": "Oui",
+      "no": "Non",
+      "continue": "Continuer",
+      "next": "Suivant",
+      "nextDefault": "Suivant (Par défaut)",
+      "save": "Enregistrer",
+      "saveAnnotations": "Enregistrer les Annotations",
+      "add": "Ajouter",
+      "remove": "Supprimer"
+    },
+    "placeholders": {
+      "chooseOption": "Choisir une option...",
+      "allSelected": "Toutes les options sélectionnées"
+    },
+    "choice": {
+      "selectLabel": "Sélectionner une option"
+    },
+    "multiChoice": {
+      "addLabel": "Ajouter une classe",
+      "selectedLabel": "Classes sélectionnées (ordonnées par rang)",
+      "instructions": "Sélectionnez et ordonnez les classes par ordre de priorité (1 = plus proche)"
+    },
+    "final": {
+      "title": "Flux de Travail Terminé",
+      "message": "Vous avez terminé toutes les étapes du flux de travail."
+    },
+    "areaSelect": {
+      "toolLabel": "Outil:",
+      "tools": {
+        "polygon": "Polygone",
+        "rectangle": "Rectangle",
+        "mouse": "Souris"
+      },
+      "mouseHint": "Pour confirmer les modifications, cliquez ailleurs pour désélectionner la zone",
+      "multipleAllowed": "Zones multiples autorisées",
+      "selected": "{count, plural, one {# sélectionnée} other {# sélectionnées}}",
+      "confirmSingle": "Confirmer la Sélection de Zone",
+      "confirmMultiple": "{count, plural, one {Confirmer # Zone} other {Confirmer # Zones}}",
+      "clear": "Effacer"
+    },
+    "errors": {
+      "noMetadata": "Aucune métadonnée trouvée pour l'état:",
+      "unsupportedType": "Type d'état non pris en charge:",
+      "networkError": "Erreur réseau: {{message}}"
+    }
   }
 }

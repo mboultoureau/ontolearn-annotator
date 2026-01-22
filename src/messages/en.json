@@ -344,5 +344,131 @@
       "fullName": "Full Name",
       "role": "Role"
     }
+  },
+  "Annotations": {
+    "title": "Project Annotations",
+    "subtitle": "Manage and review image annotations for {projectName}",
+    "stats": {
+      "totalFiles": "Total Files",
+      "annotated": "Annotated",
+      "pending": "Pending",
+      "totalAnnotations": "Total Annotations"
+    },
+    "search": {
+      "placeholder": "Search by filename...",
+      "noResults": "No files found matching your filters.",
+      "clearSearch": "Clear search"
+    },
+    "filters": {
+      "all": "All",
+      "annotatedBtn": "Annotated",
+      "pendingBtn": "Pending"
+    },
+    "table": {
+      "filename": "Filename",
+      "type": "Type",
+      "status": "Status",
+      "annotations": "Annotations",
+      "lastAnnotated": "Last Annotated",
+      "annotators": "Annotators",
+      "actions": "Actions",
+      "added": "Added {date}",
+      "noAnnotator": "—"
+    },
+    "status": {
+      "complete": "Complete",
+      "pending": "Pending"
+    },
+    "actions": {
+      "annotate": "Annotate",
+      "view": "View"
+    },
+    "modal": {
+      "title": "Annotation Preview",
+      "close": "Close",
+      "tabs": {
+        "overview": "Overview",
+        "details": "Details",
+        "classes": "Classes"
+      },
+      "info": {
+        "annotations": "{count} annotations",
+        "aois": "{count} AOIs",
+        "author": "Author:",
+        "date": "Date:",
+        "confidence": "Confidence:",
+        "quality": "Quality:",
+        "classifications": "Classifications:"
+      },
+      "aoi": {
+        "title": "Areas of Interest",
+        "noDetails": "No annotation details available.",
+        "noClasses": "No classifications found"
+      }
+    }
+  },
+  "Workflow": {
+    "loading": "Loading workflow...",
+    "navigation": {
+      "previousStep": "Previous Step",
+      "currentStep": "Current Step",
+      "stopWorkflow": "Stop Workflow",
+      "stepsCompleted": "{count, plural, =0 {No steps completed yet} one {# step completed} other {# steps completed}}",
+      "noStepsYet": "No steps completed yet"
+    },
+    "history": {
+      "stepLabel": "Step {number}",
+      "stepLabelWithName": "Step {number}: {name}"
+    },
+    "loops": {
+      "loop": "Loop",
+      "iteration": "Iteration {{number}}"
+    },
+    "actions": {
+      "yes": "Yes",
+      "no": "No",
+      "continue": "Continue",
+      "next": "Next",
+      "nextDefault": "Next (Default)",
+      "save": "Save",
+      "saveAnnotations": "Save Annotations",
+      "add": "Add",
+      "remove": "Remove"
+    },
+    "placeholders": {
+      "chooseOption": "Choose an option...",
+      "allSelected": "All options selected"
+    },
+    "choice": {
+      "selectLabel": "Select an option"
+    },
+    "multiChoice": {
+      "addLabel": "Add a class",
+      "selectedLabel": "Selected classes (ordered by rank)",
+      "instructions": "Select and order classes by priority (1 = closest match)"
+    },
+    "final": {
+      "title": "Workflow Complete",
+      "message": "You have completed all workflow steps."
+    },
+    "areaSelect": {
+      "toolLabel": "Tool:",
+      "tools": {
+        "polygon": "Polygon",
+        "rectangle": "Rectangle",
+        "mouse": "Mouse"
+      },
+      "mouseHint": "To confirm edits, click elsewhere to unselect the area",
+      "multipleAllowed": "Multiple areas allowed",
+      "selected": "{count, plural, one {# selected} other {# selected}}",
+      "confirmSingle": "Confirm Area Selection",
+      "confirmMultiple": "{count, plural, one {Confirm # Area} other {Confirm # Areas}}",
+      "clear": "Clear"
+    },
+    "errors": {
+      "noMetadata": "No metadata found for state:",
+      "unsupportedType": "Unsupported state type:",
+      "networkError": "Network error: {{message}}"
+    }
   }
 }

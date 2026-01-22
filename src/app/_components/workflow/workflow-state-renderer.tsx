@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/app/_components/ui/button';
 import { Label } from '@/app/_components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/app/_components/ui/radio-group';
@@ -135,8 +136,10 @@ interface WorkflowStateRendererProps {
 }
 
 export function WorkflowStateRenderer({ state, machine, onEvent, projectId, dataFileId, userId }: WorkflowStateRendererProps) {
+  const t = useTranslations("Workflow");
+  
   if (!state || !machine) {
-    return <div className="p-4 text-gray-500">Loading...</div>;
+    return <div className="p-4 text-gray-500">{t("loading")}</div>;
   }
 
   const stateValue = state.value;
@@ -147,9 +150,9 @@ export function WorkflowStateRenderer({ state, machine, onEvent, projectId, data
     
     return (
       <div className="p-4 border rounded bg-yellow-50">
-        <p className="text-gray-700">No metadata found for state: <code className="font-mono">{JSON.stringify(stateValue)}</code></p>
+        <p className="text-gray-700">{t("errors.noMetadata")} <code className="font-mono">{JSON.stringify(stateValue)}</code></p>
         <Button onClick={() => onEvent('NEXT')} className="mt-4">
-          Next (Default)
+          {t("actions.nextDefault")}
         </Button>
       </div>
     );
@@ -161,28 +164,28 @@ export function WorkflowStateRenderer({ state, machine, onEvent, projectId, data
   switch (stateType) {
     case 'yes_no':
     case 'loop_check':
-      return <YesNoRenderer meta={stateMeta} onEvent={onEvent} />;
+      return <YesNoRenderer meta={stateMeta} onEvent={onEvent} t={t} />;
     
     case 'area_select':
       return <AreaSelectRenderer meta={stateMeta} context={state.context} onEvent={onEvent} />;
     
     case 'choice':
-      return <ChoiceRenderer meta={stateMeta} context={state.context} onEvent={onEvent} />;
+      return <ChoiceRenderer meta={stateMeta} context={state.context} onEvent={onEvent} t={t} />;
     
     case 'multi_choice':
-      return <MultiChoiceRenderer meta={stateMeta} context={state.context} onEvent={onEvent} />;
+      return <MultiChoiceRenderer meta={stateMeta} context={state.context} onEvent={onEvent} t={t} />;
     
     case 'final':
-      return <FinalRenderer meta={stateMeta} onEvent={onEvent} />;
+      return <FinalRenderer meta={stateMeta} onEvent={onEvent} t={t} />;
     
     default:
       console.warn('[WorkflowStateRenderer] Unsupported state type:', stateType);
       
       return (
         <div className="p-4 border rounded">
-          <p className="text-sm text-gray-600">Unsupported state type: {stateType}</p>
+          <p className="text-sm text-gray-600">{t("errors.unsupportedType")} {stateType}</p>
           <Button onClick={() => onEvent('NEXT')} className="mt-4">
-            Next
+            {t("actions.next")}
           </Button>
         </div>
       );
@@ -193,7 +196,7 @@ export function WorkflowStateRenderer({ state, machine, onEvent, projectId, data
  * Renderer for Yes/No and Loop Check states
  * Displays a question with two radio button options
  */
-function YesNoRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: string, data?: any) => void }) {
+function YesNoRenderer({ meta, onEvent, t }: { meta: any; onEvent: (eventType: string, data?: any) => void; t: any }) {
   const [selectedValue, setSelectedValue] = useState<string>('');
 
   const handleSubmit = () => {
@@ -215,13 +218,13 @@ function YesNoRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: stri
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="yes" id="yes" />
           <Label htmlFor="yes" className="cursor-pointer">
-            {meta.yesLabel || 'Yes'}
+            {meta.yesLabel || t("actions.yes")}
           </Label>
         </div>
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="no" id="no" />
           <Label htmlFor="no" className="cursor-pointer">
-            {meta.noLabel || 'No'}
+            {meta.noLabel || t("actions.no")}
           </Label>
         </div>
       </RadioGroup>
@@ -231,7 +234,7 @@ function YesNoRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: stri
         disabled={!selectedValue}
         className="w-full"
       >
-        Continue
+        {t("actions.continue")}
       </Button>
     </div>
   );
@@ -275,7 +278,7 @@ function AreaSelectRenderer({ meta, context, onEvent }: { meta: any; context: an
  * Renderer for Single Choice states
  * Displays a dropdown with options from static data or data sources
  */
-function ChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; onEvent: (eventType: string, data?: any) => void }) {
+function ChoiceRenderer({ meta, context, onEvent, t }: { meta: any; context: any; onEvent: (eventType: string, data?: any) => void; t: any }) {
   const [selectedValue, setSelectedValue] = useState<string>('');
 
   // Resolve options from dataSources or use static values
@@ -312,10 +315,10 @@ function ChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; o
       </div>
 
       <div className="space-y-2">
-        <Label>Select an option</Label>
+        <Label>{t("choice.selectLabel")}</Label>
         <Select value={selectedValue} onValueChange={setSelectedValue}>
           <SelectTrigger>
-            <SelectValue placeholder="Choose an option..." />
+            <SelectValue placeholder={t("placeholders.chooseOption")} />
           </SelectTrigger>
           <SelectContent>
             {options.map((option: any) => (
@@ -332,7 +335,7 @@ function ChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; o
         disabled={!selectedValue}
         className="w-full"
       >
-        Continue
+        {t("actions.continue")}
       </Button>
     </div>
   );
@@ -342,7 +345,7 @@ function ChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; o
  * Renderer for Multi-Choice states with ranked selection
  * Allows selecting multiple options and ordering them by rank (1 to n)
  */
-function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: any; onEvent: (eventType: string, data?: any) => void }) {
+function MultiChoiceRenderer({ meta, context, onEvent, t }: { meta: any; context: any; onEvent: (eventType: string, data?: any) => void; t: any }) {
   const [selectedOptions, setSelectedOptions] = useState<Array<{ value: string; label: string; rank: number }>>([]);
   const [availableValue, setAvailableValue] = useState<string>('');
 
@@ -408,13 +411,13 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
           <p className="text-sm text-gray-600 mt-1">{meta.prompt}</p>
         )}
         <p className="text-sm text-blue-600 mt-2">
-          Sélectionnez et ordonnez les classes par ordre de priorité (1 = plus proche)
+          {t("multiChoice.instructions")}
         </p>
       </div>
 
       {/* Add new option */}
       <div className="space-y-2">
-        <Label>Ajouter une classe</Label>
+        <Label>{t("multiChoice.addLabel")}</Label>
         <div className="flex gap-2">
           <Select 
             value={availableValue} 
@@ -424,8 +427,8 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
             <SelectTrigger className="flex-1">
               <SelectValue placeholder={
                 availableOptions.length === 0 
-                  ? "Toutes les options sélectionnées" 
-                  : "Choisir une classe..."
+                  ? t("placeholders.allSelected")
+                  : t("placeholders.chooseOption")
               } />
             </SelectTrigger>
             <SelectContent>
@@ -441,7 +444,7 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
             disabled={!availableValue}
             type="button"
           >
-            Ajouter
+            {t("actions.add")}
           </Button>
         </div>
       </div>
@@ -449,7 +452,7 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
       {/* Selected options with ranks */}
       {selectedOptions.length > 0 && (
         <div className="space-y-2">
-          <Label>Classes sélectionnées (ordonnées par rang)</Label>
+          <Label>{t("multiChoice.selectedLabel")}</Label>
           <div className="space-y-2">
             {selectedOptions.map((option) => (
               <div 
@@ -468,7 +471,7 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
                   size="sm"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
-                  Supprimer
+                  {t("actions.remove")}
                 </Button>
               </div>
             ))}
@@ -481,7 +484,7 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
         disabled={selectedOptions.length === 0}
         className="w-full"
       >
-        Continuer {selectedOptions.length > 0 && `(${selectedOptions.length} sélectionnée${selectedOptions.length > 1 ? 's' : ''})`}
+        {t("actions.continue")}
       </Button>
     </div>
   );
@@ -491,7 +494,7 @@ function MultiChoiceRenderer({ meta, context, onEvent }: { meta: any; context: a
  * Renderer for Final states
  * Displays completion message with save button
  */
-function FinalRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: string, data?: any) => void }) {
+function FinalRenderer({ meta, onEvent, t }: { meta: any; onEvent: (eventType: string, data?: any) => void; t: any }) {
   const handleSave = () => {
     onEvent('SAVE');
   };
@@ -500,9 +503,11 @@ function FinalRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: stri
     <div className="p-6 border rounded-lg space-y-4 bg-green-50 border-green-200">
       <div className="text-center">
         <div className="text-4xl mb-4">✅</div>
-        <h2 className="text-2xl font-bold text-green-800">Workflow Complete</h2>
-        {meta.message && (
+        <h2 className="text-2xl font-bold text-green-800">{t("final.title")}</h2>
+        {meta.message ? (
           <p className="text-gray-600 mt-2">{meta.message}</p>
+        ) : (
+          <p className="text-gray-600 mt-2">{t("final.message")}</p>
         )}
       </div>
 
@@ -510,7 +515,7 @@ function FinalRenderer({ meta, onEvent }: { meta: any; onEvent: (eventType: stri
         onClick={handleSave}
         className="w-full bg-green-600 hover:bg-green-700"
       >
-        Save Annotations
+        {t("actions.saveAnnotations")}
       </Button>
     </div>
   );

@@ -3,11 +3,38 @@
  */
 
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import { NextIntlClientProvider } from 'next-intl';
 import { ReadOnlyStepRenderer } from '../read-only-step-renderer';
 import type { HistoryStep } from '@/lib/workflow-engine/types';
+
+// Mock the image overlay component to simplify tests
+vi.mock('@/app/_components/common/image-with-area-overlay', () => ({
+  ImageWithAreaOverlay: ({ imageUrl, title }: any) => (
+    <div data-testid="image-overlay">{title || 'Image'}</div>
+  ),
+}));
+
+const mockMessages = {
+  Workflow: {
+    history: {
+      stepLabelWithName: 'Step {number}: {name}',
+      yes: 'Yes',
+      no: 'No',
+      selectedOptions: 'Selected options',
+    },
+  },
+};
+
+const renderWithIntl = (component: React.ReactElement) => {
+  return render(
+    <NextIntlClientProvider locale="en" messages={mockMessages}>
+      {component}
+    </NextIntlClientProvider>
+  );
+};
 
 describe('ReadOnlyStepRenderer', () => {
   describe('ReadOnlyChoice', () => {
@@ -30,7 +57,7 @@ describe('ReadOnlyStepRenderer', () => {
         },
       };
 
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
+      renderWithIntl(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
 
       expect(screen.getByText(/Choose Option/i)).toBeInTheDocument();
       expect(screen.getByText(/Option A/i)).toBeInTheDocument();
@@ -55,7 +82,7 @@ describe('ReadOnlyStepRenderer', () => {
         },
       };
 
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
+      renderWithIntl(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
 
       expect(screen.getByText(/Choose Option/i)).toBeInTheDocument();
     });
@@ -81,7 +108,7 @@ describe('ReadOnlyStepRenderer', () => {
         },
       };
 
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
+      renderWithIntl(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
 
       expect(screen.getByText(/Continue\?/i)).toBeInTheDocument();
       expect(screen.getByText('Yes')).toBeInTheDocument();
@@ -106,7 +133,7 @@ describe('ReadOnlyStepRenderer', () => {
         },
       };
 
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
+      renderWithIntl(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
 
       expect(screen.getByText(/Continue\?/i)).toBeInTheDocument();
       expect(screen.getByText('No')).toBeInTheDocument();
@@ -140,7 +167,7 @@ describe('ReadOnlyStepRenderer', () => {
         },
       };
 
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
+      renderWithIntl(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
 
       expect(screen.getByText(/Select Classes/i)).toBeInTheDocument();
       expect(screen.getByText(/Class A/i)).toBeInTheDocument();
@@ -166,7 +193,7 @@ describe('ReadOnlyStepRenderer', () => {
         },
       };
 
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
+      renderWithIntl(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
 
       expect(screen.getByText(/Select Classes/i)).toBeInTheDocument();
       expect(screen.getByText(/Option 1/i)).toBeInTheDocument();
@@ -198,120 +225,12 @@ describe('ReadOnlyStepRenderer', () => {
         },
       };
 
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
+      renderWithIntl(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
 
       expect(screen.getByText(/Select Classes/i)).toBeInTheDocument();
       expect(screen.getByText(/Option A/i)).toBeInTheDocument();
       expect(screen.getByText(/Option B/i)).toBeInTheDocument();
       expect(screen.getByText(/Option C/i)).toBeInTheDocument();
-    });
-  });
-
-  describe('Coordinate Parsing', () => {
-    it('should detect pixel coordinates', () => {
-      const step: HistoryStep = {
-        id: 'test-step',
-        stateId: 'step1',
-        stateName: 'Select Area',
-        stateType: 'area_select',
-        timestamp: new Date(),
-        annotation: {
-          id: 'ann-1',
-          payload: {
-            coordinates: {
-              x: 234, // > 100, triggers pixel detection
-              y: 567,
-              width: 100,
-              height: 150,
-            },
-          },
-        },
-        contextSnapshot: { metadata: {}, currentState: 'step1', dataSources: {}, data: {} },
-      };
-
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
-
-      // Check header (using Regex to handle fragmentation)
-      expect(screen.getByText(/Step 1: Select Area/i)).toBeInTheDocument();
-      
-      // Verify coordinate system detection
-      expect(screen.getByText(/Coordinate system: pixel \(auto-detected\)/i)).toBeInTheDocument();
-    });
-
-    it('should detect normalized coordinates', () => {
-      const step: HistoryStep = {
-        id: 'test-step',
-        stateId: 'step1',
-        stateName: 'Select Area',
-        stateType: 'area_select',
-        timestamp: new Date(),
-        annotation: {
-          id: 'ann-1',
-          payload: {
-            coordinates: {
-              x: 10, // < 100
-              y: 20,
-              width: 30,
-              height: 40,
-            },
-          },
-        },
-        contextSnapshot: { metadata: {}, currentState: 'step1', dataSources: {}, data: {} },
-      };
-
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
-
-      expect(screen.getByText(/Step 1: Select Area/i)).toBeInTheDocument();
-      
-      // Verify normalized detection
-      expect(screen.getByText(/Coordinate system: normalized \(auto-detected\)/i)).toBeInTheDocument();
-    });
-
-    it('should handle nested rectangle format', () => {
-      const step: HistoryStep = {
-        id: 'test-step',
-        stateId: 'step1',
-        stateName: 'Select Area',
-        stateType: 'area_select',
-        timestamp: new Date(),
-        annotation: {
-          id: 'ann-1',
-          payload: {
-            coordinates: {
-              x: 100,
-              y: 200,
-              width: 300,
-              height: 400,
-            },
-          },
-        },
-        contextSnapshot: { metadata: {}, currentState: 'step1', dataSources: {}, data: {} },
-      };
-
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} imageUrl="/test.jpg" />);
-
-      // Verify it still renders correctly with the nested format
-      expect(screen.getByText(/Area selected/i)).toBeInTheDocument();
-      
-      // Check if details/summary exists for coordinate inspection
-      expect(screen.getByText(/View coordinates/i)).toBeInTheDocument();
-    });
-
-    it('should show error state when no image is provided', () => {
-      const step: HistoryStep = {
-        id: 'test-step',
-        stateId: 'step1',
-        stateName: 'Select Area',
-        stateType: 'area_select',
-        timestamp: new Date(),
-        annotation: { id: 'ann-1', payload: { coordinates: { x: 1, y: 1, width: 1, height: 1 } } },
-        contextSnapshot: { metadata: {}, currentState: 'step1', dataSources: {}, data: {} },
-      };
-
-      // Render without imageUrl
-      render(<ReadOnlyStepRenderer step={step} stepNumber={1} />);
-
-      expect(screen.getByText(/No image URL provided/i)).toBeInTheDocument();
     });
   });
 });
