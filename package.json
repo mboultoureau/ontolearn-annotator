@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} src/server/db/seed.ts",
@@ -85,6 +88,8 @@
     "zsa-react": "^0.2.2"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/amqplib": "^0.10.5",
     "@types/bcryptjs": "^2.4.6",
     "@types/js-yaml": "^4.0.9",
@@ -93,12 +98,17 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^5.1.2",
+    "@vitest/ui": "^4.0.17",
     "eslint": "^8",
     "eslint-config-next": "14.2.4",
+    "happy-dom": "^20.3.4",
+    "jsdom": "^27.4.0",
     "postcss": "^8",
     "prisma": "^5.18.0",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.2"
+    "typescript": "^5.5.2",
+    "vitest": "^4.0.17"
   }
 }
