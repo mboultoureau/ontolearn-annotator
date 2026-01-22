@@ -38,17 +38,12 @@ export default function WorkflowTest() {
         setStateValue(state.value);
         setContext(state.context);
         setCurrentState(typeof state.value === 'string' ? state.value : JSON.stringify(state.value));
-
-        console.log("State :", state);
-        
         
         // Get available events from state configuration
         const events: string[] = [];
         
         // Get the current state node from the machine
         const currentStateNode = state._nodes?.[0];
-
-        console.log("Current state node", currentStateNode);
         
         
         if (currentStateNode?.config?.on) {
@@ -91,7 +86,6 @@ export default function WorkflowTest() {
       if (data !== undefined) {
         event.data = data;
       }
-      console.log('Sending event:', event);
       actor.send(event);
     }
   }

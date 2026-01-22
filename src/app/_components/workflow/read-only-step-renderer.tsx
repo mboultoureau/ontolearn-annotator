@@ -50,9 +50,6 @@ export function ReadOnlyStepWrapper({
 export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepProps) {
   const payload = step.annotation.payload;
   
-  console.log('[ReadOnlyAreaSelect] Payload:', payload);
-  console.log('[ReadOnlyAreaSelect] imageUrl:', imageUrl);
-  
   // Handle different payload formats
   let coordinates: Array<{x: number; y: number}> | undefined;
   
@@ -70,7 +67,6 @@ export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepP
           { x: x + width, y: y + height },
           { x, y: y + height }
         ];
-        console.log('[ReadOnlyAreaSelect] Converted nested rectangle to polygon:', coordinates);
       }
       // Case 1b: coordinates is an array of points
       else if (Array.isArray(coords)) {
@@ -93,7 +89,6 @@ export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepP
         { x: x + width, y: y + height },
         { x, y: y + height }
       ];
-      console.log('[ReadOnlyAreaSelect] Converted rectangle to polygon:', coordinates);
     }
     // Case 3: payload itself is the coordinates array
     else if (Array.isArray(payload)) {
@@ -108,13 +103,9 @@ export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepP
     }
   }
   
-  console.log('[ReadOnlyAreaSelect] Final coordinates:', coordinates);
-  
   // Detect if coordinates are pixel (values > 100) or normalized (0-100)
   const isPixelCoordinates = coordinates && coordinates.some(c => c.x > 100 || c.y > 100);
   const coordinateSystem = isPixelCoordinates ? "pixel" : "normalized";
-  
-  console.log('[ReadOnlyAreaSelect] Detected coordinate system:', coordinateSystem);
   
   return (
     <ReadOnlyStepWrapper step={step} stepNumber={stepNumber}>
@@ -160,6 +151,18 @@ export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepP
  */
 export function ReadOnlyChoice({ step, stepNumber }: ReadOnlyStepProps) {
   const selectedValue = step.annotation.payload;
+
+  const getNestedValue = (obj: any): any => {
+    if (typeof obj === 'object' && obj !== null) {
+      if ('value' in obj) return obj.value;
+      if ('label' in obj) return obj.label;
+      for (const key in obj) {
+        const val = getNestedValue(obj[key]);
+        if (val !== undefined) return val;
+      }
+    }
+    return obj;
+  };
   
   // Handle different payload formats
   let displayValue: string;
@@ -167,7 +170,7 @@ export function ReadOnlyChoice({ step, stepNumber }: ReadOnlyStepProps) {
     displayValue = selectedValue;
   } else if (typeof selectedValue === 'object' && selectedValue !== null) {
     // Handle nested objects or complex payloads
-    displayValue = JSON.stringify(selectedValue);
+    displayValue = getNestedValue(selectedValue);
   } else {
     displayValue = String(selectedValue);
   }

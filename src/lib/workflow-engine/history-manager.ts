@@ -32,9 +32,7 @@ export function createHistoryStep(
   annotation: { id: string; payload: any },
   context: WorkflowContext,
   previousStateId?: string
-): HistoryStep {
-  console.log('[createHistoryStep] Creating step for:', stateId, 'type:', stateMeta.type);
-  
+): HistoryStep {  
   try {
     const step: HistoryStep = {
       id: `history-${stateId}-${Date.now()}`,
@@ -51,8 +49,6 @@ export function createHistoryStep(
       stateMeta: deepClone(stateMeta),
       previousStateId,
     };
-    
-    console.log('[createHistoryStep] Step created successfully');
     return step;
   } catch (err) {
     console.error('[createHistoryStep] Error creating history step:', err);
@@ -95,13 +91,6 @@ export function addHistoryStep(
     canGoBack: newIndex > 0, // Can go back if not at first step (index 0)
     canGoForward: false, // Can't go forward after adding new step
   };
-  
-  console.log('[History] Added step, new state:', {
-    stepsCount: steps.length,
-    currentIndex: newIndex,
-    canGoBack: newHistory.canGoBack,
-    stepId: step.stateId
-  });
 
   return newHistory;
 }

@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { WorkflowAnnotator } from "@/app/_components/workflow/workflow-annotator";
+import Link from "next/link";
 
 async function fetchDataFile(projectId: string, dataFileId: string) {
   return prisma.dataFile.findFirst({
@@ -8,6 +9,15 @@ async function fetchDataFile(projectId: string, dataFileId: string) {
       id: dataFileId,
       source: { projectId },
       destination: "MANUAL",
+    },
+  });
+}
+
+async function fetchAnnotations(projectId: string, dataFileId: string) {
+  return prisma.annotation.findMany({
+    where: {
+      dataFileId,
+      dataFile: { source: { projectId } },
     },
   });
 }
@@ -38,6 +48,7 @@ export default async function AnnotateDataFilePage({ params }: { params: { slug:
     return notFound();
   }
   const dataFile = await fetchDataFile(project.id, dataFileId);
+  const annotations = await fetchAnnotations(project.id, dataFileId);
 
   if (!dataFile || !dataFile.filePath) {
     return notFound();
@@ -56,6 +67,16 @@ export default async function AnnotateDataFilePage({ params }: { params: { slug:
         <p className="text-gray-600">{dataFile.name}</p>
       </div>
 
+      {annotations.length > 0 ? (
+        <div className="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500">
+          <p className="text-yellow-800">
+            Note: This data file has existing annotations. You can review in the annotation page.
+          </p>
+          <Link href={`/projects/${slug}/annotations/`} className="text-blue-600 underline">
+            Go to Annotation Page
+          </Link>
+        </div>
+      ) : (
       <WorkflowAnnotator
         projectId={project.id}
         projectSlug={slug}
@@ -64,6 +85,7 @@ export default async function AnnotateDataFilePage({ params }: { params: { slug:
         imageUrl={dataFile.filePath}
         workflowYaml={workflowYaml || undefined}
       />
+      )}
     </div>
   );
 }

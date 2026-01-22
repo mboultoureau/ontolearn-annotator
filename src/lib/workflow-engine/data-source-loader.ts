@@ -39,8 +39,6 @@ export async function loadDataSources(
           endpoint = endpoint.replace(`{${varKey}}`, String(varValue));
         }
 
-        console.log(`[DataSourceLoader] Fetching ${key} from ${endpoint}`);
-
         // Fetch the data
         const response = await fetch(endpoint);
         if (!response.ok) {
@@ -54,8 +52,6 @@ export async function loadDataSources(
           type: 'static',
           data: Array.isArray(data) ? data : [data],
         };
-
-        console.log(`[DataSourceLoader] Loaded ${key}:`, data);
       } catch (error) {
         console.error(`[DataSourceLoader] Error loading ${key}:`, error);
         // Fallback to empty array

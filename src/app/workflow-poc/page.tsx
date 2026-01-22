@@ -198,8 +198,6 @@ export default function WorkflowPOCPage() {
   const handleEvent = (eventType: string, data?: any, meta?: any) => {
     if (!currentState) return;
 
-    console.log('[handleEvent]', { eventType, data, currentStateValue: currentState.value });
-
     // Get current state info
     const stateValue = currentState.value;
     let stateId: string;
@@ -269,14 +267,6 @@ export default function WorkflowPOCPage() {
         // Find metadata using the same logic as in renderer
         const stateMeta = findMeta(stateValue, machine.config);
         
-        console.log('[handleEvent NEXT]', {
-          stateId,
-          stateValue,
-          stateType: stateMeta?.type,
-          data,
-          meta: stateMeta
-        });
-        
         if (stateMeta?.type === 'choice' || stateMeta?.type === 'multi_choice') {
           // Store the entire data object to preserve nested structure
           annotation = {
@@ -326,8 +316,6 @@ export default function WorkflowPOCPage() {
       annotations: annotations,
       completedAt: new Date().toISOString()
     };
-
-    console.log('Workflow completed - Saving annotations...', saveData);
     
     try {
       const response = await fetch('/api/workflow/save', {
@@ -345,8 +333,6 @@ export default function WorkflowPOCPage() {
         alert(`Erreur lors de la sauvegarde: ${result.error}\n\n${result.details || ''}`);
         return;
       }
-
-      console.log('Annotations saved successfully:', result);
       alert(`✅ Annotations sauvegardées avec succès!\n\n${result.annotationsCreated} enregistrements créés`);
       
       // Optionally reset the workflow

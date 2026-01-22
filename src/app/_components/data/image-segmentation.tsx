@@ -144,7 +144,6 @@ export function ImageSegmentation({
           if (idx >= 0) {
             const updated = [...prev];
             updated[idx] = coords;
-            console.log('[ImageSegmentation] Updated areas (multiple):', updated);
             return updated;
           }
           return prev;

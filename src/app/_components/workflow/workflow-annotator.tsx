@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createActor } from "xstate";
 import { parseWorkflowDefinition } from "@/lib/workflow-engine/parser";
 import { compileWorkflowToMachine } from "@/lib/workflow-engine/compiler";
@@ -37,6 +38,7 @@ interface WorkflowAnnotatorProps {
 }
 
 export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, imageUrl, workflowYaml }: WorkflowAnnotatorProps) {
+  const router = useRouter();
   const [actor, setActor] = useState<any>(null);
   const [currentState, setCurrentState] = useState<any>(null);
   const [context, setContext] = useState<any>(null);
@@ -48,6 +50,12 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
   
   // History management
   const [history, setHistory] = useState<WorkflowHistory>(initializeHistory());
+
+  // Auto-start workflow on mount
+  useEffect(() => {
+    startWorkflow();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array = run once on mount
 
   const startWorkflow = async () => {
     try {
@@ -563,7 +571,12 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       }
 
       alert(`Annotations saved: ${result.annotationsCreated}`);
-      setTimeout(() => stopWorkflow(), 500);
+      
+      // Redirect to project annotations page
+      setTimeout(() => {
+        stopWorkflow();
+        router.push(`/projects/${projectSlug}/annotations`);
+      }, 500);
     } catch (error) {
       alert(`Network error: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -571,11 +584,9 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
 
   return (
     <div className="space-y-4">
-      {!actor && (
+      {!actor && !error && (
         <div className="text-center py-6">
-          <div className="text-5xl mb-4">🧊</div>
-          <p className="text-gray-700 mb-4">Start the annotation workflow for this image.</p>
-          <Button onClick={startWorkflow}>Start Workflow</Button>
+          <p className="text-gray-700">Loading workflow...</p>
         </div>
       )}
 
