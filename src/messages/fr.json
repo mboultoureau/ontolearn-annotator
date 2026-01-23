@@ -195,7 +195,75 @@
       "useHeadwork": "Utiliser Headwork",
       "users": "Utilisateurs",
       "annotations": "Annotations",
+      "classTypes": "Types de classes",
       "noAccess": "Vous n'avez pas accès à ces paramètres : {settings}."
+    },
+    "ClassTypes": {
+      "title": "Types de classes",
+      "subtitle": "Gérer les types de classes d'annotation pour ce projet",
+      "addNew": "Ajouter un type",
+      "search": "Rechercher des types de classes...",
+      "statusFilter": "Statut",
+      "allStatuses": "Tous les statuts",
+      "table": {
+        "name": "Nom",
+        "status": "Statut",
+        "created": "Créé",
+        "usage": "Utilisation",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif"
+      },
+      "usage": "{count, plural, =0 {Non utilisé} one {# annotation} other {# annotations}}",
+      "empty": "Aucun type de classe trouvé",
+      "emptyDescription": "Commencez par créer votre premier type de classe.",
+      "dialog": {
+        "add": {
+          "title": "Ajouter un type de classe",
+          "description": "Créer un nouveau type de classification pour les annotations",
+          "submit": "Créer"
+        },
+        "edit": {
+          "title": "Modifier le type de classe",
+          "description": "Mettre à jour le nom du type de classe",
+          "submit": "Enregistrer"
+        },
+        "delete": {
+          "title": "Supprimer le type de classe",
+          "description": "Êtes-vous sûr de vouloir supprimer ce type de classe ?",
+          "inUse": "Ce type de classe est utilisé dans {count, plural, one {# annotation} other {# annotations}}. Il sera marqué comme inactif au lieu d'être supprimé.",
+          "notInUse": "Ce type de classe n'est pas utilisé et sera supprimé définitivement.",
+          "cancel": "Annuler",
+          "confirm": "Supprimer"
+        }
+      },
+      "form": {
+        "name": "Nom du type de classe",
+        "namePlaceholder": "ex : Singulier, Hexagone, Dendrite",
+        "nameRequired": "Le nom est requis"
+      },
+      "actions": {
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "activate": "Activer",
+        "deactivate": "Désactiver"
+      },
+      "success": {
+        "created": "Type de classe créé avec succès",
+        "updated": "Type de classe mis à jour avec succès",
+        "deleted": "Type de classe supprimé avec succès",
+        "activated": "Type de classe activé",
+        "deactivated": "Type de classe désactivé"
+      },
+      "errors": {
+        "load": "Échec du chargement des types de classes",
+        "create": "Échec de la création du type de classe",
+        "update": "Échec de la mise à jour du type de classe",
+        "delete": "Échec de la suppression du type de classe",
+        "duplicate": "Un type de classe avec ce nom existe déjà"
+      }
     },
     "Statistics": {
       "accuracy": "Précision",

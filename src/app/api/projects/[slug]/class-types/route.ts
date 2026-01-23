@@ -1,0 +1,133 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/server/auth";
+import { db } from "@/server/db";
+import { z } from "zod";
+
+// Validation schema
+const classTypeSchema = z.object({
+  name: z.string().min(1).max(100),
+});
+
+/**
+ * GET /api/projects/[slug]/class-types
+ * List all class types for a project (including inactive)
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { slug } = params;
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get("status"); // optional filter
+
+    // Get project
+    const project = await db.project.findUnique({
+      where: { slug },
+    });
+
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    // Fetch class types with usage count
+    const classTypes = await db.classType.findMany({
+      where: {
+        projectId: project.id,
+        ...(status && { status: status as any }),
+      },
+      include: {
+        _count: {
+          select: { annotationTypes: true },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return NextResponse.json(classTypes);
+  } catch (error) {
+    console.error("[GET /api/projects/[slug]/class-types] Error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/projects/[slug]/class-types
+ * Create a new class type
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { slug } = params;
+    const body = await request.json();
+
+    // Validate input
+    const validation = classTypeSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { name } = validation.data;
+
+    // Get project
+    const project = await db.project.findUnique({
+      where: { slug },
+    });
+
+    if (!project) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    // Check if class type name already exists for this project
+    const existing = await db.classType.findFirst({
+      where: {
+        projectId: project.id,
+        name,
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "Class type with this name already exists" },
+        { status: 409 }
+      );
+    }
+
+    // Create class type
+    const classType = await db.classType.create({
+      data: {
+        projectId: project.id,
+        name,
+        status: "ACTIVE",
+      },
+    });
+
+    return NextResponse.json(classType, { status: 201 });
+  } catch (error) {
+    console.error("[POST /api/projects/[slug]/class-types] Error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

@@ -195,7 +195,75 @@
       "useHeadwork": "Use Headwork",
       "users": "Users",
       "annotations": "Annotations",
+      "classTypes": "Class Types",
       "noAccess": "You do not have access to these settings: {settings}."
+    },
+    "ClassTypes": {
+      "title": "Class Types",
+      "subtitle": "Manage annotation class types for this project",
+      "addNew": "Add Class Type",
+      "search": "Search class types...",
+      "statusFilter": "Status",
+      "allStatuses": "All Statuses",
+      "table": {
+        "name": "Name",
+        "status": "Status",
+        "created": "Created",
+        "usage": "Usage",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "usage": "{count, plural, =0 {Not used} one {# annotation} other {# annotations}}",
+      "empty": "No class types found",
+      "emptyDescription": "Get started by creating your first class type.",
+      "dialog": {
+        "add": {
+          "title": "Add Class Type",
+          "description": "Create a new classification type for annotations",
+          "submit": "Create"
+        },
+        "edit": {
+          "title": "Edit Class Type",
+          "description": "Update the class type name",
+          "submit": "Save Changes"
+        },
+        "delete": {
+          "title": "Delete Class Type",
+          "description": "Are you sure you want to delete this class type?",
+          "inUse": "This class type is used in {count, plural, one {# annotation} other {# annotations}}. It will be marked as inactive instead of deleted.",
+          "notInUse": "This class type is not used and will be permanently deleted.",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        }
+      },
+      "form": {
+        "name": "Class Type Name",
+        "namePlaceholder": "e.g., Singular, Hexagon, Dendrite",
+        "nameRequired": "Name is required"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "activate": "Activate",
+        "deactivate": "Deactivate"
+      },
+      "success": {
+        "created": "Class type created successfully",
+        "updated": "Class type updated successfully",
+        "deleted": "Class type deleted successfully",
+        "activated": "Class type activated",
+        "deactivated": "Class type deactivated"
+      },
+      "errors": {
+        "load": "Failed to load class types",
+        "create": "Failed to create class type",
+        "update": "Failed to update class type",
+        "delete": "Failed to delete class type",
+        "duplicate": "A class type with this name already exists"
+      }
     },
     "Statistics": {
       "accuracy": "Accuracy",
