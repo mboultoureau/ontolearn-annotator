@@ -44,7 +44,7 @@ interface ClassType {
 }
 
 export default function ClassTypesPage({ params }: { params: { slug: string } }) {
-  const t = useTranslations("ClassTypes");
+  const t = useTranslations("Project.ClassTypes");
   const { toast } = useToast();
   const { slug } = params;
 

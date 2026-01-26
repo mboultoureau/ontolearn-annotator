@@ -178,6 +178,7 @@
       "search": "クラスタイプを検索...",
       "statusFilter": "ステータス",
       "allStatuses": "全てのステータス",
+      "loading": "読み込み中",
       "table": {
         "name": "名前",
         "status": "ステータス",

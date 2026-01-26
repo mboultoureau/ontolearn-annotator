@@ -205,6 +205,7 @@
       "search": "Search class types...",
       "statusFilter": "Status",
       "allStatuses": "All Statuses",
+      "loading": "Loading",
       "table": {
         "name": "Name",
         "status": "Status",
