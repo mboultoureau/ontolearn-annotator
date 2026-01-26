@@ -150,57 +150,57 @@ export function AnnotationsTableClient({ slug, dataFiles }: Props) {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white border rounded-lg p-4 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <FileImage className="w-5 h-5 text-blue-600" />
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <FileImage className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">{t("stats.totalFiles")}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t("stats.totalFiles")}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.total}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white border rounded-lg p-4 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">{t("stats.annotated")}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.annotated}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t("stats.annotated")}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.annotated}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white border rounded-lg p-4 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <Clock className="w-5 h-5 text-yellow-600" />
+            <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+              <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">{t("stats.pending")}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t("stats.pending")}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.pending}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white border rounded-lg p-4 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <User className="w-5 h-5 text-purple-600" />
+            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <User className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">{t("stats.totalAnnotations")}</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalAnnotations}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t("stats.totalAnnotations")}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalAnnotations}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white border rounded-lg p-4 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4 shadow-sm">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
@@ -210,7 +210,7 @@ export function AnnotationsTableClient({ slug, dataFiles }: Props) {
               placeholder={t("search.placeholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
+              className="pl-10 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
             />
           </div>
 
@@ -227,7 +227,7 @@ export function AnnotationsTableClient({ slug, dataFiles }: Props) {
               variant={filterStatus === "annotated" ? "default" : "outline"}
               size="sm"
               onClick={() => setFilterStatus("annotated")}
-              className={filterStatus === "annotated" ? "bg-green-600 hover:bg-green-700" : ""}
+              className={filterStatus === "annotated" ? "bg-green-600 hover:bg-green-700 text-white" : ""}
             >
               <CheckCircle2 className="w-4 h-4 mr-1" />
               {t("filters.annotatedBtn")} ({stats.annotated})
@@ -236,7 +236,7 @@ export function AnnotationsTableClient({ slug, dataFiles }: Props) {
               variant={filterStatus === "pending" ? "default" : "outline"}
               size="sm"
               onClick={() => setFilterStatus("pending")}
-              className={filterStatus === "pending" ? "bg-yellow-600 hover:bg-yellow-700" : ""}
+              className={filterStatus === "pending" ? "bg-yellow-600 hover:bg-yellow-700 text-white" : ""}
             >
               <Clock className="w-4 h-4 mr-1" />
               {t("filters.pendingBtn")} ({stats.pending})
@@ -246,81 +246,81 @@ export function AnnotationsTableClient({ slug, dataFiles }: Props) {
       </div>
 
       {/* Table */}
-      <div className="bg-white border rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => handleSort("name")}
                 >
                   <div className="flex items-center gap-2">
                     {t("table.filename")}
                     {sortField === "name" && (
-                      <span className="text-gray-400">{sortOrder === "asc" ? "↑" : "↓"}</span>
+                      <span className="text-gray-400 dark:text-gray-500">{sortOrder === "asc" ? "↑" : "↓"}</span>
                     )}
                   </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   {t("table.type")}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   {t("table.status")}
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => handleSort("annotationCount")}
                 >
                   <div className="flex items-center gap-2">
                     {t("table.annotations")}
                     {sortField === "annotationCount" && (
-                      <span className="text-gray-400">{sortOrder === "asc" ? "↑" : "↓"}</span>
+                      <span className="text-gray-400 dark:text-gray-500">{sortOrder === "asc" ? "↑" : "↓"}</span>
                     )}
                   </div>
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => handleSort("annotationDate")}
                 >
                   <div className="flex items-center gap-2">
                     {t("table.lastAnnotated")}
                     {sortField === "annotationDate" && (
-                      <span className="text-gray-400">{sortOrder === "asc" ? "↑" : "↓"}</span>
+                      <span className="text-gray-400 dark:text-gray-500">{sortOrder === "asc" ? "↑" : "↓"}</span>
                     )}
                   </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   {t("table.annotators")}
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   {t("table.actions")}
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredAndSorted.map((df) => {
                 const annotated = df.annotations.length > 0;
                 const latestDate = getLatestAnnotationDate(df);
                 const annotators = getAnnotators(df);
 
                 return (
-                  <tr key={df.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={df.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded flex items-center justify-center">
-                          <FileImage className="w-5 h-5 text-gray-400" />
+                        <div className="flex-shrink-0 h-10 w-10 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center">
+                          <FileImage className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{df.name}</div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{df.name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             {t("table.added", { date: new Date(df.createdAt).toLocaleDateString() })}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded">
+                      <span className="px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
                         {df.type}
                       </span>
                     </td>
@@ -338,32 +338,32 @@ export function AnnotationsTableClient({ slug, dataFiles }: Props) {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 font-medium">
+                      <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
                         {df.annotations.length}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {latestDate ? (
                         <div>
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-gray-900 dark:text-gray-100">
                             {latestDate.toLocaleDateString()}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             {latestDate.toLocaleTimeString()}
                           </div>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400">{t("table.noAnnotator")}</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">{t("table.noAnnotator")}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {annotators.length > 0 ? (
                         <div className="flex items-center gap-1">
-                          <User className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">{annotators.join(", ")}</span>
+                          <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{annotators.join(", ")}</span>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400">{t("table.noAnnotator")}</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500">{t("table.noAnnotator")}</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -463,8 +463,8 @@ export function AnnotationsTableClient({ slug, dataFiles }: Props) {
 
         {filteredAndSorted.length === 0 && (
           <div className="text-center py-12">
-            <FileImage className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-sm">{t("search.noResults")}</p>
+            <FileImage className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400 text-sm">{t("search.noResults")}</p>
             {search && (
               <Button
                 variant="link"

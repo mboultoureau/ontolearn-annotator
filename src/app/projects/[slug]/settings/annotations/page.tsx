@@ -4,38 +4,8 @@ import { Button } from "@/app/_components/ui/button";
 import { Label } from "@/app/_components/ui/label";
 import { useState, useEffect } from "react";
 
-const DEFAULT_WORKFLOW = `metadata:
-  id: default_workflow
-  version: 1.0.0
-  name: default workflow
-  description: This is a template for a workflow
-  author: NII Research Team
-
-dataSources:
-  data: 
-    type: static
-    data: test
-
-workflow:
-  entry: default_node
-
-  states:
-    # 1. Default start node
-    - id: default_node
-      type: yes_no
-      name: Want to end the workflow?
-      question: Want to end the workflow?
-      yesTarget: final
-      noTarget: default_node
-
-    # 7. End
-    - id: final
-      type: final
-      message: Workflow finished
-`;
-
 export default function AnnotationsSettingsPage({ params }: { params: { slug: string } }) {
-  const [workflowYaml, setWorkflowYaml] = useState(DEFAULT_WORKFLOW);
+  const [workflowYaml, setWorkflowYaml] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -195,6 +165,56 @@ export default function AnnotationsSettingsPage({ params }: { params: { slug: st
           {saving ? "Saving..." : "Save Configuration"}
         </Button>
       </div>
+
+      <details className="mt-6 p-4 bg-gray-50 border rounded">
+        <summary className="font-semibold cursor-pointer text-gray-900">Workflow DSL Documentation</summary>
+        <div className="mt-4 space-y-2 text-sm text-gray-700">
+          <p>
+            Define annotation workflows using our custom YAML-based DSL. The workflow consists of states and transitions that guide the annotation process.
+          </p>
+          <ul className="list-disc list-inside">
+            <li>
+              <strong>States:</strong> Define different annotation tasks, such as labeling, reviewing, or approving annotations.
+            </li>
+            <li>
+              <strong>Transitions:</strong> Specify how to move between states based on conditions or user actions.
+            </li>
+            <li>
+              <strong>Placeholders:</strong> Use <code className="bg-gray-100 px-1 rounded">{"${imageUrl}"}</code> to dynamically insert the image URL into annotation tasks.
+            </li>
+          </ul>
+          <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto display-[initial]">
+metadata:
+  id: default_workflow
+  version: 1.0.0
+  name: default workflow
+  description: This is a template for a workflow
+  author: NII Research Team
+
+dataSources:
+  data: 
+    type: static
+    data: test
+
+workflow:
+  entry: default_node
+
+  states:
+    # 1. Default start node
+    - id: default_node
+      type: yes_no
+      name: Want to end the workflow?
+      question: Want to end the workflow?
+      yesTarget: final
+      noTarget: default_node
+
+    # 7. End
+    - id: final
+      type: final
+      message: Workflow finished
+</pre>
+        </div>
+      </details>
     </div>
   );
 }
