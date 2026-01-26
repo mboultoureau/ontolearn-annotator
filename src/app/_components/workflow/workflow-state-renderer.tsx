@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/app/_components/ui/button';
 import { Label } from '@/app/_components/ui/label';
+import { Input } from '@/app/_components/ui/input';
+import { Textarea } from '@/app/_components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/app/_components/ui/radio-group';
 import {
   Select,
@@ -162,6 +164,14 @@ export function WorkflowStateRenderer({ state, machine, onEvent, projectId, data
 
   // Render component based on state type
   switch (stateType) {
+    case 'task':
+      return <TaskRenderer meta={stateMeta} onEvent={onEvent} t={t} />;
+    
+    case 'branch':
+      // Branch states auto-transition based on guards
+      // Trigger NEXT event immediately to evaluate guards
+      return <BranchRenderer meta={stateMeta} onEvent={onEvent} t={t} />;
+    
     case 'yes_no':
     case 'loop_check':
       return <YesNoRenderer meta={stateMeta} onEvent={onEvent} t={t} />;
@@ -190,6 +200,127 @@ export function WorkflowStateRenderer({ state, machine, onEvent, projectId, data
         </div>
       );
   }
+}
+
+/**
+ * Renderer for Branch states
+ * Branch states automatically route based on guard conditions
+ * This component triggers the NEXT event immediately to evaluate guards
+ */
+function BranchRenderer({ meta, onEvent, t }: { meta: any; onEvent: (eventType: string, data?: any) => void; t: any }) {
+  useEffect(() => {
+    // Auto-trigger transition after a brief delay to show the routing message
+    const timer = setTimeout(() => {
+      onEvent('NEXT');
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [onEvent]);
+
+  return (
+    <div className="p-6 border rounded-lg space-y-4 bg-blue-50 border-blue-200">
+      <div className="text-center">
+        <div className="text-4xl mb-4">🔀</div>
+        <h2 className="text-xl font-bold">{meta.name || t("branch.routing")}</h2>
+        {meta.description && (
+          <p className="text-sm text-gray-600 mt-2">{meta.description}</p>
+        )}
+        <p className="text-sm text-blue-600 mt-2">{t("branch.evaluating")}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Renderer for Task states
+ * Displays a form with multiple fields for data collection
+ */
+function TaskRenderer({ meta, onEvent, t }: { meta: any; onEvent: (eventType: string, data?: any) => void; t: any }) {
+  const [formData, setFormData] = useState<Record<string, any>>({});
+
+  const handleFieldChange = (fieldId: string, value: any) => {
+    setFormData(prev => ({ ...prev, [fieldId]: value }));
+  };
+
+  const handleSubmit = () => {
+    // Send the form data
+    onEvent('NEXT', formData);
+  };
+
+  // Check if all required fields are filled
+  const isValid = meta.fields?.every((field: any) => {
+    if (field.required) {
+      const value = formData[field.id];
+      return value !== undefined && value !== null && value !== '';
+    }
+    return true;
+  }) ?? false;
+
+  return (
+    <div className="p-6 border rounded-lg space-y-4">
+      <div>
+        <h2 className="text-xl font-bold">{meta.name}</h2>
+        {meta.description && (
+          <p className="text-sm text-gray-600 mt-1">{meta.description}</p>
+        )}
+        {meta.instructions && (
+          <p className="text-sm text-blue-600 mt-2">{meta.instructions}</p>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        {meta.fields?.map((field: any) => (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+            
+            {(field.type === 'text' || field.type === 'email') && (
+              <Input
+                id={field.id}
+                type={field.type}
+                placeholder={field.placeholder}
+                value={formData[field.id] || ''}
+                onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                required={field.required}
+              />
+            )}
+            
+            {field.type === 'number' && (
+              <Input
+                id={field.id}
+                type="number"
+                placeholder={field.placeholder}
+                value={formData[field.id] || ''}
+                onChange={(e) => handleFieldChange(field.id, e.target.valueAsNumber)}
+                required={field.required}
+              />
+            )}
+            
+            {field.type === 'textarea' && (
+              <Textarea
+                id={field.id}
+                placeholder={field.placeholder}
+                value={formData[field.id] || ''}
+                onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                required={field.required}
+                rows={4}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      <Button 
+        onClick={handleSubmit} 
+        disabled={!isValid}
+        className="w-full"
+      >
+        {t("actions.continue")}
+      </Button>
+    </div>
+  );
 }
 
 /**
@@ -288,11 +419,16 @@ function ChoiceRenderer({ meta, context, onEvent, t }: { meta: any; context: any
     const sourceData = context.dataSources[meta.options.source];
     
     if (sourceData?.type === 'static' && Array.isArray(sourceData.data)) {
-      options = sourceData.data.map((item: any) => 
-        typeof item === 'string' 
-          ? { value: item, label: item }
-          : item
-      );
+      options = sourceData.data.map((item: any) => {
+        if (typeof item === 'string') {
+          return { value: item, label: item };
+        }
+        // Handle both {value, label} and {id, label} formats
+        return {
+          value: item.value || item.id,
+          label: item.label || item.value || item.id
+        };
+      });
     } else if (sourceData?.type === 'fetch') {
       // Fetch type should have been loaded already, but if not, show warning
       console.warn(`Data source '${meta.options.source}' is of type 'fetch' but data was not pre-loaded`);
@@ -356,11 +492,16 @@ function MultiChoiceRenderer({ meta, context, onEvent, t }: { meta: any; context
     const sourceData = context.dataSources[meta.options.source];
     
     if (sourceData?.type === 'static' && Array.isArray(sourceData.data)) {
-      allOptions = sourceData.data.map((item: any) => 
-        typeof item === 'string' 
-          ? { value: item, label: item }
-          : item
-      );
+      allOptions = sourceData.data.map((item: any) => {
+        if (typeof item === 'string') {
+          return { value: item, label: item };
+        }
+        // Handle both {value, label} and {id, label} formats
+        return {
+          value: item.value || item.id,
+          label: item.label || item.value || item.id
+        };
+      });
     } else if (sourceData?.type === 'fetch') {
       // Fetch type should have been loaded already, but if not, show warning
       console.warn(`Data source '${meta.options.source}' is of type 'fetch' but data was not pre-loaded`);
