@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Search, Filter, Calendar, User, CheckCircle2, Clock, Eye, FileImage } from "lucide-react";
+import { Search, User, CheckCircle2, Clock, Eye, FileImage } from "lucide-react";
 import { Button } from "@/app/_components/ui/button";
 import { Input } from "@/app/_components/ui/input";
 import AoiPreviewModal from "@/app/_components/annotations/aoi-preview-modal";

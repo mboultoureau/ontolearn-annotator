@@ -1,7 +1,8 @@
 import prisma from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { WorkflowAnnotator } from "@/app/_components/workflow/workflow-annotator";
 import Link from "next/link";
+import { auth } from "@/server/auth";
 
 async function fetchDataFile(projectId: string, dataFileId: string) {
   return prisma.dataFile.findFirst({
@@ -43,6 +44,13 @@ async function fetchWorkflowConfig(projectId: string): Promise<string | null> {
 
 export default async function AnnotateDataFilePage({ params }: { params: { slug: string; dataFileId: string } }) {
   const { slug, dataFileId } = params;
+  
+  // Check authentication
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login");
+  }
+  
   const project = await fetchProject(slug);
   if (!project) {
     return notFound();
@@ -57,8 +65,8 @@ export default async function AnnotateDataFilePage({ params }: { params: { slug:
   // Fetch workflow configuration from database
   const workflowYaml = await fetchWorkflowConfig(project.id);
 
-  // For now we do not have user auth wired here; using placeholder user id
-  const userId = "user-67890";
+  // Use authenticated user's ID
+  const userId = session.user.id;
 
   return (
     <div className="p-8 space-y-6">

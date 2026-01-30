@@ -378,9 +378,6 @@ describe('Loop Replay - Edge Cases', () => {
     it('should restore loop state correctly after going back', () => {
       let history = initializeHistory();
 
-      // Initial data state
-      const initialData = { items: [] };
-
       // First iteration
       const iter1Context = { items: [{ id: 1, value: 'first' }] };
       const iter1 = createHistoryStep(

@@ -5,7 +5,7 @@
  * These tests validate that the entire system works together correctly.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createActor } from 'xstate';
 import { parseWorkflowDefinition } from '@/lib/workflow-engine/parser';
 import { compileWorkflowToMachine } from '@/lib/workflow-engine/compiler';
@@ -263,7 +263,6 @@ describe('Workflow Execution Integration', () => {
       actor.start();
       
       actor.send({ type: 'NEXT', data: 'Irregular' });
-      const afterFirst = actor.getSnapshot().context.data;
       
       actor.send({ type: 'YES', data: true });
       const afterSecond = actor.getSnapshot().context.data;

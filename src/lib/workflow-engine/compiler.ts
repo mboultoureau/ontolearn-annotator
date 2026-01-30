@@ -68,7 +68,7 @@ export function compileWorkflowToMachine(
   workflow: WorkflowDefinition,
   options: CompilerOptions = {}
 ): CompiledWorkflow {
-  const { strict = false, customGuards = {} } = options;
+  const { customGuards = {} } = options;
 
   // Initialize compilers
   const guardCompiler = new GuardCompiler();

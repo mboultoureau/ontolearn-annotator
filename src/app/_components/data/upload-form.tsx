@@ -3,7 +3,7 @@
 import { createData } from "@/actions/data";
 import { createDataInputSchema } from "@/lib/validation-schemas/data";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Prisma, Project, DataFileDestination } from "@prisma/client";
+import { Prisma, Project } from "@prisma/client";
 import { AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { redirect } from "next/navigation";

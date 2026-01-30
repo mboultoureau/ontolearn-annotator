@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/app/_components/ui/button";
-import { X, User, Calendar, Award, Target, Layers } from "lucide-react";
+import { User, Calendar, Award, Target, Layers } from "lucide-react";
 import {
   Dialog,
   DialogContent,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import type { Annotation as PrismaAnnotation } from '@prisma/client';
+import { auth } from '@/server/auth';
 
 interface WorkflowAnnotation {
     id: string;
@@ -28,6 +29,15 @@ interface SaveWorkflowRequest {
  * Creates AreaOfInterest for each area annotation and AnnotationType for each choice annotation
  */
 export async function POST(request: NextRequest) {
+    // Check authentication
+    const session = await auth();
+    if (!session?.user) {
+        return NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+
     /**
      * Extracts class values from the annotation payload
      * Handles different payload structures for choice and multi_choice
@@ -53,7 +63,7 @@ export async function POST(request: NextRequest) {
     try {
         const body: SaveWorkflowRequest = await request.json();
 
-        const { projectId, dataFileId, userId, workflowContext, annotations, completedAt } = body;
+        const { projectId, dataFileId, userId, annotations, completedAt } = body;
 
         // Validate required fields
         if (!projectId || !dataFileId || !annotations || !Array.isArray(annotations)) {
@@ -62,6 +72,17 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
+
+        // Verify userId matches authenticated user
+        if (userId && userId !== session.user.id) {
+            return NextResponse.json(
+                { error: 'User ID mismatch - cannot save annotations for another user' },
+                { status: 403 }
+            );
+        }
+
+        // Use authenticated user's ID (prioritize session over request body)
+        const authenticatedUserId = session.user.id;
 
         // Verify the dataFile exists
         const dataFile = await prisma.dataFile.findUnique({
@@ -121,7 +142,7 @@ export async function POST(request: NextRequest) {
                     dataFileId,
                     areaOfInterestId: areaOfInterest.id,
                     author: 'USER',
-                    userId: userId || undefined,
+                    userId: authenticatedUserId,
                     quality: qualityValue,
                     parentAnnotationId: group.parentState ? lastRootAnnotationId || undefined : undefined,
                     createdAt: new Date(areaAnnotation.timestamp),

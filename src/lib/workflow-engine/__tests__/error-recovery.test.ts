@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { compileWorkflowToMachine } from '../compiler';
-import { parseWorkflowDefinition, parseWorkflowDefinitionSafe } from '../parser';
+import { parseWorkflowDefinition } from '../parser';
 
 describe('Error Recovery', () => {
   describe('Missing Entry State', () => {

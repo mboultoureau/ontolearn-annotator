@@ -69,7 +69,6 @@ export function ImageSegmentation({
 }: ImageSegmentationProps) {
   const t = useTranslations("Workflow.areaSelect");
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [viewer, setViewer] = useState<OpenSeadragon.Viewer | null>(null);
   const [annotate, setAnnotate] = useState<any>(null);
   const [selectedTool, setSelectedTool] = useState<'mouse' | 'rectangle' | 'polygon'>(
     toolType === 'rectangle' ? 'rectangle' : 'polygon'
@@ -86,8 +85,6 @@ export function ImageSegmentation({
       tileSources: isDzi(imageUrl) ? imageUrl : { type: 'image', url: imageUrl },
       showNavigationControl: false,
     } as any);
-
-    setViewer(viewerInstance);
 
     const annotorious = Annotorious(viewerInstance, { disableEditor: true });
     setAnnotate(annotorious);
@@ -164,7 +161,6 @@ export function ImageSegmentation({
 
     return () => {
       viewerInstance?.destroy();
-      setViewer(null);
     };
   }, [imageUrl]);
 

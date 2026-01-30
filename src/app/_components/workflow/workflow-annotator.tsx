@@ -11,7 +11,6 @@ import {
   initializeHistory, 
   addHistoryStep, 
   createHistoryStep,
-  goBackInHistory,
   getCompletedSteps
 } from "@/lib/workflow-engine/history-manager";
 import type { WorkflowHistory, WorkflowState, WorkflowDefinition, WorkflowContext } from "@/lib/workflow-engine/types";
@@ -124,7 +123,6 @@ export function WorkflowAnnotator({ projectId, projectSlug, dataFileId, userId, 
       // We want to go back to REDO the last completed step
       // So we remove it from history and replay everything BEFORE it
       const targetIndex = history.currentIndex - 1; // Index of the last step to keep
-      const targetStepToEdit = history.steps[history.currentIndex]; // The step we want to edit
       
       // Stop current actor
       if (actor) {

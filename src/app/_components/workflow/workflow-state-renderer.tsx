@@ -28,24 +28,6 @@ const ImageSegmentation = dynamic(
 );
 
 /**
- * Utility: Creates a nested object structure from a dot-notation path
- * Example: createNestedObject("crystal.area", coordinates) => { crystal: { area: coordinates } }
- */
-function createNestedObject(path: string, value: any): any {
-  const segments = path.split('.');
-  const result: any = {};
-  let current = result;
-  
-  for (let i = 0; i < segments.length - 1; i++) {
-    current[segments[i]] = {};
-    current = current[segments[i]];
-  }
-  
-  current[segments[segments.length - 1]] = value;
-  return result;
-}
-
-/**
  * Utility: Resolve a dotted/bracket path (e.g., "dataSources.images.data[0].url") from an object
  */
 function resolvePath(obj: any, path: string): any {
