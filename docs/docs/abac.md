@@ -6,6 +6,8 @@ sidebar_position: 3
 
 OntoLearn Annotator implements a fine-grained **Attribute-Based Access Control (ABAC)** system that provides advanced permission management for all project resources and actions. This security layer enables precise control over who can access what resources under which circumstances.
 
+Code for the ABAC Server : [here](https://zenodo.org/records/18412324?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjgwYWRiYmFjLTgwZTUtNDNmZS1hMjMzLWZhZWUxYTU0ODU3YSIsImRhdGEiOnt9LCJyYW5kb20iOiI3YzFiOTFiNjlkOWU2Yjc1MTY5OTU4YzFlMWI2N2RmZiJ9.J4-qW_ubrfn151UU3CsbwmrAmygVePr0sDYZcoUkkbnSKHqUwHH6N3bk2WXq-ZaL58Ws2fYodGJz_tnSI3IV6A)
+
 ## Overview
 
 ABAC is a security model that grants access rights based on attributes rather than traditional roles. In OntoLearn Annotator, access decisions are made by evaluating:
@@ -299,4 +301,4 @@ ABAC policies are enforced at multiple points in the application:
 
 ## API Reference
 
-For detailed API documentation and policy management endpoints, see the [ABAC API Documentation](TODO).
+For detailed API documentation and policy management endpoints, see the [ABAC API Documentation](https://zenodo.org/records/18412324?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjgwYWRiYmFjLTgwZTUtNDNmZS1hMjMzLWZhZWUxYTU0ODU3YSIsImRhdGEiOnt9LCJyYW5kb20iOiI3YzFiOTFiNjlkOWU2Yjc1MTY5OTU4YzFlMWI2N2RmZiJ9.J4-qW_ubrfn151UU3CsbwmrAmygVePr0sDYZcoUkkbnSKHqUwHH6N3bk2WXq-ZaL58Ws2fYodGJz_tnSI3IV6A).

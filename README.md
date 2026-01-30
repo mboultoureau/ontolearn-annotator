@@ -54,7 +54,7 @@ npm run dev
 ### Prerequisites
 
 This project requires an ABAC (Attribute-Based Access Control) server for the security layer. Make sure you have:
-- An ABAC server running and accessible (see [ABAC Server](<URL>) for more information)
+- An ABAC server running and accessible (see [ABAC Server](https://zenodo.org/records/18412324?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjgwYWRiYmFjLTgwZTUtNDNmZS1hMjMzLWZhZWUxYTU0ODU3YSIsImRhdGEiOnt9LCJyYW5kb20iOiI3YzFiOTFiNjlkOWU2Yjc1MTY5OTU4YzFlMWI2N2RmZiJ9.J4-qW_ubrfn151UU3CsbwmrAmygVePr0sDYZcoUkkbnSKHqUwHH6N3bk2WXq-ZaL58Ws2fYodGJz_tnSI3IV6A) for more information)
 - The ABAC server URL configured in your `.env.local` file (see `ABAC_SERVER_URL`)
 
 The application will be available at `http://localhost:3000`.
