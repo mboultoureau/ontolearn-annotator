@@ -15,6 +15,9 @@
 # object with a ${imageUrl} template), a fetch dataSource, guards using
 # == / != / && / ||, both imageSource template forms, and nested storeAs paths.
 #
+# Both class-bearing choices (pick_tags, detail_class) read the project's class types,
+# because /api/workflow/save only links a value it can resolve to a ClassType row.
+#
 # Answer "yes" at ask_details to walk the loop; the branch only routes to
 # area_select when severity is medium or high.
 
@@ -178,19 +181,22 @@ workflow:
           allowMultiple: false
           storeAs: detail.zone
 
-        # choice inside a loop, inline values
+        # choice inside a loop, fed by the project's own class types.
+        #
+        # This must use `source: class_types` rather than inline values: /api/workflow/save
+        # only links a value to an AnnotationType when the project declares it as a
+        # ClassType, so inline demo values would leave every sub-section at "0 classes".
+        # To exercise the inline form instead, swap in:
+        #   options:
+        #     values:
+        #       - value: primary
+        #         label: Primary feature
         - id: detail_class
           type: choice
           name: Detail class
           prompt: Classify this detail
           options:
-            values:
-              - value: primary
-                label: Primary feature
-              - value: secondary
-                label: Secondary feature
-              - value: artifact
-                label: Artifact / noise
+            source: class_types
           storeAs: detail.class
 
         # task inside a loop
