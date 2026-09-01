@@ -29,6 +29,13 @@
       "themeUpdated": "Theme updated!",
       "themeUpdatedDescription": "The theme has been updated to: {theme}",
       "title": "Account Settings"
+    },
+    "VerifyRequest": {
+      "backToLogin": "Back to login",
+      "description": "A sign-in link has been sent to {email}.",
+      "descriptionNoEmail": "A sign-in link has been sent to your email address.",
+      "spam": "The link is valid for 24 hours and can only be used once. If you don't see it, check your spam folder.",
+      "title": "Check your email"
     }
   },
   "App": {

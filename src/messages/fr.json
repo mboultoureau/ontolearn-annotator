@@ -29,6 +29,13 @@
       "themeUpdated": "Thème mis à jour !",
       "themeUpdatedDescription": "Le thème a été mis à jour vers : {theme}",
       "title": "Paramètres du compte"
+    },
+    "VerifyRequest": {
+      "backToLogin": "Retour à la connexion",
+      "description": "Un lien de connexion a été envoyé à {email}.",
+      "descriptionNoEmail": "Un lien de connexion a été envoyé à votre adresse e-mail.",
+      "spam": "Le lien est valable 24 heures et ne peut être utilisé qu'une seule fois. Si vous ne le voyez pas, vérifiez vos courriers indésirables.",
+      "title": "Consultez votre boîte mail"
     }
   },
   "App": {

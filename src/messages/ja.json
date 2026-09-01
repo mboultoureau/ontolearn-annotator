@@ -29,6 +29,13 @@
       "themeUpdated": "テーマが更新されました！",
       "themeUpdatedDescription": "テーマが{theme}に更新された。",
       "title": "アカウント設定"
+    },
+    "VerifyRequest": {
+      "backToLogin": "ログインに戻る",
+      "description": "{email} にログインリンクを送信しました。",
+      "descriptionNoEmail": "ご登録のメールアドレスにログインリンクを送信しました。",
+      "spam": "リンクの有効期限は24時間で、使用できるのは1回のみです。見つからない場合は迷惑メールフォルダをご確認ください。",
+      "title": "メールをご確認ください"
     }
   },
   "App": {
