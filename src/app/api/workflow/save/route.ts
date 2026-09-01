@@ -42,23 +42,39 @@ export async function POST(request: NextRequest) {
      * Extracts class values from the annotation payload
      * Handles different payload structures for choice and multi_choice
      */
-    function extractClassesFromPayload(payload: any): string[] {
-        // For multi_choice (subsections), classes are in an ordered array
-        if (Array.isArray(payload?.subsection?.classes)) {
-            return payload.subsection.classes;
-        }
+    function extractClassesFromPayload(payload: any, knownClassNames: Set<string>): string[] {
+        // The client nests each choice under its own `storeAs` path
+        // (workflow-annotator.tsx), so the shape is workflow-specific: crystal.class,
+        // subsection.classes, qa.tags, detail.class... Hardcoding those paths meant any
+        // workflow other than the water-crystal one silently saved zero classes.
+        //
+        // Instead, walk the payload and keep the leaf values the project actually
+        // declares as ClassTypes. Anything else (a quality rating, a free-text note) is
+        // simply not a class.
+        const found: string[] = [];
 
-        // For single crystal class selection
-        if (payload?.crystal?.class && typeof payload.crystal.class === 'string') {
-            return [payload.crystal.class];
-        }
+        const visit = (value: any) => {
+            if (typeof value === 'string') {
+                if (knownClassNames.has(value) && !found.includes(value)) {
+                    found.push(value);
+                }
+                return;
+            }
 
-        // Fallback: check for direct class value
-        if (payload?.class && typeof payload.class === 'string') {
-            return [payload.class];
-        }
+            if (Array.isArray(value)) {
+                // Order matters: multi_choice is a ranked selection.
+                value.forEach(visit);
+                return;
+            }
 
-        return [];
+            if (value && typeof value === 'object') {
+                Object.values(value).forEach(visit);
+            }
+        };
+
+        visit(payload);
+
+        return found;
     }
     try {
         const body: SaveWorkflowRequest = await request.json();
@@ -96,6 +112,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // The project's declared classes, fetched once: they are both the vocabulary
+        // used to recognise a class in a payload and the rows we link to.
+        const projectClassTypes = await prisma.classType.findMany({
+            where: { projectId, status: 'ACTIVE' },
+            select: { id: true, name: true },
+        });
+        const classTypeIdByName = new Map(projectClassTypes.map((ct) => [ct.name, ct.id]));
+        const knownClassNames = new Set(classTypeIdByName.keys());
+
         // Group annotations by logical item (crystal or subsection)
         const annotationGroups = groupAnnotationsByContext(annotations);
         const createdAnnotations = [];
@@ -128,7 +153,7 @@ export async function POST(request: NextRequest) {
                         qualityValue = q;
                     }
 
-                    const classValues = extractClassesFromPayload(ann.payload);
+                    const classValues = extractClassesFromPayload(ann.payload, knownClassNames);
                     for (const className of classValues) {
                         allClassValues.push({ className, rank: rankCounter++ });
                     }
@@ -157,15 +182,10 @@ export async function POST(request: NextRequest) {
             // Create AnnotationType records for all collected classes
             const annotationTypes = [];
             for (const { className, rank } of allClassValues) {
-                // Find the existing ClassType - DO NOT create if missing
-                const classType = await prisma.classType.findFirst({
-                    where: {
-                        projectId,
-                        name: className,
-                    },
-                });
+                // Resolved from the map fetched above - never created if missing.
+                const classTypeId = classTypeIdByName.get(className);
 
-                if (!classType) {
+                if (!classTypeId) {
                     // Log warning but don't fail - just skip this class
                     console.warn(`[POST /api/workflow/save] ClassType "${className}" not found for project ${projectId}. Skipping.`);
                     continue;
@@ -175,7 +195,7 @@ export async function POST(request: NextRequest) {
                 const annotationType = await prisma.annotationType.create({
                     data: {
                         annotationId: annotationRecord.id,
-                        classTypeId: classType.id,
+                        classTypeId,
                         rank,
                     },
                 });
