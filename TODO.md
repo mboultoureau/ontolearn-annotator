@@ -85,6 +85,19 @@ individual iteration steps are still saved, tagged with their `iteration` index.
 Both fixes are a few lines. Add a regression test that asserts on `context.data`, not
 just on the state path: navigation is fine, only the writes are broken.
 
+### 6. An answer given before any area selection cannot be stored at all
+
+`groupAnnotationsByContext` in `/api/workflow/save` only opens a group when it meets an
+`area` annotation, and a `choice` met before the first one is dropped with no `else`
+branch. So a whole-image answer — a global classification, an overall quality rating —
+never reaches the database. In `node-coverage-test.yaml` this is `pick_severity`.
+
+This is not a one-line fix: `Annotation.areaOfInterestId` is **non-nullable** in the
+Prisma schema, so an annotation that is not about a region has nowhere to live. Deciding
+how to model image-level labels (a nullable area, or a whole-image AOI created
+implicitly) is a schema decision, and it blocks any workflow whose first question is
+about the image as a whole.
+
 ---
 
 ## Feature work
@@ -184,6 +197,13 @@ format, annotation mapping in both directions, and whether we push or Headwork p
   publishes MariaDB on **3307**. It also defaults `ABAC_SERVER_URL` to port 4000 while
   `inheritance_service` listens on **5004**. Following the README verbatim fails at the
   migrate step.
+- **`tsc --noEmit` reports 119 errors**, every one of them in a test file
+  (`loop-edge-cases.test.ts` alone accounts for 49, mostly `Date` where a `string` is
+  expected and a `metadata` key the context type does not declare). The count is
+  identical before and after the 2026-09-01 work, so this is a standing baseline, not a
+  regression — but Vitest passes only because it transpiles without typechecking, so a
+  CI typecheck step would be red on day one. Several of the offending files are the
+  duplicated suites above, so the two items overlap.
 - `amqplib` is an unused dependency — remove it, or use it for Headwork (item 10).
 - `src/lib/workflow-engine/README.md` references a `REFACTORING.md` that does not exist,
   and claims "87 tests passing" — the suite is 152 across 15 files.
@@ -223,6 +243,14 @@ easy to lose and two of them were caused by upstream behaviour, not by our code.
   settings form used `mutate` (fire-and-forget) so the database write was never awaited —
   the UI could switch language while the account kept the old one, and the next sign-in
   silently reverted it. Cookie is now persistent (1 year); the form awaits `mutateAsync`.
+- **Polygon areas rendered as "Invalid coordinates"** in the read-only history: the
+  polygon tool emits `[x, y]` tuples (also what is stored in `AreaOfInterest.area`) while
+  the renderer only accepted `{x, y}` objects. Four tests cover both shapes.
+- **Classes were never attached for any workflow but the water-crystal one.**
+  `extractClassesFromPayload` was hardcoded to that workflow's storeAs paths. A leaf
+  value is now treated as a class when the project declares it as a ClassType — which
+  also means a class-bearing `choice` must read `source: <class types>` rather than
+  inline demo values, or it silently links nothing.
 - **The landing page had no way in.** The "Get Started" button's `href` was commented out
   in favour of `href="#"` plus an onClick, and the `isLogged` prop was unused. There is
   now a Login/Projects button in the header and a real `href`.
