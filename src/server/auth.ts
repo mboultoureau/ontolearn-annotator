@@ -1,11 +1,12 @@
 import { env } from "@/env";
-import { LOCALE_COOKIE_NAME } from "@/i18n";
+import { Locale } from "@/i18n";
 import prisma from "@/lib/prisma";
+import { setUserLocale } from "@/lib/locale";
+import { authEdgeConfig } from "@/server/auth.config";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { DefaultSession, default as NextAuth, NextAuthConfig } from "next-auth";
 import type { Provider } from "next-auth/providers";
 import GitHub from "next-auth/providers/github";
-import { cookies } from "next/headers";
 import EmailProvider from "next-auth/providers/nodemailer";
 
 /**
@@ -56,23 +57,12 @@ export const providerMap = providers.map((provider) => {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authConfig: NextAuthConfig = {
+  // session, pages and the `authorized` callback are shared with middleware.ts.
+  ...authEdgeConfig,
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
   providers: providers,
   callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user;
-      const isOnProtectedPage =
-        nextUrl.pathname.startsWith("/projects") ||
-        nextUrl.pathname.startsWith("/account");
-      if (isOnProtectedPage) {
-        if (isLoggedIn) return true;
-        return false; // Redirect unauthenticated users to login page
-      } else if (isLoggedIn) {
-        return Response.redirect(new URL("/projects", nextUrl));
-      }
-      return true;
-    },
+    ...authEdgeConfig.callbacks,
     session: ({ session, token }) => ({
       ...session,
       user: {
@@ -80,9 +70,13 @@ export const authConfig: NextAuthConfig = {
         id: token.sub,
       },
     }),
+    // Re-applies the language saved on the account, so signing in on a new device
+    // restores the user's preference. Note this deliberately overwrites the locale
+    // cookie: the database is the source of truth for a signed-in user, which is why
+    // the settings form must not update the cookie unless its write succeeded.
     signIn: async ({ user }) => {
       if (user.locale) {
-        let locale = "";
+        let locale: Locale = "en";
         switch (user.locale) {
           case "ENGLISH":
             locale = "en";
@@ -98,15 +92,13 @@ export const authConfig: NextAuthConfig = {
             break;
         }
 
-        cookies().set(LOCALE_COOKIE_NAME, locale);
+        // Goes through setUserLocale so the cookie gets the same lifetime as an
+        // explicit choice, instead of dying with the browser session.
+        await setUserLocale(locale);
       }
 
       return true;
     },
-  },
-  pages: {
-    signIn: "/login",
-    signOut: "/"
   },
 };
 
