@@ -50,12 +50,45 @@ export function ReadOnlyStepWrapper({
 /**
  * Read-only area selection display
  */
+/**
+ * Normalises a list of polygon points.
+ *
+ * Rectangles arrive as `{x, y, width, height}`, but the polygon tool emits points as
+ * `[x, y]` tuples — which is also what ends up in `AreaOfInterest.area`. Only accepting
+ * `{x, y}` objects made every polygon render as "Invalid coordinates".
+ */
+function parsePoints(points: unknown): Array<{ x: number; y: number }> | undefined {
+  if (!Array.isArray(points)) {
+    return undefined;
+  }
+
+  const parsed = points
+    .map((point: any) => {
+      if (Array.isArray(point) && point.length >= 2) {
+        const [x, y] = point;
+        if (typeof x === "number" && typeof y === "number") {
+          return { x, y };
+        }
+        return null;
+      }
+
+      if (point && typeof point === "object" && "x" in point && "y" in point) {
+        return { x: Number(point.x), y: Number(point.y) };
+      }
+
+      return null;
+    })
+    .filter((point): point is { x: number; y: number } => point !== null);
+
+  return parsed.length >= 3 ? parsed : undefined;
+}
+
 export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepProps) {
   const payload = step.annotation.payload;
-  
+
   // Handle different payload formats
   let coordinates: Array<{x: number; y: number}> | undefined;
-  
+
   if (payload && typeof payload === 'object') {
     // Case 1: payload.coordinates exists - could be rectangle or array of points
     if (payload.coordinates) {
@@ -71,16 +104,9 @@ export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepP
           { x, y: y + height }
         ];
       }
-      // Case 1b: coordinates is an array of points
+      // Case 1b: coordinates is an array of points ({x,y} objects or [x,y] tuples)
       else if (Array.isArray(coords)) {
-        const parsed = coords.map((c: any) => {
-          if (typeof c === 'object' && 'x' in c && 'y' in c) {
-            return { x: c.x, y: c.y };
-          }
-          return null;
-        }).filter((c: any): c is {x: number; y: number} => c !== null);
-        
-        if (parsed.length >= 3) coordinates = parsed;
+        coordinates = parsePoints(coords);
       }
     }
     // Case 2: payload itself is a rectangle {x, y, width, height}
@@ -95,14 +121,7 @@ export function ReadOnlyAreaSelect({ step, stepNumber, imageUrl }: ReadOnlyStepP
     }
     // Case 3: payload itself is the coordinates array
     else if (Array.isArray(payload)) {
-      const parsed = payload.map((c: any) => {
-        if (typeof c === 'object' && 'x' in c && 'y' in c) {
-          return { x: c.x, y: c.y };
-        }
-        return null;
-      }).filter((c: any): c is {x: number; y: number} => c !== null);
-      
-      if (parsed.length >= 3) coordinates = parsed;
+      coordinates = parsePoints(payload);
     }
   }
   
