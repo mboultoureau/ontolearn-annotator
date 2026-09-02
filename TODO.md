@@ -165,7 +165,36 @@ email provider is already wired, so a magic-link invite is the natural fit.
 Related, and worth deciding at the same time: nothing stops the last ADMIN from
 demoting or removing themselves.
 
-### 11. Node-based workflow editor instead of YAML
+### 11. Finish replacing `Data` with `DataFile`
+
+`main` has only `Data`; commit `5d4c709` added `DataFile` beside it and the `Data` model
+is byte-identical to what it was on `main` — never deprecated, never removed. So the
+replacement was started and left half-done, and the split of consumers shows exactly
+where it stopped:
+
+- **`DataFile`** (under a `Source`): the UI upload, both annotation pages, the
+  annotations table, `/api/workflow/save` — everything written on this branch.
+- **`Data`** (under the project): `/api/v1/projects/[id]/data` and `/api/v1/data/[id]`
+  — everything that predates it. The dashboard read it too, until 2026-09-02.
+
+That `DataFile.destination` defaults to `ML` is the giveaway: it was meant to absorb the
+ML path as well.
+
+Two things make the rest non-trivial, which is presumably why it stalled:
+
+1. `DataFile` requires a `sourceId` and a unique `filePath`, while
+   `POST /api/v1/.../data` creates a row with inline `content` and no source. Porting it
+   means deciding which `Source` a machine upload attaches to, and inline content has no
+   equivalent on disk.
+2. That endpoint is live: `examples/water_crystal_classification/02_upload/upload.py:108`
+   posts to it, so removing `Data` breaks the ML upload client. Note the same script
+   already creates `Source` rows through `/api/v1/.../sources` — the parent of
+   `DataFile` — so the two halves are closer than they look.
+
+Once ported: update `upload.py`, then drop the `Data` model and `DataType` in a
+migration.
+
+### 12. Node-based workflow editor instead of YAML
 
 Current state of the two halves:
 
@@ -195,7 +224,7 @@ Two engine gaps to close first, or the editor will offer nodes that do not work:
   `number`, `textarea`). `select`, `slider`, `yes_no` and `area_select` fields validate
   but render as a bare label.
 
-### 12. Headwork integration
+### 13. Headwork integration
 
 Effectively unstarted. What exists: the `DataFileDestination.HEADWORK` and
 `AuthorType.HEADWORK` enum values, a few validation schemas, and `amqplib` as a
@@ -229,7 +258,7 @@ format, annotation mapping in both directions, and whether we push or Headwork p
   regression — but Vitest passes only because it transpiles without typechecking, so a
   CI typecheck step would be red on day one. Several of the offending files are the
   duplicated suites above, so the two items overlap.
-- `amqplib` is an unused dependency — remove it, or use it for Headwork (item 12).
+- `amqplib` is an unused dependency — remove it, or use it for Headwork (item 13).
 - `src/lib/workflow-engine/README.md` references a `REFACTORING.md` that does not exist,
   and claims "87 tests passing" — the suite is 152 across 15 files.
 - `ABAC_NII` is not a git repository. Its `opa/policy.rego` was rewritten on 2026-08-31
@@ -289,6 +318,15 @@ easy to lose and two of them were caused by upstream behaviour, not by our code.
 - **`visibility` was accepted then dropped**, so every project came out `PRIVATE`
   whatever the user picked. `project.create` now maps `"public"`/`"private"` onto the
   enum.
+- **The dashboard read the wrong data model.** "Data" and "Recent Data" counted `Data`
+  while UI uploads land in `DataFile`, so a project with files showed 0 and "No data
+  available"; "Annotated Data" was a hardcoded `0.0`. All three now read `DataFile`
+  through its `Source`, and the row download target moved from `/datasets/{projectId}/
+  {content}` — a route that does not exist and 404'd — to the served `filePath`.
+  Accuracy and the chart are unchanged: those genuinely are ML-fed, from the `Statistics`
+  table. Also dropped an unused monthly-count query, a duplicate
+  `fetchHeaderStatistics` call in the Recent Data card, and a
+  `setTimeout(10)` labelled "Simulate long running operation".
 - **The landing page had no way in.** The "Get Started" button's `href` was commented out
   in favour of `href="#"` plus an onClick, and the `isLogged` prop was unused. There is
   now a Login/Projects button in the header and a real `href`.
