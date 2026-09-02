@@ -4,7 +4,7 @@ import {
   updateUseHeadworkInputSchema,
 } from "@/lib/validation-schemas/project";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { requireWrite } from "@/lib/abac-guards";
+import { requireRead, requireWrite } from "@/lib/abac-guards";
 
 export const projectRouter = createTRPCRouter({
   create: protectedProcedure
@@ -26,10 +26,6 @@ export const projectRouter = createTRPCRouter({
           name: input.name,
           slug: input.slug,
           description: input.description,
-          // The input carries "public"/"private"; the Visibility enum is uppercase.
-          // This used to be dropped entirely, so every project silently came out
-          // PRIVATE regardless of what the user picked.
-          visibility: input.visibility === "public" ? "PUBLIC" : "PRIVATE",
           categories: {
             connect: input.categories.map((category) => {
               return { id: category };
@@ -81,6 +77,10 @@ export const projectRouter = createTRPCRouter({
   getClassTypes: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // projectId comes straight from the client, so a session is not enough: this
+      // returned any project's vocabulary to any logged-in user.
+      await requireRead(input.projectId, "task");
+
       const classTypes = await ctx.db.classType.findMany({
         where: {
           projectId: input.projectId,

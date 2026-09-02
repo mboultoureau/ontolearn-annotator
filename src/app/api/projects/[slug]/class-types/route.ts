@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
-import { PermissionDeniedError, requireWrite } from "@/lib/abac-guards";
+import { PermissionDeniedError, requireRead, requireWrite } from "@/lib/abac-guards";
 import { z } from "zod";
 
 // Validation schema
 const classTypeSchema = z.object({
   name: z.string().min(1).max(100),
 });
+
+const CLASS_TYPE_STATUSES = ["ACTIVE", "INACTIVE", "DEPRECATED"] as const;
+type ClassTypeStatus = (typeof CLASS_TYPE_STATUSES)[number];
+
+function isClassTypeStatus(value: string): value is ClassTypeStatus {
+  return (CLASS_TYPE_STATUSES as readonly string[]).includes(value);
+}
 
 /**
  * GET /api/projects/[slug]/class-types
@@ -36,11 +43,35 @@ export async function GET(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
+    // A session alone used to be enough here, so any logged-in user could read a
+    // private project's whole class vocabulary, usage counts included.
+    try {
+      await requireRead(project.id, "settings");
+    } catch (error) {
+      if (error instanceof PermissionDeniedError) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      throw error;
+    }
+
+    // Validated rather than cast: `status as any` let ?status=bogus reach Prisma and
+    // come back as a 500.
+    let statusFilter: ClassTypeStatus | undefined;
+    if (status) {
+      if (!isClassTypeStatus(status)) {
+        return NextResponse.json(
+          { error: `Invalid status: expected one of ${CLASS_TYPE_STATUSES.join(", ")}` },
+          { status: 400 }
+        );
+      }
+      statusFilter = status;
+    }
+
     // Fetch class types with usage count
     const classTypes = await db.classType.findMany({
       where: {
         projectId: project.id,
-        ...(status && { status: status as any }),
+        ...(statusFilter && { status: statusFilter }),
       },
       include: {
         _count: {

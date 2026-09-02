@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
+import { PermissionDeniedError, requireRead } from "@/lib/abac-guards";
 
 export async function GET(
   request: NextRequest,
@@ -35,6 +36,18 @@ export async function GET(
         { error: "Project not found" },
         { status: 404 }
       );
+    }
+
+    // A session alone used to be enough. task:read rather than settings:read because
+    // DataSourceLoader fetches this from the browser during a workflow run, and it is a
+    // cacheable action so annotating stays fast.
+    try {
+      await requireRead(project.id, "task");
+    } catch (error) {
+      if (error instanceof PermissionDeniedError) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      throw error;
     }
 
     // Fetch active class types for the project
