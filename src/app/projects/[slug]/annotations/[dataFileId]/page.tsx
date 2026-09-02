@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { WorkflowAnnotator } from "@/app/_components/workflow/workflow-annotator";
 import Link from "next/link";
 import { auth } from "@/server/auth";
+// Goes through the service so a denied project:read becomes null -> notFound().
+import { fetchProject } from "@/services/projects";
 
 async function fetchDataFile(projectId: string, dataFileId: string) {
   return prisma.dataFile.findFirst({
@@ -23,11 +25,6 @@ async function fetchAnnotations(projectId: string, dataFileId: string) {
   });
 }
 
-async function fetchProject(slug: string) {
-  return prisma.project.findUnique({
-    where: { slug },
-  });
-}
 
 async function fetchWorkflowConfig(projectId: string): Promise<string | null> {
   const config = await prisma.configuration.findUnique({
@@ -51,7 +48,7 @@ export default async function AnnotateDataFilePage({ params }: { params: { slug:
     redirect("/login");
   }
   
-  const project = await fetchProject(slug);
+  const project = await fetchProject({ slug });
   if (!project) {
     return notFound();
   }

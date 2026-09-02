@@ -2,6 +2,9 @@ import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AnnotationsTableClient } from "@/app/_components/annotations/annotations-table-client";
+// Goes through the service so a denied project:read becomes null -> notFound(), instead
+// of the unguarded lookup this page used to do.
+import { fetchProject } from "@/services/projects";
 
 async function fetchDataFiles(projectId: string) {
   return prisma.dataFile.findMany({
@@ -26,15 +29,10 @@ async function fetchDataFiles(projectId: string) {
   });
 }
 
-async function fetchProject(slug: string) {
-  return prisma.project.findUnique({
-    where: { slug },
-  });
-}
 
 export default async function AnnotationsPage({ params }: { params: { slug: string } }) {
   const { slug } = params;
-  const project = await fetchProject(slug);
+  const project = await fetchProject({ slug });
   if (!project) {
     return notFound();
   }
