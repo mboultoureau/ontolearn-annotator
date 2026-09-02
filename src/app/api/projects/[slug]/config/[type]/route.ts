@@ -1,5 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/server/auth";
+import { PermissionDeniedError, requireRead, requireWrite } from "@/lib/abac-guards";
+
+/**
+ * Both handlers used to accept anonymous requests: the POST rewrites a project's entire
+ * annotation workflow, so a session alone would not be enough either — reading settings
+ * is USER-visible, writing them is ADMIN-only per the policy.
+ *
+ * Returns a response when the caller must be refused, null when it may proceed.
+ */
+async function denyUnlessPermitted(check: () => Promise<void>) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await check();
+    return null;
+  } catch (error) {
+    if (error instanceof PermissionDeniedError) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    throw error;
+  }
+}
 
 // GET: Fetch configuration by project slug and type
 export async function GET(
@@ -18,6 +44,9 @@ export async function GET(
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
+
+    const denied = await denyUnlessPermitted(() => requireRead(project.id, "settings"));
+    if (denied) return denied;
 
     // Find configuration
     const config = await prisma.configuration.findUnique({
@@ -65,6 +94,9 @@ export async function POST(
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
+
+    const denied = await denyUnlessPermitted(() => requireWrite(project.id, "settings"));
+    if (denied) return denied;
 
     // Upsert configuration
     await prisma.configuration.upsert({
