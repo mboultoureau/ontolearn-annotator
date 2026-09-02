@@ -26,6 +26,10 @@ export const projectRouter = createTRPCRouter({
           name: input.name,
           slug: input.slug,
           description: input.description,
+          // The input carries "public"/"private"; the Visibility enum is uppercase.
+          // This used to be dropped entirely, so every project silently came out
+          // PRIVATE regardless of what the user picked.
+          visibility: input.visibility === "public" ? "PUBLIC" : "PRIVATE",
           categories: {
             connect: input.categories.map((category) => {
               return { id: category };
