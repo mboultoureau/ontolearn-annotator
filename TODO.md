@@ -1,6 +1,6 @@
 # TODO
 
-Backlog for OntoLearn Annotator, as of 2026-09-02 (branch `feature/new_annotation`).
+Backlog for OntoLearn Annotator, as of 2026-09-02, merged to `main`.
 
 Every claim below was verified against the running stack, not read off the code. File
 references use `path:line`. Start the whole thing locally with `../start-local.sh`.
