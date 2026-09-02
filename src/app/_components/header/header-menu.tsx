@@ -66,10 +66,18 @@ export default async function HeaderMenu({ project }: { project?: Project }) {
             </Link>
             {project && (
               <>
+                {/* Same gating as the desktop nav above: it hid these three, the mobile
+                    sheet showed them to everyone. */}
                 <HeaderLink href={`/projects/${project.slug}`}>{t('dashboard')}</HeaderLink>
-                <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
-                <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
-                <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
+                {canReadData && (
+                  <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
+                )}
+                {canWritePlayground && (
+                  <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
+                )}
+                {canReadTask && (
+                  <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
+                )}
                 <HeaderLink href={`/projects/${project.slug}/annotations`}>{t('annotations')}</HeaderLink>
                 <HeaderLink href={`/projects/${project.slug}/settings`}>{t('settings')}</HeaderLink>
               </>

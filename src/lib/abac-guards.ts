@@ -32,7 +32,7 @@ export async function requirePermission(
   action: string,
   options?: {
     resourceAttributes?: Record<string, any>;
-    environment?: Record<string, any>;
+    environments?: Record<string, any>;
   }
 ): Promise<void> {
   const actionKey = `${resource}:${action}` as ABACAction;
@@ -53,7 +53,7 @@ export async function requireRead(
   resource: string,
   options?: {
     resourceAttributes?: Record<string, any>;
-    environment?: Record<string, any>;
+    environments?: Record<string, any>;
   }
 ): Promise<void> {
   return requirePermission(projectId, resource, "read", options);
@@ -67,7 +67,7 @@ export async function requireWrite(
   resource: string,
   options?: {
     resourceAttributes?: Record<string, any>;
-    environment?: Record<string, any>;
+    environments?: Record<string, any>;
   }
 ): Promise<void> {
   return requirePermission(projectId, resource, "write", options);

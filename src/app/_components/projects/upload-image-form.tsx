@@ -55,8 +55,12 @@ export function UploadImageForm({ formId, projectId }: Props) {
           </Alert>
         )}
         <FormField
-          name="image"
-          render={({ field }) => (
+          control={form.control}
+          /* Was name="image", which matches no schema field — so useFormField
+             looked up errors under a key that never has any, and validation
+             messages for `icon` never rendered. */
+          name="icon"
+          render={() => (
             <FormItem>
               <FormLabel>{t('icon')}</FormLabel>
               <FormControl>

@@ -26,8 +26,13 @@ export const uploadImage = canWriteSettings
                 },
             });
 
-            // Remove old image from storage
-            fs.unlinkSync(`${process.cwd()}/public/img/projects/${project.icon}`);
+            // Remove old image from storage. Guarded: the file may be gone already
+            // (manual deletion, a wiped volume), and an unguarded unlink threw and
+            // failed the whole upload.
+            const previousIconPath = `${process.cwd()}/public/img/projects/${project.icon}`;
+            if (fs.existsSync(previousIconPath)) {
+                fs.unlinkSync(previousIconPath);
+            }
         }
 
         // Save new image to storage

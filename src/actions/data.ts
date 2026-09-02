@@ -66,9 +66,11 @@ export const createData = authedProcedure
         }
 
 
-        // Determine upload directory based on destination
-        const uploadDir = destination === "MANUAL" ? "playground" : "uploads";
-        const fullUploadPath = path.join(process.cwd(), "public", "uploads", uploadDir);
+        // Determine upload sub-directory based on destination. Empty for anything but
+        // MANUAL: "uploads" here was joined onto public/uploads, so those files landed in
+        // public/uploads/uploads and were stored as /uploads/uploads/<file>.
+        const uploadSubdir = destination === "MANUAL" ? "playground" : "";
+        const fullUploadPath = path.join(process.cwd(), "public", "uploads", uploadSubdir);
         if (!existsSync(fullUploadPath)) {
             mkdirSync(fullUploadPath, { recursive: true });
         }
@@ -96,7 +98,11 @@ export const createData = authedProcedure
 
                 uploadedFiles.push({
                     fieldId: field.id,
-                    filePath: `/uploads/${uploadDir}/${fileName}`,
+                    // Built conditionally so an empty sub-directory does not yield
+                    // a double slash.
+                    filePath: uploadSubdir
+                        ? `/uploads/${uploadSubdir}/${fileName}`
+                        : `/uploads/${fileName}`,
                     fileName: file.name,
                     extension: extension || '',
                     isImage: isImage && !isZip
