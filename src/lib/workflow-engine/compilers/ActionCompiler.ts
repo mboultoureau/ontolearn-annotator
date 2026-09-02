@@ -8,6 +8,7 @@
 import { assign } from 'xstate';
 import type { WorkflowDefinition, WorkflowState, WorkflowContext } from '../types';
 import { DataPathNavigator } from '../utils/DataPathNavigator';
+import { StateTraversal } from '../utils/StateTraversal';
 
 /**
  * ActionCompiler - Compiles storeAs fields into XState actions
@@ -22,7 +23,10 @@ export class ActionCompiler {
   compile(workflow: WorkflowDefinition): Record<string, any> {
     const actions: Record<string, any> = {};
 
-    for (const state of workflow.workflow.states) {
+    // Loop steps live in `state.steps`, not in `workflow.workflow.states`. Iterating the
+    // top-level array alone is why `storeAs` on a loop step stored nothing: no
+    // `store_<stepId>` action was ever built for it.
+    for (const state of StateTraversal.allStates(workflow)) {
       this.compileStateActions(state, actions);
     }
 

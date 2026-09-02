@@ -137,6 +137,19 @@ export abstract class StateCompiler {
    * and never attached, and every task field landed as null.
    */
   protected hasStoreAction(state: WorkflowState & { storeAs?: string }): boolean {
+    // yes_no stores through `store_<id>_yes` / `store_<id>_no`; `store_<id>` is never
+    // registered, and XState silently ignores an unknown action name — attaching it
+    // would look wired up while storing nothing. YesNoStateCompiler names its own two.
+    if (state.type === 'yes_no') {
+      return false;
+    }
+
+    // A loop's own storeAs means "one entry per iteration", which the generic
+    // single-payload assign is not. Left unattached rather than half-implemented.
+    if (state.type === 'loop') {
+      return false;
+    }
+
     if (state.type === 'task') {
       const fields = (state as { fields?: unknown[] }).fields;
       return Array.isArray(fields) && fields.length > 0;

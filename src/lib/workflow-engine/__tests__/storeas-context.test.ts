@@ -79,4 +79,19 @@ describe('storeAs writes into context.data', () => {
   it('makes the area available to guards', () => {
     expect(data.qa.zone).not.toBeNull();
   });
+
+  // storeAs on a step *inside* a loop wrote nothing either: ActionCompiler and
+  // GuardCompiler both iterated only the top-level states array, while a loop keeps its
+  // children in state.steps.
+  it('stores every kind of loop step', () => {
+    expect(data.detail.zone).toEqual({ x: 5, y: 6, width: 7, height: 8 }); // area_select
+    expect(data.detail.class).toBe('Dentrite');                            // choice
+    expect(data.detail.comment).toBe('c');                                 // task field
+  });
+
+  // The loop's own storeAs means one entry per iteration, which is still unimplemented.
+  // Pinned so nobody attaches the generic single-payload assign and calls it done.
+  it("leaves the loop's own storeAs alone", () => {
+    expect(data.qa.details).toBeNull();
+  });
 });

@@ -7,6 +7,7 @@
 
 import type { WorkflowDefinition, WorkflowState, WorkflowContext } from '../types';
 import { DataPathNavigator } from '../utils/DataPathNavigator';
+import { StateTraversal } from '../utils/StateTraversal';
 
 /**
  * Deep merge helper for combining context data
@@ -47,7 +48,10 @@ export class GuardCompiler {
   ): Record<string, any> {
     const guards: Record<string, any> = { ...customGuards };
 
-    for (const state of workflow.workflow.states) {
+    // Loop steps are compiled with the same `compileTransitions`, so they emit
+    // `guard_<stepId>_<i>` references. Unregistered, XState errors the actor out on the
+    // first guarded event instead of taking the transition.
+    for (const state of StateTraversal.allStates(workflow)) {
       if (!state.transitions) continue;
 
       for (let i = 0; i < state.transitions.length; i++) {

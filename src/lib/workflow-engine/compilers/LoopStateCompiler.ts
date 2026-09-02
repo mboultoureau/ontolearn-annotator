@@ -115,7 +115,11 @@ export class LoopStateCompiler extends StateCompiler {
       node.type = 'final';
     }
 
-    return node;
+    // Last, so the store action lands on every event the step accepts: NEXT from the
+    // auto-chain or from explicit transitions, plus AREA_SELECTED. Same ordering as
+    // AreaSelectStateCompiler. One call covers all three branches above, and no
+    // transition object is reachable from two keys, so nothing is attached twice.
+    return this.addStoreActionsToTransitions(node, step, context);
   }
 
   /**
