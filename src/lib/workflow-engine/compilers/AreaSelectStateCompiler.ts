@@ -28,7 +28,10 @@ export class AreaSelectStateCompiler extends StateCompiler {
         target: state.transitions[0].target,
       };
     }
-    
-    return node;
+
+    // After AREA_SELECTED exists, so the store action lands on it too. This call was
+    // missing altogether, which is why a selected area never reached context.data and
+    // no guard could branch on one.
+    return this.addStoreActionsToTransitions(node, state, context);
   }
 }

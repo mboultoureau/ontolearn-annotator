@@ -128,12 +128,29 @@ export abstract class StateCompiler {
    * @param context - Compiler context
    * @returns Modified node with store actions
    */
+  /**
+   * Whether ActionCompiler produces a `store_<id>` action for this state.
+   *
+   * Gating on `state.storeAs` alone was wrong for task states: they store per field, so
+   * they never carry a top-level storeAs — TaskStateSchema is strict and forbids one —
+   * yet ActionCompiler still builds an action from their fields. The action was compiled
+   * and never attached, and every task field landed as null.
+   */
+  protected hasStoreAction(state: WorkflowState & { storeAs?: string }): boolean {
+    if (state.type === 'task') {
+      const fields = (state as { fields?: unknown[] }).fields;
+      return Array.isArray(fields) && fields.length > 0;
+    }
+
+    return Boolean(state.storeAs);
+  }
+
   protected addStoreActionsToTransitions(
     node: XStateNode,
     state: WorkflowState & { storeAs?: string },
     context: CompilerContext
   ): XStateNode {
-    if (!state.storeAs || !node.on) {
+    if (!this.hasStoreAction(state) || !node.on) {
       return node;
     }
 
