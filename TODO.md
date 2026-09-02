@@ -115,8 +115,6 @@ services plus two databases, not one.
   calls `notFound()`. A project you are a member of but lack rights on is
   indistinguishable from one that does not exist. It should be an explicit
   "access denied" screen.
-- **Scratch pages ship and are routable**: `/workflow-poc` (459 lines),
-  `/workflow-demo`, `/workflow-test`. Delete or move behind a dev-only flag.
 
 ### 6. Project members can only be viewed, not managed
 
@@ -204,40 +202,6 @@ dependency that is **never imported anywhere**.
 
 Everything is still to be specified before any code: transport (AMQP?), task exchange
 format, annotation mapping in both directions, and whether we push or Headwork pulls.
-
----
-
-## P2 — Tech debt
-
-- **Duplicated, drifting test suites**: `src/__tests__/unit/{parser,compiler}.test.ts`
-  and `src/lib/workflow-engine/__tests__/{parser,compiler}.test.ts` both match the vitest
-  `include` glob and test the same modules independently.
-- **The committed `.env` is wrong**: it declares `postgresql://app:ChangeMe@db:5432/app`
-  while the Prisma provider is `mysql`, the migrations are MySQL dialect, and compose
-  publishes MariaDB on **3307**. It also defaults `ABAC_SERVER_URL` to port 4000 while
-  `inheritance_service` listens on **5004**. Following the README verbatim fails at the
-  migrate step.
-- **`prisma migrate dev` cannot work as the stack ships.** The compose file grants the
-  `app` user rights on the `app` database only, so Prisma cannot create its shadow
-  database (`P3014`/`P1010`). Generate the SQL with `prisma migrate diff
-  --from-schema-datasource --to-schema-datamodel --script`, drop it in a migration
-  folder, and apply with `migrate deploy` — which is what `start-local.sh` uses. Or grant
-  the `app` user database-creation rights in `docker-compose.dev.yml`.
-- **`tsc --noEmit` reports 119 errors**, every one of them in a test file
-  (`loop-edge-cases.test.ts` alone accounts for 49, mostly `Date` where a `string` is
-  expected and a `metadata` key the context type does not declare). The count is
-  identical before and after the 2026-09-01 work, so this is a standing baseline, not a
-  regression — but Vitest passes only because it transpiles without typechecking, so a
-  CI typecheck step would be red on day one. Several of the offending files are the
-  duplicated suites above, so the two items overlap.
-- `amqplib` is an unused dependency — remove it, or use it for Headwork (item 9).
-- `src/lib/workflow-engine/README.md` references a `REFACTORING.md` that does not exist,
-  and claims "87 tests passing" — the suite is 152 across 15 files.
-- `ABAC_NII` is not a git repository. Its `opa/policy.rego` was rewritten on 2026-08-31
-  from the shipped demo policy to a real `ADMIN`/`USER` role policy; the original is kept
-  only as `opa/policy.demo.rego.bak`. Put that repo under version control.
-
----
 
 ---
 
