@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import type { Annotation as PrismaAnnotation } from '@prisma/client';
 import { auth } from '@/server/auth';
+import { PermissionDeniedError, requireWrite } from '@/lib/abac-guards';
 
 interface WorkflowAnnotation {
     id: string;
@@ -100,9 +101,26 @@ export async function POST(request: NextRequest) {
         // Use authenticated user's ID (prioritize session over request body)
         const authenticatedUserId = session.user.id;
 
-        // Verify the dataFile exists
-        const dataFile = await prisma.dataFile.findUnique({
-            where: { id: dataFileId },
+        // projectId comes from the client, so a session is not enough: without this any
+        // logged-in user could annotate another project's data file and, through the
+        // ClassType lookup below, enumerate that project's vocabulary. task:write is the
+        // annotator's own action, granted to USER by the policy.
+        try {
+            await requireWrite(projectId, 'task');
+        } catch (error) {
+            if (error instanceof PermissionDeniedError) {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            }
+            throw error;
+        }
+
+        // Scoped through Source so a data file from another project cannot be targeted,
+        // the same shape the annotation pages use.
+        const dataFile = await prisma.dataFile.findFirst({
+            where: {
+                id: dataFileId,
+                source: { projectId },
+            },
         });
 
         if (!dataFile) {
