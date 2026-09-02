@@ -22,8 +22,6 @@ import CreateCategory from "../category/dialog";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "../ui/use-toast";
 import SelectCategories from "./select-categories";
@@ -59,7 +57,6 @@ export default function ProjectForm({
       name: data?.name || "",
       slug: data?.slug || "",
       description: data?.description || "",
-      visibility: data?.visibility || "PRIVATE",
       categories: data?.categories.map((category: Category) => category.id) || [],
     },
   });
@@ -68,7 +65,9 @@ export default function ProjectForm({
     if (readOnly) return;
     
     try {
-      await mutateAsync({ ...values, visibility: "public" });
+      // Visibility is no longer part of the form: the column keeps its PRIVATE default.
+      // This call used to force visibility: "public", discarding the radio selection.
+      await mutateAsync(values);
       
       toast({
         title: t("projectCreated"),
@@ -151,38 +150,6 @@ export default function ProjectForm({
                   {...field}
                 />
               </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="visibility"
-          disabled={readOnly}
-          render={() => (
-            <FormItem>
-              <FormLabel>{t("visibility")}</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  defaultValue="private"
-                  onValueChange={(value) =>
-                    form.setValue(
-                      "visibility",
-                      value === "PUBLIC" ? "PUBLIC" : "PRIVATE"
-                    )
-                  }
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="PUBLIC" id="public" />
-                    <Label htmlFor="public">{t("visibilityPublic")}</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="PRIVATE" id="private" />
-                    <Label htmlFor="private">{t("visibilityPrivate")}</Label>
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormDescription>{t("visibilityDescription")}</FormDescription>
               <FormMessage />
             </FormItem>
           )}
