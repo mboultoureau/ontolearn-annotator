@@ -38,9 +38,12 @@ export default function AnnotationsSettingsPage({ params }: { params: { slug: st
   const handleSave = async () => {
     setSaving(true);
     setMessage(null);
-    // Validate before saving
-    await handleValidate();
-    if (validationResult && !validationResult.valid) {
+    // Gate on the value handleValidate returns, not on validationResult: that state is
+    // a render behind, so the check used to pass on the first click and persist a broken
+    // workflow — and then refuse a fixed one because the stale invalid result was still
+    // in the closure.
+    const validation = await handleValidate();
+    if (!validation.valid) {
       setMessage({ type: "error", text: "Cannot save: Workflow YAML is invalid." });
       setSaving(false);
       return;
@@ -64,6 +67,7 @@ export default function AnnotationsSettingsPage({ params }: { params: { slug: st
     }
   };
 
+  /** Returns the result as well as storing it, so a caller can act on it immediately. */
   const handleValidate = async () => {
     setValidating(true);
     setValidationResult(null);
@@ -76,8 +80,11 @@ export default function AnnotationsSettingsPage({ params }: { params: { slug: st
 
       const data = await res.json();
       setValidationResult(data);
+      return data;
     } catch (error) {
-      setValidationResult({ valid: false, errors: [{ path: "root", message: "Validation request failed", code: "network_error" }] });
+      const failure = { valid: false as const, errors: [{ path: "root", message: "Validation request failed", code: "network_error" }] };
+      setValidationResult(failure);
+      return failure;
     } finally {
       setValidating(false);
     }
