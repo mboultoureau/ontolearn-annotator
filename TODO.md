@@ -20,42 +20,57 @@ it will save re-diagnosing behaviour that has already been explained.
 ### 1. `/api/v1/*` has no authentication at all
 
 Six routes accept unauthenticated requests: `data`, `tasks`, `sources`, `statistics`,
-`playground-tasks`, `data/[id]`. No `auth()` call, no API key, no `Authorization` header
-check — and there is no `middleware.ts` to cover them.
+`playground-tasks`, `data/[id]`; `api/v1/categories` too. No `auth()` call, no API key, no
+`Authorization` header check.
 
 Verified: an anonymous `POST /api/v1/projects/<id>/data` created a row and returned it.
 
-These are the routes the Python clients in `examples/` call, so a session cookie is the
-wrong answer — they need a machine credential (project-scoped API key or service token),
-checked in the route and mapped onto an ABAC action.
+These are the routes the ML workers in `examples/` poll — `playground.py`, `upload.py` and
+`02_prediction.py` all call them with plain `requests`, no session and no cookie. So a session
+cookie is the wrong answer: they need a machine credential (project-scoped API key or service
+token), checked in the route and mapped onto an ABAC action. Note this is also what keeps
+uploaded files public — see item 2.
 
 ### 2. Uploaded files are served publicly with no access control
 
 Covered under [File storage](#3-real-file-storage) below — listed here because the
-access-control half is a security bug, not an architecture preference.
+access-control half is a security bug, not an architecture preference. Bear in mind
+`playground.py` fetches `{platformUrl}{filePath}` with no credentials, so locking this down and
+item 1 have to land together.
 
----
+## P1 — Workflow engine: what is still missing
 
-## P1 — Workflow engine: loop accumulation
+**A loop's own `storeAs` does not accumulate.** Per-step `storeAs` now writes (fixed
+2026-09-02), but the loop's own path — meant to hold one entry per iteration, e.g. `qa.details`
+— stays `null`, and each iteration overwrites the same step paths (`detail.zone`,
+`detail.class`). Every iteration still reaches the database tagged with its `iteration` index,
+so this is a context/guard limitation, not loss on save. Implementing it means having
+`LoopStateCompiler` push the iteration's slice onto an array on the loop-check transition, and
+removing the `state.type === 'loop'` exclusion in `StateCompiler.hasStoreAction` that currently
+keeps the generic single-payload assign from half-implementing it.
 
-`storeAs` now writes for every state type, but a `loop`'s own `storeAs` — meant to
-accumulate one entry per iteration, e.g. `qa.details` — still stays `null`. Each
-iteration's steps overwrite the same paths (`detail.zone`, `detail.class`), so only the
-last one survives in `context.data`.
+**A `yes_no` step inside a loop is a dead end.** `LoopStateCompiler.compileLoopStep` compiles
+every step generically and wires it to `NEXT`, while `YesNoRenderer` sends `YES`/`NO`, so such a
+step can never be answered. Fixing it means delegating to `YesNoStateCompiler` and deciding how
+`yesTarget`/`noTarget` resolve to sibling step ids.
 
-Every iteration is still saved to the database, tagged with its `iteration` index, so
-this is a context/guard limitation rather than data loss. Implementing it means having
-`LoopStateCompiler` push the iteration's slice onto an array on the loop-check
-transition.
-
-Related: `over:` (iterate over a collection) is accepted by `LoopStateSchema` but
+**`over:`** (iterate over a collection) is accepted by `LoopStateSchema` but
 `LoopStateCompiler` only implements `repeatWhile` — it never reads `over`.
 
-Only 4 of the 9 schema field types render in a `task` state (`text`, `email`, `number`,
-`textarea`). `select`, `slider`, `yes_no` and `area_select` fields validate but render as
-a bare label.
+**Action and guard names are a flat namespace.** They are `store_<id>` / `guard_<id>_<i>` with
+no parent prefix, while `schema.ts` only checks id uniqueness among *top-level* states. Now that
+loop steps are registered too, a step id colliding with a top-level state id silently overwrites
+one registration with the other. Either namespace nested names by parent, or validate step-id
+uniqueness in `validateWorkflowSemantics`.
 
----
+**`compiler.ts:initializeDataStructure`** still iterates top-level states only, so a loop step's
+`storeAs` path is not pre-seeded to `null`. A `when` reading it before the first write logs a
+`console.error` and evaluates false instead of throwing. A one-line traversal swap would fix it,
+but it changes the initial shape of `context.data`, so it is a separate decision.
+
+**Only 4 of the 9 task field types render**: `text`, `email`, `number`, `textarea`. `select`,
+`slider`, `yes_no` and `area_select` fields validate but render as a bare label, so a required
+field of those types leaves Continue permanently disabled.
 
 ## Feature work
 
@@ -262,6 +277,43 @@ easy to lose and two of them were caused by upstream behaviour, not by our code.
   value is now treated as a class when the project declares it as a ClassType — which
   also means a class-bearing `choice` must read `source: <class types>` rather than
   inline demo values, or it silently links nothing.
+- **`POST /api/workflow/save` accepted writes to any project.** It checked a session and that
+  `userId` matched it, then looked the data file up by id alone and resolved `ClassType`s from the
+  client-supplied `projectId` — so any logged-in user could annotate another project's file and
+  enumerate its vocabulary. Now behind `requireWrite(projectId, "task")`, with the data file
+  scoped through its `Source`, and the per-group writes in a transaction so a mid-way failure
+  cannot leave orphan `AreaOfInterest` rows.
+- **The workflow `validate` route had no authentication at all** — it ran the YAML parser and the
+  whole compiler on anonymous input. Gated like its GET/POST siblings, which had been fixed a day
+  earlier while this third handler was missed.
+- **Three project pages had no permission check.** `annotations/page.tsx`,
+  `annotations/[dataFileId]/page.tsx` and `playground/page.tsx` each did their own bare
+  `prisma.project.findUnique({ where: { slug } })`, so a logged-in non-member reached them. They
+  now go through `fetchProject` like every other project page.
+- **Class-vocabulary reads were open to any session** through three paths (`GET class-types`,
+  `GET classes`, tRPC `getClassTypes`), returning a private project's classes and usage counts to
+  any logged-in user. All three now require a read permission; `classes` uses `task:read` because
+  `DataSourceLoader` fetches it from the browser mid-annotation. `?status=` is validated instead
+  of cast, so a bad value is a 400 rather than a Prisma 500.
+- **`visibility` was retired.** It never had a read path, and the create form hardcoded
+  `visibility: "public"` while discarding the radio selection — so once the binding was fixed the
+  day before, *every* project created through the UI was stored `PUBLIC` while non-members still
+  got a 404. The two schemas also disagreed on case (`zod.ts` uppercase, the tRPC input
+  lowercase), which is why the hardcode existed. The field is gone from both schemas, the
+  mutation and the form; the column keeps its `PRIVATE` default, so restoring the feature is a
+  reversible decision — see item 5.
+- **`storeAs` and `when` did nothing on a loop step.** `ActionCompiler.compile` and
+  `GuardCompiler.compile` iterated only `workflow.workflow.states`, while a loop keeps its
+  children in `state.steps`. A `when` there did not merely no-op: XState raised
+  "Guard 'guard_<id>_<i>' is not implemented" and the actor died with `status: 'error'`, which
+  looks like a frozen state path. Both compilers now walk a shared `StateTraversal`, and
+  `compileLoopStep` attaches the store action last so it lands on `NEXT` and `AREA_SELECTED`
+  alike. `hasStoreAction` now excludes `yes_no` (whose actions are `store_<id>_yes`/`_no`) and
+  `loop` (whose `storeAs` means accumulation, still unimplemented) so neither is silently
+  attached to a no-op.
+- **The workflow settings page could persist an invalid workflow.** `handleSave` awaited
+  `handleValidate()` then read `validationResult`, a render behind, so the first click saved
+  broken YAML and a later fixed one was refused. `handleValidate` now returns its result.
 - **`POST /api/projects/[slug]/config/[type]` accepted anonymous calls** while
   rewriting a project's entire annotation workflow. Both handlers now require a session
   plus `settings:read` / `settings:write` — verified: anonymous 401, `USER` 200 on GET
