@@ -1,13 +1,17 @@
 # TODO
 
-Backlog for OntoLearn Annotator, as of 2026-09-01 (branch `feature/new_annotation`).
+Backlog for OntoLearn Annotator, as of 2026-09-02 (branch `feature/new_annotation`).
 
 Every claim below was verified against the running stack, not read off the code. File
 references use `path:line`. Start the whole thing locally with `../start-local.sh`.
 
-Suggested order: security holes → engine data loss → auth middleware → file storage
-(which overlaps security) → deployment → node editor → Headwork. Headwork sits last
-because it is the only item blocked on a third party whose contract is still undefined.
+Suggested order: the remaining `/api/v1` auth hole → file storage (which is the other
+half of that hole) → deployment → project members → finishing the `Data`/`DataFile`
+migration → node editor → Headwork. Headwork sits last because it is the only item
+blocked on a third party whose contract is still undefined.
+
+What was fixed on 2026-09-01 and 2026-09-02 is listed near the bottom — read that first,
+it will save re-diagnosing behaviour that has already been explained.
 
 ---
 
@@ -25,84 +29,37 @@ These are the routes the Python clients in `examples/` call, so a session cookie
 wrong answer — they need a machine credential (project-scoped API key or service token),
 checked in the route and mapped onto an ABAC action.
 
-### 2. `POST /api/projects/[slug]/config/[type]` has no authentication
+### 2. Uploaded files are served publicly with no access control
 
-`src/app/api/projects/[slug]/config/[type]/route.ts` — zero auth checks, and it
-overwrites a project's **entire annotation workflow**. Verified by calling it with no
-cookie. Needs `requireWrite(projectId, "settings")` like the tRPC routers do.
-
-Its `validate` sibling route is fine and works (returns
-`{"valid":true,"metadata":{...}}`).
-
-### 3. Uploaded files are served publicly with no access control
-
-Covered under [File storage](#7-real-file-storage) below — listed here because the
+Covered under [File storage](#3-real-file-storage) below — listed here because the
 access-control half is a security bug, not an architecture preference.
 
 ---
 
-## P0 — The workflow engine drops data, but not where you would expect
+## P1 — Workflow engine: loop accumulation
 
-Two independent capture paths exist, and only one of them works everywhere:
+`storeAs` now writes for every state type, but a `loop`'s own `storeAs` — meant to
+accumulate one entry per iteration, e.g. `qa.details` — still stays `null`. Each
+iteration's steps overwrite the same paths (`detail.zone`, `detail.class`), so only the
+last one survives in `context.data`.
 
-- **What reaches the database** is built client-side from the raw events in
-  `workflow-annotator.tsx:405-478`, *not* from `context.data`. `area_select`, `choice`,
-  `multi_choice` and `yes_no` all produce an annotation there, loop iterations included.
-- **`context.data`** — what guards (`when:`) and the final summary read — is written by
-  `storeAs`, which only works for `choice`, `multi_choice` and `yes_no`.
+Every iteration is still saved to the database, tagged with its `iteration` index, so
+this is a context/guard limitation rather than data loss. Implementing it means having
+`LoopStateCompiler` push the iteration's slice onto an array on the loop-check
+transition.
 
-Consequences, in order of severity:
+Related: `over:` (iterate over a collection) is accepted by `LoopStateSchema` but
+`LoopStateCompiler` only implements `repeatWhile` — it never reads `over`.
 
-1. **`task` states capture nothing at all.** They are absent from `context.data` (item 4)
-   *and* that client-side switch has no `task` branch, so no annotation is emitted
-   either. A workflow collecting form fields silently records nothing.
-2. **No guard can depend on a `task` field or a selected area**, since neither reaches
-   `context.data`. Guards on `choice` values do work — which is why
-   `water-crystal-annotation.yaml` behaves correctly.
-3. The `final` state's `summary`, and anything else reading `context.data`, is incomplete.
-
-Reproduce with `workflows/examples/node-coverage-test.yaml`, which walks all 8 node types.
-
-### 4. `task` fields never store their values
-
-`ActionCompiler.compileTaskActions` builds a `store_<stateId>` action that reads
-`event.data[field.id]` per field — but `StateCompiler.addStoreActionsToTransitions`
-(`src/lib/workflow-engine/compilers/StateCompiler.ts:136`) returns early on
-`!state.storeAs`, and a `task` state has no top-level `storeAs`: `TaskStateSchema` is
-`.strict()` and does not allow one. The action is compiled and never attached. Every
-task field lands as `null`.
-
-### 5. `area_select` never stores the area *into the context*
-
-`AreaSelectStateCompiler.compile` never calls `addStoreActionsToTransitions`, and the
-`AREA_SELECTED` transition it auto-adds (`AreaSelectStateCompiler.ts:26`) carries no
-`actions`. The area still reaches the database through the client-side path, so this is
-not loss on save — but no guard can branch on a selected area.
-
-Also: the `loop` state's own `storeAs`, meant to accumulate iterations, stays `null`;
-individual iteration steps are still saved, tagged with their `iteration` index.
-
-Both fixes are a few lines. Add a regression test that asserts on `context.data`, not
-just on the state path: navigation is fine, only the writes are broken.
-
-### 6. An answer given before any area selection cannot be stored at all
-
-`groupAnnotationsByContext` in `/api/workflow/save` only opens a group when it meets an
-`area` annotation, and a `choice` met before the first one is dropped with no `else`
-branch. So a whole-image answer — a global classification, an overall quality rating —
-never reaches the database. In `node-coverage-test.yaml` this is `pick_severity`.
-
-This is not a one-line fix: `Annotation.areaOfInterestId` is **non-nullable** in the
-Prisma schema, so an annotation that is not about a region has nowhere to live. Deciding
-how to model image-level labels (a nullable area, or a whole-image AOI created
-implicitly) is a schema decision, and it blocks any workflow whose first question is
-about the image as a whole.
+Only 4 of the 9 schema field types render in a `task` state (`text`, `email`, `number`,
+`textarea`). `select`, `slider`, `yes_no` and `area_select` fields validate but render as
+a bare label.
 
 ---
 
 ## Feature work
 
-### 7. Real file storage
+### 3. Real file storage
 
 Today: synchronous `writeFileSync` into the Next.js `public/` directory, in three places
 — `src/actions/data.ts:91`, `src/actions/projects.ts:41`,
@@ -120,7 +77,7 @@ Target: object storage (S3 or MinIO) behind either signed short-lived URLs or an
 `/api/files/[id]` route that goes through ABAC (`data:read`). Needs a migration path for
 existing `filePath` values, which are currently `/uploads/...` public paths.
 
-### 8. Deployment
+### 4. Deployment
 
 The multi-stage Dockerfile builds a Next standalone image and is broadly correct. Two
 hard blockers:
@@ -136,7 +93,7 @@ and a reverse proxy (`docker-compose.yml` maps both 80 and 443 to the same plain
 3000). And ABAC_NII is a runtime dependency — the deployment story has to cover two
 services plus two databases, not one.
 
-### 9. UX / navigation
+### 5. UX / navigation
 
 - **An ABAC denial renders as a 404.** `fetchProjectBySlug`
   (`src/services/projects.ts:83`) returns `null` on a failed `project:read`, and the page
@@ -146,7 +103,7 @@ services plus two databases, not one.
 - **Scratch pages ship and are routable**: `/workflow-poc` (459 lines),
   `/workflow-demo`, `/workflow-test`. Delete or move behind a dev-only flag.
 
-### 10. Project members can only be viewed, not managed
+### 6. Project members can only be viewed, not managed
 
 `/projects/{slug}/settings/users` lists the members and nothing else. There is no way to
 invite someone, change a role or remove a member — so a project is stuck with whoever
@@ -165,7 +122,7 @@ email provider is already wired, so a magic-link invite is the natural fit.
 Related, and worth deciding at the same time: nothing stops the last ADMIN from
 demoting or removing themselves.
 
-### 11. Finish replacing `Data` with `DataFile`
+### 7. Finish replacing `Data` with `DataFile`
 
 `main` has only `Data`; commit `5d4c709` added `DataFile` beside it and the `Data` model
 is byte-identical to what it was on `main` — never deprecated, never removed. So the
@@ -194,7 +151,7 @@ Two things make the rest non-trivial, which is presumably why it stalled:
 Once ported: update `upload.py`, then drop the `Data` model and `DataType` in a
 migration.
 
-### 12. Node-based workflow editor instead of YAML
+### 8. Node-based workflow editor instead of YAML
 
 Current state of the two halves:
 
@@ -224,7 +181,7 @@ Two engine gaps to close first, or the editor will offer nodes that do not work:
   `number`, `textarea`). `select`, `slider`, `yes_no` and `area_select` fields validate
   but render as a bare label.
 
-### 13. Headwork integration
+### 9. Headwork integration
 
 Effectively unstarted. What exists: the `DataFileDestination.HEADWORK` and
 `AuthorType.HEADWORK` enum values, a few validation schemas, and `amqplib` as a
@@ -258,7 +215,7 @@ format, annotation mapping in both directions, and whether we push or Headwork p
   regression — but Vitest passes only because it transpiles without typechecking, so a
   CI typecheck step would be red on day one. Several of the offending files are the
   duplicated suites above, so the two items overlap.
-- `amqplib` is an unused dependency — remove it, or use it for Headwork (item 13).
+- `amqplib` is an unused dependency — remove it, or use it for Headwork (item 9).
 - `src/lib/workflow-engine/README.md` references a `REFACTORING.md` that does not exist,
   and claims "87 tests passing" — the suite is 152 across 15 files.
 - `ABAC_NII` is not a git repository. Its `opa/policy.rego` was rewritten on 2026-08-31
@@ -269,7 +226,7 @@ format, annotation mapping in both directions, and whether we push or Headwork p
 
 ---
 
-## Fixed on 2026-09-01 — context for the handover
+## Fixed on 2026-09-01 and 2026-09-02 — context for the handover
 
 Do not re-diagnose these; they are done and verified. Listed because the reasoning is
 easy to lose and two of them were caused by upstream behaviour, not by our code.
@@ -305,6 +262,23 @@ easy to lose and two of them were caused by upstream behaviour, not by our code.
   value is now treated as a class when the project declares it as a ClassType — which
   also means a class-bearing `choice` must read `source: <class types>` rather than
   inline demo values, or it silently links nothing.
+- **`POST /api/projects/[slug]/config/[type]` accepted anonymous calls** while
+  rewriting a project's entire annotation workflow. Both handlers now require a session
+  plus `settings:read` / `settings:write` — verified: anonymous 401, `USER` 200 on GET
+  and 403 on POST, `ADMIN` 200.
+- **`storeAs` wrote nothing for `task` and `area_select`.**
+  `addStoreActionsToTransitions` gated on `state.storeAs`, which a task state cannot
+  have (`TaskStateSchema` is strict), so the action ActionCompiler built from its fields
+  was never attached; and `AreaSelectStateCompiler` never called that method at all, so
+  no guard could branch on a selected area. Both now write, covered by tests that assert
+  on `context.data` rather than on the state path.
+- **An answer given before any area selection is no longer dropped.**
+  `Annotation.areaOfInterestId` is nullable (migration
+  `20260902094350_annotation_optional_area`) and `groupAnnotationsByContext` opens an
+  image-level group for choices met before the first area. Such an annotation is saved
+  with no `AreaOfInterest`; the annotations table already skipped AOI-less rows, so it
+  renders unchanged. A group without an area also no longer becomes the parent of a
+  following sub-section.
 - **A `USER` could redefine the project's class vocabulary, and the page offered it.** The three writing
   class-types routes only checked for a session, so any member could create, rename or
   delete a class type. They now go through `requireWrite(projectId, "settings")`, which
