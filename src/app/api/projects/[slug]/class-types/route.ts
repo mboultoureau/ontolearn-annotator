@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
+import { PermissionDeniedError, requireWrite } from "@/lib/abac-guards";
 import { z } from "zod";
 
 // Validation schema
@@ -96,6 +97,17 @@ export async function POST(
 
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    // A session is not enough: defining the project's vocabulary is an ADMIN act.
+    // The policy grants settings:write to ADMIN only, so a USER is refused here.
+    try {
+      await requireWrite(project.id, "settings");
+    } catch (error) {
+      if (error instanceof PermissionDeniedError) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      throw error;
     }
 
     // Check if class type name already exists for this project

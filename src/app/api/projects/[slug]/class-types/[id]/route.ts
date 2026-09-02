@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
+import { PermissionDeniedError, requireWrite } from "@/lib/abac-guards";
 import { z } from "zod";
+
+/**
+ * Editing the project's class vocabulary is an ADMIN act: the policy grants
+ * settings:write to ADMIN only, so a plain USER is refused. Returns a 403 response
+ * when denied, null when allowed.
+ */
+async function denyIfNotAdmin(projectId: string) {
+  try {
+    await requireWrite(projectId, "settings");
+    return null;
+  } catch (error) {
+    if (error instanceof PermissionDeniedError) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    throw error;
+  }
+}
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -42,6 +60,9 @@ export async function PATCH(
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
+
+    const denied = await denyIfNotAdmin(project.id);
+    if (denied) return denied;
 
     // Check class type exists and belongs to project
     const classType = await db.classType.findFirst({
@@ -116,6 +137,9 @@ export async function DELETE(
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
+
+    const denied = await denyIfNotAdmin(project.id);
+    if (denied) return denied;
 
     // Check class type exists and belongs to project
     const classType = await db.classType.findFirst({
