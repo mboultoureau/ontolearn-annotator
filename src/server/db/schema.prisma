@@ -346,8 +346,11 @@ model Annotation {
   id                 String           @id @default(cuid())
   dataFile           DataFile         @relation(fields: [dataFileId], references: [id])
   dataFileId         String
-  areaOfInterest     AreaOfInterest   @relation(fields: [areaOfInterestId], references: [id])
-  areaOfInterestId   String
+  // Optional: an answer about the image as a whole - a global classification, an
+  // overall quality rating - is not about a region. While this was required, such an
+  // answer had nowhere to live and was silently dropped on save.
+  areaOfInterest     AreaOfInterest?  @relation(fields: [areaOfInterestId], references: [id])
+  areaOfInterestId   String?
   parentAnnotationId String?
   quality            String?
   author             AuthorType

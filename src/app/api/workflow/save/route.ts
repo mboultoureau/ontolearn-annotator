@@ -129,17 +129,17 @@ export async function POST(request: NextRequest) {
         for (const group of annotationGroups) {
             // Create AreaOfInterest from the first area annotation in the group
             // Each group must start with an area annotation
+            // An image-level group has no area: nothing was drawn, so no
+            // AreaOfInterest is created and the annotation keeps a null one.
             const areaAnnotation = group.annotations.find(a => a.type === 'area');
-            if (!areaAnnotation) {
-                console.warn('[POST /api/workflow/save] Skipping group without area annotation:', group);
-                continue;
-            }
 
-            const areaOfInterest = await prisma.areaOfInterest.create({
-                data: {
-                    area: areaAnnotation.payload.coordinates,
-                },
-            });
+            const areaOfInterest = areaAnnotation
+                ? await prisma.areaOfInterest.create({
+                    data: {
+                        area: areaAnnotation.payload.coordinates,
+                    },
+                })
+                : null;
 
             // Collect class values and quality separately from this group
             const allClassValues: Array<{ className: string; rank: number }> = [];
@@ -165,17 +165,19 @@ export async function POST(request: NextRequest) {
             const annotationRecord: PrismaAnnotation = await prisma.annotation.create({
                 data: {
                     dataFileId,
-                    areaOfInterestId: areaOfInterest.id,
+                    areaOfInterestId: areaOfInterest?.id,
                     author: 'USER',
                     userId: authenticatedUserId,
                     quality: qualityValue,
                     parentAnnotationId: group.parentState ? lastRootAnnotationId || undefined : undefined,
-                    createdAt: new Date(areaAnnotation.timestamp),
+                    createdAt: new Date((areaAnnotation ?? group.annotations[0]).timestamp),
                 },
             });
 
-            // Remember latest root for nested groups
-            if (!group.parentState) {
+            // Remember latest root for nested groups. Only a group that actually has
+            // an area can parent a sub-section, otherwise a loop entered straight after
+            // an image-level answer would attach its sub-sections to that answer.
+            if (!group.parentState && areaOfInterest) {
                 lastRootAnnotationId = annotationRecord.id;
             }
 
@@ -205,7 +207,7 @@ export async function POST(request: NextRequest) {
 
             createdAnnotations.push({
                 id: annotationRecord.id,
-                areaOfInterestId: areaOfInterest.id,
+                areaOfInterestId: areaOfInterest?.id ?? null,
                 classCount: allClassValues.length,
                 annotationTypes,
             });
@@ -260,10 +262,15 @@ function groupAnnotationsByContext(annotations: WorkflowAnnotation[]): Annotatio
             // Start new group with this area
             currentGroup = { parentState: annotation.parentState, annotations: [annotation] };
         } else if (annotation.type === 'choice' || annotation.type === 'multi_choice') {
-            // Add choice/multi_choice to the current group (if exists)
-            if (currentGroup) {
-                currentGroup.annotations.push(annotation);
+            // A choice met before the first area is about the image as a whole - a
+            // global classification, an overall rating. It used to be dropped here
+            // because there was no group to put it in; it now opens an image-level
+            // group, saved with no AreaOfInterest.
+            if (!currentGroup) {
+                currentGroup = { annotations: [] };
             }
+
+            currentGroup.annotations.push(annotation);
         }
     }
 
