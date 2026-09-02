@@ -14,6 +14,7 @@ import { Plus } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { checkPermission } from "@/lib/abac-client"
 
 type Props = {
     params: {
@@ -28,6 +29,14 @@ export default async function DataTypesPage({ params }: Props) {
         notFound();
     }
 
+    const canRead = await checkPermission(project.id, "settings:read");
+    const readOnly = !(await checkPermission(project.id, "settings:write"));
+
+    if (!canRead) {
+        const tSettings = await getTranslations("Project.Settings");
+        return <div>{tSettings('noAccess', { settings: tSettings('sourceTypes') })}</div>;
+    }
+
     const sourceTypes = await fetchSourceTypes(project.id);
 
     return (
@@ -38,12 +47,14 @@ export default async function DataTypesPage({ params }: Props) {
                         <CardTitle>
                             {t('title')}
                         </CardTitle>
-                        <Button asChild>
-                            <Link href={`/projects/${params.slug}/settings/source-types/create`}>
-                                <Plus className="mr-2" />
-                                {t('create')}
-                            </Link>
-                        </Button>
+                        {!readOnly && (
+                            <Button asChild>
+                                <Link href={`/projects/${params.slug}/settings/source-types/create`}>
+                                    <Plus className="mr-2" />
+                                    {t('create')}
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                     <CardDescription>
                         {t('description')}

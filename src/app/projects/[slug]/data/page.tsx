@@ -8,6 +8,7 @@ import { sourceColumns } from "@/app/_components/source/columns";
 import SourceDataTable from "@/app/_components/source/data-table";
 import { Button } from "@/app/_components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/_components/ui/tabs";
+import { checkPermission } from "@/lib/abac-client";
 import { fetchProject } from "@/services/projects";
 import { Upload } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -32,11 +33,13 @@ export default async function DataPage({ params }: { params: { slug: string } })
         notFound();
     }
 
+    const canWriteData = await checkPermission(project.id, "data:write");
+    
     return (
         <>
             <div className="mx-auto flex justify-between w-full max-w-6xl gap-2">
                 <h1 className="text-3xl font-semibold">{t('title')}</h1>
-                {project.sourceTypes.length > 0 ? (
+                {project.sourceTypes.length > 0 && canWriteData ? (
                     <Button asChild>
                         <Link href={`/projects/${params.slug}/data/upload`}>
                             <Upload className="mr-2" />

@@ -29,6 +29,13 @@
       "themeUpdated": "テーマが更新されました！",
       "themeUpdatedDescription": "テーマが{theme}に更新された。",
       "title": "アカウント設定"
+    },
+    "VerifyRequest": {
+      "backToLogin": "ログインに戻る",
+      "description": "{email} にログインリンクを送信しました。",
+      "descriptionNoEmail": "ご登録のメールアドレスにログインリンクを送信しました。",
+      "spam": "リンクの有効期限は24時間で、使用できるのは1回のみです。見つからない場合は迷惑メールフォルダをご確認ください。",
+      "title": "メールをご確認ください"
     }
   },
   "App": {
@@ -146,14 +153,15 @@
       "playground": "プレイグラウンド",
       "settings": "設定",
       "tasks": "タスク",
+      "annotations": "注釈",
       "title": "クラウド・レーベル・ジェン",
       "toggleNavigation": "ナビゲーションの切り替え"
     },
-    "Image": {
-      "current": "現在の画像",
-      "image": "画像",
-      "imageDescription": "現在の画像は削除されます。",
-      "imageUpload": "画像アップロード",
+    "Icon": {
+      "current": "現在のアイコン",
+      "icon": "アイコン",
+      "iconDescription": "現在のアイコンは削除されます。",
+      "iconUpload": "アイコンアップロード",
       "submit": "保存"
     },
     "List": {
@@ -165,7 +173,78 @@
       "sourceTypes": "ソースタイプ",
       "tasks": "タスク",
       "title": "プロジェクト設定",
-      "users": "ユーザー"
+      "users": "ユーザー",
+      "annotations": "注釈",
+      "classTypes": "クラスタイプ",
+      "noAccess": "次の設定にアクセスする権限がありません: {settings}."
+    },
+    "ClassTypes": {
+      "title": "クラスタイプ",
+      "subtitle": "このプロジェクトのアノテーションクラスタイプを管理",
+      "addNew": "クラスタイプを追加",
+      "search": "クラスタイプを検索...",
+      "statusFilter": "ステータス",
+      "allStatuses": "全てのステータス",
+      "loading": "読み込み中",
+      "table": {
+        "name": "名前",
+        "status": "ステータス",
+        "created": "作成日",
+        "usage": "使用状況",
+        "actions": "アクション"
+      },
+      "status": {
+        "active": "アクティブ",
+        "inactive": "非アクティブ"
+      },
+      "usage": "{count, plural, =0 {未使用} other {#件のアノテーション}}",
+      "empty": "クラスタイプが見つかりません",
+      "emptyDescription": "最初のクラスタイプを作成してください。",
+      "dialog": {
+        "add": {
+          "title": "クラスタイプを追加",
+          "description": "アノテーションの新しい分類タイプを作成",
+          "submit": "作成"
+        },
+        "edit": {
+          "title": "クラスタイプを編集",
+          "description": "クラスタイプ名を更新",
+          "submit": "変更を保存"
+        },
+        "delete": {
+          "title": "クラスタイプを削除",
+          "description": "このクラスタイプを削除してもよろしいですか？",
+          "inUse": "このクラスタイプは{count, plural, other {#件のアノテーション}}で使用されています。削除の代わりに非アクティブとしてマークされます。",
+          "notInUse": "このクラスタイプは使用されておらず、完全に削除されます。",
+          "cancel": "キャンセル",
+          "confirm": "削除"
+        }
+      },
+      "form": {
+        "name": "クラスタイプ名",
+        "namePlaceholder": "例：単数、六角形、樹枝状",
+        "nameRequired": "名前は必須です"
+      },
+      "actions": {
+        "edit": "編集",
+        "delete": "削除",
+        "activate": "有効化",
+        "deactivate": "無効化"
+      },
+      "success": {
+        "created": "クラスタイプを作成しました",
+        "updated": "クラスタイプを更新しました",
+        "deleted": "クラスタイプを削除しました",
+        "activated": "クラスタイプを有効化しました",
+        "deactivated": "クラスタイプを無効化しました"
+      },
+      "errors": {
+        "load": "クラスタイプの読み込みに失敗しました",
+        "create": "クラスタイプの作成に失敗しました",
+        "update": "クラスタイプの更新に失敗しました",
+        "delete": "クラスタイプの削除に失敗しました",
+        "duplicate": "この名前のクラスタイプは既に存在します"
+      }
     },
     "Statistics": {
       "accuracy": "注釈データ",
@@ -312,6 +391,132 @@
   "Playground": {
     "Index": {
       "dragOrUpload": "ドラッグ アンド ドロップまたはクリックしてファイルをアップロードします。"
+    }
+  },
+  "Annotations": {
+    "title": "プロジェクトアノテーション",
+    "subtitle": "{projectName}の画像アノテーションを管理・確認",
+    "stats": {
+      "totalFiles": "総ファイル数",
+      "annotated": "アノテーション済み",
+      "pending": "保留中",
+      "totalAnnotations": "総アノテーション数"
+    },
+    "search": {
+      "placeholder": "ファイル名で検索...",
+      "noResults": "フィルターに一致するファイルが見つかりません。",
+      "clearSearch": "検索をクリア"
+    },
+    "filters": {
+      "all": "すべて",
+      "annotatedBtn": "アノテーション済み",
+      "pendingBtn": "保留中"
+    },
+    "table": {
+      "filename": "ファイル名",
+      "type": "タイプ",
+      "status": "ステータス",
+      "annotations": "アノテーション",
+      "lastAnnotated": "最終アノテーション",
+      "annotators": "アノテーター",
+      "actions": "アクション",
+      "added": "{date}に追加",
+      "noAnnotator": "—"
+    },
+    "status": {
+      "complete": "完了",
+      "pending": "保留中"
+    },
+    "actions": {
+      "annotate": "アノテート",
+      "view": "表示"
+    },
+    "modal": {
+      "title": "アノテーションプレビュー",
+      "close": "閉じる",
+      "tabs": {
+        "overview": "概要",
+        "details": "詳細",
+        "classes": "クラス"
+      },
+      "info": {
+        "annotations": "{count}個のアノテーション",
+        "aois": "{count}個のAOI",
+        "author": "作成者:",
+        "date": "日付:",
+        "confidence": "信頼度:",
+        "quality": "品質:",
+        "classifications": "分類:"
+      },
+      "aoi": {
+        "title": "関心領域",
+        "noDetails": "アノテーション詳細がありません。",
+        "noClasses": "分類が見つかりません"
+      }
+    }
+  },
+  "Workflow": {
+    "loading": "ワークフローを読み込み中...",
+    "navigation": {
+      "previousStep": "前のステップ",
+      "currentStep": "現在のステップ",
+      "stopWorkflow": "ワークフローを停止",
+      "stepsCompleted": "{count, plural, =0 {まだステップが完了していません} other {#ステップ完了}}",
+      "noStepsYet": "まだステップが完了していません"
+    },
+    "history": {
+      "stepLabel": "ステップ {number}",
+      "stepLabelWithName": "ステップ {number}: {name}"
+    },
+    "loops": {
+      "loop": "ループ",
+      "iteration": "反復 {{number}}"
+    },
+    "actions": {
+      "yes": "はい",
+      "no": "いいえ",
+      "continue": "続ける",
+      "next": "次へ",
+      "nextDefault": "次へ（デフォルト）",
+      "save": "保存",
+      "saveAnnotations": "アノテーションを保存",
+      "add": "追加",
+      "remove": "削除"
+    },
+    "placeholders": {
+      "chooseOption": "オプションを選択...",
+      "allSelected": "すべてのオプションが選択されました"
+    },
+    "choice": {
+      "selectLabel": "オプションを選択"
+    },
+    "multiChoice": {
+      "addLabel": "クラスを追加",
+      "selectedLabel": "選択されたクラス（ランク順）",
+      "instructions": "優先順位でクラスを選択して並べ替える（1 = 最も近い）"
+    },
+    "final": {
+      "title": "ワークフロー完了",
+      "message": "すべてのワークフローステップが完了しました。"
+    },
+    "areaSelect": {
+      "toolLabel": "ツール:",
+      "tools": {
+        "polygon": "ポリゴン",
+        "rectangle": "矩形",
+        "mouse": "マウス"
+      },
+      "mouseHint": "編集を確定するには、他の場所をクリックして領域の選択を解除してください",
+      "multipleAllowed": "複数の領域を許可",
+      "selected": "{count, plural, other {#個選択中}}",
+      "confirmSingle": "領域の選択を確定",
+      "confirmMultiple": "{count, plural, other {#個の領域を確定}}",
+      "clear": "クリア"
+    },
+    "errors": {
+      "noMetadata": "状態のメタデータが見つかりません:",
+      "unsupportedType": "サポートされていない状態タイプ:",
+      "networkError": "ネットワークエラー: {{message}}"
     }
   }
 }

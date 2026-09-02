@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@/app/_components/theme-provider";
 import { Toaster } from "@/app/_components/ui/toaster";
+import { AuthProvider } from "@/app/_components/auth-provider";
 import { cn } from "@/lib/utils";
 import "@/styles/globals.css";
 import { TRPCReactProvider } from "@/trpc/react";
@@ -44,17 +45,19 @@ export default async function RootLayout({
         )}
       >
         <TRPCReactProvider>
-          <NextIntlClientProvider messages={messages}>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-            </ThemeProvider>
-            <Toaster />
-          </NextIntlClientProvider>
+          <AuthProvider>
+            <NextIntlClientProvider messages={messages}>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+              </ThemeProvider>
+              <Toaster />
+            </NextIntlClientProvider>
+          </AuthProvider>
         </TRPCReactProvider>
       </body>
     </html>

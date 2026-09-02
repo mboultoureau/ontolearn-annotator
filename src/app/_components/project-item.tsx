@@ -23,10 +23,10 @@ export function ProjectItem({
     return (
         <Link href={`/projects/${project.slug}`} className={cn("space-y-3", className)} {...props}>
             <div className="overflow-hidden rounded-md">
-                {project.image ? (
+                {project.icon ? (
                 <Image
                     // src={project.img}
-                    src={`/img/projects/${project.image}`}
+                    src={`/img/projects/${project.icon}`}
                     alt={project.name}
                     width={width}
                     height={height}

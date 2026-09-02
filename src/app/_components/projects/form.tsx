@@ -22,8 +22,6 @@ import CreateCategory from "../category/dialog";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Textarea } from "../ui/textarea";
 import { useToast } from "../ui/use-toast";
 import SelectCategories from "./select-categories";
@@ -37,23 +35,21 @@ type Props = {
       categories: true
     }
   }>;
+  readOnly?: boolean;
 };
 
 export default function ProjectForm({
   formId = "create-project",
   displaySubmit = true,
   data,
+  readOnly = true,
 }: Props) {
   const t = useTranslations("Project.Form");
   const { toast } = useToast();
   const [updateCount, setUpdateCount] = useState(0);
   const router = useRouter();
 
-  const { mutate, error, isPending } = api.project.create.useMutation();
-
-//   if (Array.isArray(data?.categories) && data?.categories.length > 0) {
-//     categories = data.categories.map((category) => category.id);
-//   }
+  const { mutateAsync, error } = api.project.create.useMutation();
 
   const form = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
@@ -61,23 +57,29 @@ export default function ProjectForm({
       name: data?.name || "",
       slug: data?.slug || "",
       description: data?.description || "",
-      visibility: data?.visibility || "PRIVATE",
       categories: data?.categories.map((category: Category) => category.id) || [],
     },
   });
 
   const onSubmit = async (values: z.infer<typeof projectSchema>) => {
-    await mutate({ ...values, visibility: "public" });
-    if (error) return;
-
-    toast({
-      title: t("projectCreated"),
-      description: t("projectCreatedDescription", {
-        name: values.name,
-      }),
-    });
-
-    router.push(`/projects/${values.slug}`);
+    if (readOnly) return;
+    
+    try {
+      // Visibility is no longer part of the form: the column keeps its PRIVATE default.
+      // This call used to force visibility: "public", discarding the radio selection.
+      await mutateAsync(values);
+      
+      toast({
+        title: t("projectCreated"),
+        description: t("projectCreatedDescription", {
+          name: values.name,
+        }),
+      });
+      
+      router.push(`/projects/${values.slug}`);
+    } catch (err) {
+      // Error is already shown via error state
+    }
   };
 
   function updateSlug(e: React.ChangeEvent<HTMLInputElement>, field: any) {
@@ -106,6 +108,7 @@ export default function ProjectForm({
         <FormField
           control={form.control}
           name="name"
+          disabled={readOnly}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("name")}</FormLabel>
@@ -123,6 +126,7 @@ export default function ProjectForm({
         <FormField
           control={form.control}
           name="slug"
+          disabled={readOnly}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("slug")}</FormLabel>
@@ -136,6 +140,7 @@ export default function ProjectForm({
         <FormField
           control={form.control}
           name="description"
+          disabled={readOnly}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("description")}</FormLabel>
@@ -151,38 +156,8 @@ export default function ProjectForm({
         />
         <FormField
           control={form.control}
-          name="visibility"
-          render={() => (
-            <FormItem>
-              <FormLabel>{t("visibility")}</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  defaultValue="private"
-                  onValueChange={(value) =>
-                    form.setValue(
-                      "visibility",
-                      value === "PUBLIC" ? "PUBLIC" : "PRIVATE"
-                    )
-                  }
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="PUBLIC" id="public" />
-                    <Label htmlFor="public">{t("visibilityPublic")}</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="PRIVATE" id="private" />
-                    <Label htmlFor="private">{t("visibilityPrivate")}</Label>
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormDescription>{t("visibilityDescription")}</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
           name="categories"
+          disabled={readOnly}
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("categories")}</FormLabel>
@@ -205,7 +180,7 @@ export default function ProjectForm({
         />
         {displaySubmit && (
           <div className="flex justify-end">
-            <Button type="submit">{t("submit")}</Button>
+            <Button type="submit" disabled={readOnly}>{t("submit")}</Button>
           </div>
         )}
       </form>

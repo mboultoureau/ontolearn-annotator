@@ -22,8 +22,6 @@ export default async function ProjectsPage() {
     //     redirect(`/projects/${categories[0].projects[0].slug}`);
     // }
 
-    console.log(categories);
-
     return (
         <>
             <div className="mx-auto flex justify-between w-full max-w-6xl gap-2">

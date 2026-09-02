@@ -7,15 +7,20 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 
 interface EmailLoginFormProps {
-  csrfToken?: string;
+  /**
+   * Server action that performs the sign-in. Posting to /api/auth/signin/... by hand
+   * would require a CSRF token, which is only minted once a /api/auth/* route has been
+   * hit — so a first, cold visit to /login used to fail with MissingCSRF. Going through
+   * signIn() lets Auth.js handle the CSRF exchange itself.
+   */
+  action: (formData: FormData) => Promise<void>;
 }
 
-export default function EmailLoginForm({ csrfToken }: EmailLoginFormProps) {
+export default function EmailLoginForm({ action }: EmailLoginFormProps) {
   const t = useTranslations("Account.Login");
 
   return (
-    <form action="/api/auth/signin/nodemailer" method="POST">
-      <input type="hidden" name="csrfToken" value={csrfToken} />
+    <form action={action}>
       <div className="mb-2">
         <Label htmlFor="email">Email</Label>
         <Input

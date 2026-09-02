@@ -4,6 +4,7 @@ import SettingLink from "@/app/_components/settings/setting-link";
 import { fetchProject } from "@/services/projects";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { checkPermission } from "@/lib/abac-client";
 
 export default async function Layout({
     children,
@@ -24,6 +25,10 @@ export default async function Layout({
         notFound();
     }
 
+    // Check permissions server-side
+    const canReadSettings = await checkPermission(project.id, "settings:read");
+    const canListUsers = await checkPermission(project.id, "user:list");
+
     return (
         <>
             <div className="mx-auto grid w-full max-w-6xl gap-2">
@@ -34,21 +39,33 @@ export default async function Layout({
                 <nav
                     className="grid gap-4 text-sm text-muted-foreground" x-chunk="dashboard-04-chunk-0"
                 >
-                    <SettingLink href={`/projects/${project.slug}/settings`}>
-                        {t('general')}
-                    </SettingLink>
-                    <SettingLink href={`/projects/${project.slug}/settings/integrations`}>
-                        {t('integrations')}
-                    </SettingLink>
-                    <SettingLink href={`/projects/${project.slug}/settings/source-types`}>
-                        {t('sourceTypes')}
-                    </SettingLink>
-                    <SettingLink href={`/projects/${project.slug}/settings/tasks`}>
-                        {t('tasks')}
-                    </SettingLink>
-                    <SettingLink href={`/projects/${project.slug}/settings/users`}>
-                        {t('users')}
-                    </SettingLink>
+                    {canReadSettings && (
+                        <>
+                            <SettingLink href={`/projects/${project.slug}/settings`}>
+                                {t('general')}
+                            </SettingLink>
+                            <SettingLink href={`/projects/${project.slug}/settings/integrations`}>
+                                {t('integrations')}
+                            </SettingLink>
+                            <SettingLink href={`/projects/${project.slug}/settings/source-types`}>
+                                {t('sourceTypes')}
+                            </SettingLink>
+                            <SettingLink href={`/projects/${project.slug}/settings/tasks`}>
+                                {t('tasks')}
+                            </SettingLink>
+                            <SettingLink href={`/projects/${project.slug}/settings/annotations`}>
+                                {t('annotations')}
+                            </SettingLink>
+                            <SettingLink href={`/projects/${project.slug}/settings/class-types`}>
+                                {t('classTypes')}
+                            </SettingLink>
+                        </>
+                    )}
+                    {canListUsers && (
+                        <SettingLink href={`/projects/${project.slug}/settings/users`}>
+                            {t('users')}
+                        </SettingLink>
+                    )}
                 </nav>
                 <div className="grid gap-6">
                     {children}

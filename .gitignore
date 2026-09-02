@@ -35,10 +35,17 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/public/uploads
+
 /public/datasets
-/public/img/projects
+/public/*
 /data
+# Ignore all files in uploads/playground except .gitkeep
+public/uploads/playground/*
+!public/uploads/playground/.gitkeep
+
+# Ignore all files in img/projects except .gitkeep
+public/img/projects/*
+!public/img/projects/.gitkeep
 
 # Examples
 /examples/*/env

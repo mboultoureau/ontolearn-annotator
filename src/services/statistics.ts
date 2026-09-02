@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { requireRead } from "@/lib/abac-guards";
 
 export type HeaderStatistics = {
     accuracy: {
@@ -16,8 +17,8 @@ export type HeaderStatistics = {
 }
 
 export async function fetchHeaderStatistics(projectId: string): Promise<HeaderStatistics> {
-    // Simulate long running operation
-    await new Promise(resolve => setTimeout(resolve, 10));
+    // Check permission to read statistics
+    await requireRead(projectId, "statistics");
 
     const numberOfUsers = await prisma.projectMember.count({
         where: {
@@ -25,18 +26,25 @@ export async function fetchHeaderStatistics(projectId: string): Promise<HeaderSt
         }
     })
 
-    const numberOfData = await prisma.data.count({
+    // Counts DataFile, not the older Data model: uploads made through the UI land in
+    // DataFile (under a Source), so this tile used to read 0 for a project that had
+    // files. Data is still what /api/v1/.../data writes — see TODO.md.
+    const numberOfData = await prisma.dataFile.count({
         where: {
-            projectId: projectId
+            source: {
+                projectId: projectId
+            }
         }
     });
 
-    const numberOfDataThisMonth = await prisma.data.count({
+    // Was hardcoded to 0, so the tile could never show anything else.
+    const numberOfAnnotatedData = await prisma.dataFile.count({
         where: {
-            projectId: projectId,
-            uploadedAt: {
-                gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-                lt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+            source: {
+                projectId: projectId
+            },
+            annotations: {
+                some: {}
             }
         }
     });
@@ -54,6 +62,8 @@ export async function fetchHeaderStatistics(projectId: string): Promise<HeaderSt
     });
 
     return {
+        // The only ML-fed figure here: written by POST /api/v1/projects/[id]/statistics
+        // during training, so it stays at 0 until a model has run.
         accuracy: {
             value: accuracy ? accuracy.accuracy : 0.0,
         },
@@ -61,7 +71,7 @@ export async function fetchHeaderStatistics(projectId: string): Promise<HeaderSt
             value: numberOfData,
         },
         annotatedData: {
-            value: 0.0,
+            value: numberOfAnnotatedData,
         },
         users: {
             value: numberOfUsers,

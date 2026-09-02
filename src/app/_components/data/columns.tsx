@@ -1,12 +1,12 @@
 "use client";
 
 import { Button } from "@/app/_components/ui/button";
-import { Data } from "@prisma/client";
+import { RecentDataFile } from "@/services/data";
 import { ColumnDef } from "@tanstack/react-table";
 import { Download } from "lucide-react";
 import Link from "next/link";
 
-export const columns: ColumnDef<Data>[] = [
+export const columns: ColumnDef<RecentDataFile>[] = [
     {
         accessorKey: "name",
         header: 'name',
@@ -34,7 +34,9 @@ export const columns: ColumnDef<Data>[] = [
         cell: ({ row }) => {
             return (
                 <Button variant="ghost" size="icon" asChild>
-                    <Link href={`/datasets/${row.original.projectId}/${row.original.content}`} target="_blank" rel="noopener noreferrer" locale={false} download>
+                    {/* filePath is served straight from public/uploads. The previous
+                        /datasets/{projectId}/{content} target has no route and 404'd. */}
+                    <Link href={row.original.filePath} target="_blank" rel="noopener noreferrer" locale={false} download>
                         <Download className="h-4 w-4" />
                     </Link>
                 </Button>

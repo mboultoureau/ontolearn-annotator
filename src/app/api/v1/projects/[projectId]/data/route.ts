@@ -1,4 +1,5 @@
 import { z } from "zod";
+import prisma from "@/lib/prisma";
 
 type Props = {
     params: {

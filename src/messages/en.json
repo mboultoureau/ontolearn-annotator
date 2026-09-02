@@ -29,6 +29,13 @@
       "themeUpdated": "Theme updated!",
       "themeUpdatedDescription": "The theme has been updated to: {theme}",
       "title": "Account Settings"
+    },
+    "VerifyRequest": {
+      "backToLogin": "Back to login",
+      "description": "A sign-in link has been sent to {email}.",
+      "descriptionNoEmail": "A sign-in link has been sent to your email address.",
+      "spam": "The link is valid for 24 hours and can only be used once. If you don't see it, check your spam folder.",
+      "title": "Check your email"
     }
   },
   "App": {
@@ -159,14 +166,15 @@
       "playground": "Playground",
       "settings": "Settings",
       "tasks": "Tasks",
+      "annotations": "Annotations",
       "title": "OntoLearn Annotator",
       "toggleNavigation": "Toggle navigation"
     },
-    "Image": {
-      "current": "Current Image",
-      "image": "Image",
-      "imageDescription": "The current image will be deleted.",
-      "imageUpload": "Image Upload",
+    "Icon": {
+      "current": "Current Icon",
+      "icon": "Icon",
+      "iconDescription": "The current icon will be deleted.",
+      "iconUpload": "Icon Upload",
       "submit": "Save"
     },
     "List": {
@@ -192,7 +200,78 @@
       "tasks": "Tasks",
       "title": "Project Settings",
       "useHeadwork": "Use Headwork",
-      "users": "Users"
+      "users": "Users",
+      "annotations": "Annotations",
+      "classTypes": "Class Types",
+      "noAccess": "You do not have access to these settings: {settings}."
+    },
+    "ClassTypes": {
+      "title": "Class Types",
+      "subtitle": "Manage annotation class types for this project",
+      "addNew": "Add Class Type",
+      "search": "Search class types...",
+      "statusFilter": "Status",
+      "allStatuses": "All Statuses",
+      "loading": "Loading",
+      "table": {
+        "name": "Name",
+        "status": "Status",
+        "created": "Created",
+        "usage": "Usage",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "usage": "{count, plural, =0 {Not used} one {# annotation} other {# annotations}}",
+      "empty": "No class types found",
+      "emptyDescription": "Get started by creating your first class type.",
+      "dialog": {
+        "add": {
+          "title": "Add Class Type",
+          "description": "Create a new classification type for annotations",
+          "submit": "Create"
+        },
+        "edit": {
+          "title": "Edit Class Type",
+          "description": "Update the class type name",
+          "submit": "Save Changes"
+        },
+        "delete": {
+          "title": "Delete Class Type",
+          "description": "Are you sure you want to delete this class type?",
+          "inUse": "This class type is used in {count, plural, one {# annotation} other {# annotations}}. It will be marked as inactive instead of deleted.",
+          "notInUse": "This class type is not used and will be permanently deleted.",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        }
+      },
+      "form": {
+        "name": "Class Type Name",
+        "namePlaceholder": "e.g., Singular, Hexagon, Dendrite",
+        "nameRequired": "Name is required"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "activate": "Activate",
+        "deactivate": "Deactivate"
+      },
+      "success": {
+        "created": "Class type created successfully",
+        "updated": "Class type updated successfully",
+        "deleted": "Class type deleted successfully",
+        "activated": "Class type activated",
+        "deactivated": "Class type deactivated"
+      },
+      "errors": {
+        "load": "Failed to load class types",
+        "create": "Failed to create class type",
+        "update": "Failed to update class type",
+        "delete": "Failed to delete class type",
+        "duplicate": "A class type with this name already exists"
+      }
     },
     "Statistics": {
       "accuracy": "Accuracy",
@@ -340,6 +419,132 @@
       "email": "Email",
       "fullName": "Full Name",
       "role": "Role"
+    }
+  },
+  "Annotations": {
+    "title": "Project Annotations",
+    "subtitle": "Manage and review image annotations for {projectName}",
+    "stats": {
+      "totalFiles": "Total Files",
+      "annotated": "Annotated",
+      "pending": "Pending",
+      "totalAnnotations": "Total Annotations"
+    },
+    "search": {
+      "placeholder": "Search by filename...",
+      "noResults": "No files found matching your filters.",
+      "clearSearch": "Clear search"
+    },
+    "filters": {
+      "all": "All",
+      "annotatedBtn": "Annotated",
+      "pendingBtn": "Pending"
+    },
+    "table": {
+      "filename": "Filename",
+      "type": "Type",
+      "status": "Status",
+      "annotations": "Annotations",
+      "lastAnnotated": "Last Annotated",
+      "annotators": "Annotators",
+      "actions": "Actions",
+      "added": "Added {date}",
+      "noAnnotator": "—"
+    },
+    "status": {
+      "complete": "Complete",
+      "pending": "Pending"
+    },
+    "actions": {
+      "annotate": "Annotate",
+      "view": "View"
+    },
+    "modal": {
+      "title": "Annotation Preview",
+      "close": "Close",
+      "tabs": {
+        "overview": "Overview",
+        "details": "Details",
+        "classes": "Classes"
+      },
+      "info": {
+        "annotations": "{count} annotations",
+        "aois": "{count} AOIs",
+        "author": "Author:",
+        "date": "Date:",
+        "confidence": "Confidence:",
+        "quality": "Quality:",
+        "classifications": "Classifications:"
+      },
+      "aoi": {
+        "title": "Areas of Interest",
+        "noDetails": "No annotation details available.",
+        "noClasses": "No classifications found"
+      }
+    }
+  },
+  "Workflow": {
+    "loading": "Loading workflow...",
+    "navigation": {
+      "previousStep": "Previous Step",
+      "currentStep": "Current Step",
+      "stopWorkflow": "Stop Workflow",
+      "stepsCompleted": "{count, plural, =0 {No steps completed yet} one {# step completed} other {# steps completed}}",
+      "noStepsYet": "No steps completed yet"
+    },
+    "history": {
+      "stepLabel": "Step {number}",
+      "stepLabelWithName": "Step {number}: {name}"
+    },
+    "loops": {
+      "loop": "Loop",
+      "iteration": "Iteration {{number}}"
+    },
+    "actions": {
+      "yes": "Yes",
+      "no": "No",
+      "continue": "Continue",
+      "next": "Next",
+      "nextDefault": "Next (Default)",
+      "save": "Save",
+      "saveAnnotations": "Save Annotations",
+      "add": "Add",
+      "remove": "Remove"
+    },
+    "placeholders": {
+      "chooseOption": "Choose an option...",
+      "allSelected": "All options selected"
+    },
+    "choice": {
+      "selectLabel": "Select an option"
+    },
+    "multiChoice": {
+      "addLabel": "Add a class",
+      "selectedLabel": "Selected classes (ordered by rank)",
+      "instructions": "Select and order classes by priority (1 = closest match)"
+    },
+    "final": {
+      "title": "Workflow Complete",
+      "message": "You have completed all workflow steps."
+    },
+    "areaSelect": {
+      "toolLabel": "Tool:",
+      "tools": {
+        "polygon": "Polygon",
+        "rectangle": "Rectangle",
+        "mouse": "Mouse"
+      },
+      "mouseHint": "To confirm edits, click elsewhere to unselect the area",
+      "multipleAllowed": "Multiple areas allowed",
+      "selected": "{count, plural, one {# selected} other {# selected}}",
+      "confirmSingle": "Confirm Area Selection",
+      "confirmMultiple": "{count, plural, one {Confirm # Area} other {Confirm # Areas}}",
+      "clear": "Clear"
+    },
+    "errors": {
+      "noMetadata": "No metadata found for state:",
+      "unsupportedType": "Unsupported state type:",
+      "networkError": "Network error: {{message}}"
     }
   }
 }

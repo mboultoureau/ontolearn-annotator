@@ -5,6 +5,7 @@ import IntegrationHeadwork from "@/app/_components/settings/integration-headwork
 import { fetchProject } from "@/services/projects";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { checkPermission } from "@/lib/abac-client";
 
 type Props = {
   params: {
@@ -20,10 +21,17 @@ export default async function IntegrationsPage({ params }: Props) {
     notFound();
   }
 
+  const canRead = await checkPermission(project.id, "settings:read");
+  const readOnly = !(await checkPermission(project.id, "settings:write"));
+
+  if (!canRead) {
+    return <div>{t('noAccess', { settings: t('integrations') })}</div>;
+  }
+
   return (
     <>
-      <IntegrationApi projectId={project.id} />
-      <IntegrationHeadwork projectId={project.id} useHeadwork={project.useHeadwork} />
+      <IntegrationApi projectId={project.id} readOnly={readOnly} />
+      <IntegrationHeadwork projectId={project.id} useHeadwork={project.useHeadwork} readOnly={readOnly} />
     </>
   );
 }

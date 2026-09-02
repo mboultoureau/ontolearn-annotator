@@ -3,6 +3,7 @@ import { auth } from "@/server/auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createServerActionProcedure } from "zsa";
+import { requireWrite } from "@/lib/abac-guards";
 
 export const authedProcedure = createServerActionProcedure()
     .handler(async() => {
@@ -29,25 +30,22 @@ export const authedProcedure = createServerActionProcedure()
     }
 )
 
-export const isAdminOfProject = createServerActionProcedure(authedProcedure)
+export const canWriteSettings = createServerActionProcedure(authedProcedure)
     .input(
         z.object({ projectId: z.string() })
     )
     .handler(async({ input, ctx }) => {
+        // Use new ABAC system to check settings:write permission
+        await requireWrite(input.projectId, "settings");
+
         const project = await ctx.prisma.project.findUnique({
             where: {
-                id: input.projectId,
-                members: {
-                    some: {
-                        userId: ctx.user.id,
-                        role: "ADMIN"
-                    }
-                }
+                id: input.projectId
             }
         });
 
         if (!project) {
-            throw new Error("You are not an admin of this project")
+            throw new Error("Project not found");
         }
 
         return {
@@ -56,25 +54,22 @@ export const isAdminOfProject = createServerActionProcedure(authedProcedure)
         }
     }
 )
-
-export const isMemberOfProject = createServerActionProcedure(authedProcedure)
+export const canWritePlayground = createServerActionProcedure(authedProcedure)
     .input(
         z.object({ projectId: z.string() })
     )
     .handler(async({ input, ctx }) => {
+        // Use new ABAC system to check playground:write permission
+        await requireWrite(input.projectId, "playground");
+
         const project = await ctx.prisma.project.findUnique({
             where: {
-                id: input.projectId,
-                members: {
-                    some: {
-                        userId: ctx.user.id
-                    }
-                }
+                id: input.projectId
             }
         });
 
         if (!project) {
-            throw new Error("You are not a member of this project")
+            throw new Error("Project not found");
         }
 
         return {

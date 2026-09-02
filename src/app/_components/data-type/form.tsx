@@ -62,7 +62,6 @@ export default function DataTypeForm({ formId = "create-project", displaySubmit 
 
     const onSubmit = async (data: z.infer<typeof dataTypeSchema>) => {
         const response = await formAction(data);
-        console.log(response)
     }
 
     function updateName(e: React.ChangeEvent<HTMLInputElement>, field: any) {

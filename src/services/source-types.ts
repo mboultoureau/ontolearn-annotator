@@ -1,23 +1,13 @@
 import prisma from '@/lib/prisma';
-import { auth } from '@/server/auth';
+import { requirePermission } from '@/lib/abac-guards';
 
 export async function fetchSourceTypes(projectId: string) {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-        return Promise.reject("User not authenticated");
-    }
+    // Check permission to read source types
+    await requirePermission(projectId, "sourceType", "list");
 
     return await prisma.sourceType.findMany({
         where: {
             projectId: projectId,
-            project: {
-                members: {
-                    some: {
-                        userId: session.user.id,
-                    },
-                },
-            },
         },
         include: {
             project: true,
@@ -26,22 +16,24 @@ export async function fetchSourceTypes(projectId: string) {
 }
 
 export async function fetchSourceType(projectSlug: string, sourceTypeName: string) {
-    const session = await auth();
+    // First find the project to get its ID
+    const project = await prisma.project.findUnique({
+        where: { slug: projectSlug },
+        select: { id: true }
+    });
 
-    if (!session?.user?.id) {
-        return Promise.reject("User not authenticated");
+    if (!project) {
+        return Promise.reject(new Error("Project not found"));
     }
+
+    // Check permission to read source types
+    await requirePermission(project.id, "sourceType", "list");
 
     return await prisma.sourceType.findFirst({
         where: {
             name: sourceTypeName,
             project: {
-                slug: projectSlug,
-                members: {
-                    some: {
-                        userId: session.user.id,
-                    },
-                },
+                slug: projectSlug
             },
         },
         include: {

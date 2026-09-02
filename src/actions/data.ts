@@ -2,10 +2,11 @@
 
 import { createDataInputSchema } from "@/lib/validation-schemas/data";
 import { authedProcedure } from "@/lib/zsa-procedures";
-import { writeFileSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { v4 as uuidv4 } from 'uuid';
+import path from 'path';
 
 export type FormState = {
     message: string;
@@ -19,7 +20,7 @@ export const createData = authedProcedure
         type: "formData"
     })
     .handler(async ({ input, ctx }) => {
-        const { sourceTypeId } = input;
+        const { sourceTypeId, destination = "MANUAL" } = input;
         const { user, prisma } = ctx;
 
         const sourceType = await prisma.sourceType.findUnique({
@@ -65,20 +66,47 @@ export const createData = authedProcedure
         }
 
 
+        // Determine upload sub-directory based on destination. Empty for anything but
+        // MANUAL: "uploads" here was joined onto public/uploads, so those files landed in
+        // public/uploads/uploads and were stored as /uploads/uploads/<file>.
+        const uploadSubdir = destination === "MANUAL" ? "playground" : "";
+        const fullUploadPath = path.join(process.cwd(), "public", "uploads", uploadSubdir);
+        if (!existsSync(fullUploadPath)) {
+            mkdirSync(fullUploadPath, { recursive: true });
+        }
+
         // Handle all file uploads
+        const uploadedFiles: Array<{ fieldId: string; filePath: string; fileName: string; extension: string; isImage: boolean }> = [];
+
         for (const field of sourceType.fields) {
             if (field.type === "FILE") {
                 // Write the file to the disk
                 const file = input[`fields[${field.id}]`];
                 const extension = file.name.split('.').pop()?.toLocaleLowerCase();
-                const fileName = `${uuidv4()}.${extension}`;
+                const fileUuid = uuidv4();
+                const fileName = `${fileUuid}.${extension}`;
 
-                const path = `${process.cwd()}/public/uploads/${fileName}`;
+                const diskPath = path.join(fullUploadPath, fileName);
                 const arrayBuffer = await file.arrayBuffer();
                 const buffer = new Uint8Array(arrayBuffer);
 
-                writeFileSync(path, buffer);
-                // input[`fields[${field.id}]`] = `/uploads/${fileName}`;
+                writeFileSync(diskPath, buffer);
+
+                // Store metadata for DataFile creation
+                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'svg', 'dzi'].includes(extension || '');
+                const isZip = extension === 'zip';
+
+                uploadedFiles.push({
+                    fieldId: field.id,
+                    // Built conditionally so an empty sub-directory does not yield
+                    // a double slash.
+                    filePath: uploadSubdir
+                        ? `/uploads/${uploadSubdir}/${fileName}`
+                        : `/uploads/${fileName}`,
+                    fileName: file.name,
+                    extension: extension || '',
+                    isImage: isImage && !isZip
+                });
             }
         }
 
@@ -102,6 +130,26 @@ export const createData = authedProcedure
             }
         });
 
+        // Create DataFile only for image files (not ZIP)
+        for (const fileInfo of uploadedFiles) {
+            if (fileInfo.isImage) {
+                // Determine file type based on extension
+                let fileType: "IMAGE" | "DEEP_ZOOM_IMAGE" = "IMAGE";
+                if (fileInfo.extension === 'dzi') {
+                    fileType = "DEEP_ZOOM_IMAGE";
+                }
+
+                await prisma.dataFile.create({
+                    data: {
+                        sourceId: source.id,
+                        name: fileInfo.fileName,
+                        filePath: fileInfo.filePath,
+                        type: fileType,
+                        destination: destination as "MANUAL" | "ML" | "HEADWORK",
+                    }
+                });
+            }
+        }
 
         revalidatePath(`/projects/${project.slug}/data`);
         redirect(`/projects/${project.slug}/data`)

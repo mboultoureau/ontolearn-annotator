@@ -26,6 +26,16 @@ export const env = createEnv({
     GITHUB_CLIENT_SECRET: z.string(),
     EMAIL_SERVER: z.string(),
     EMAIL_FROM: z.string().email(),
+    ABAC_SERVER_URL: z.string().url(),
+    ABAC_SECRET: z.string(),
+    ABAC_CACHE_TTL: z.preprocess(
+      (v) => v ? Number(v) : 3600,
+      z.number().nonnegative().default(3600) // seconds
+    ),
+    ABAC_CACHE_SIZE_LIMIT: z.preprocess(
+      (v) => v ? Number(v) : 10000,
+      z.number().positive().default(10000) // max entries
+    ),
   },
 
   /**
@@ -49,7 +59,11 @@ export const env = createEnv({
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
     EMAIL_SERVER: process.env.EMAIL_SERVER,
-    EMAIL_FROM: process.env.EMAIL_FROM
+    EMAIL_FROM: process.env.EMAIL_FROM,
+    ABAC_SERVER_URL: process.env.ABAC_SERVER_URL,
+    ABAC_SECRET: process.env.ABAC_SECRET,
+    ABAC_CACHE_TTL: process.env.ABAC_CACHE_TTL,
+    ABAC_CACHE_SIZE_LIMIT: process.env.ABAC_CACHE_SIZE_LIMIT
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -113,8 +113,10 @@ model Project {
   id              String           @id @default(cuid())
   name            String
   slug            String           @unique
-  description     String
-  image           String?
+  // TEXT rather than the default VARCHAR(191): createProjectInputSchema accepts up to
+  // 10 000 characters, and anything longer than 191 used to fail with a raw 500.
+  description     String           @db.Text
+  icon            String?
   useHeadwork     Boolean          @default(false)
   visibility      Visibility       @default(PRIVATE)
   categories      Category[]
@@ -125,6 +127,9 @@ model Project {
   statistics      Statistics[]
   playgroundTasks PlaygroundTask[]
   tasks           Task[]
+  configurations  Configuration[]
+  classTypes      ClassType[]
+  questions       Question[]
 }
 
 enum Visibility {
@@ -183,6 +188,7 @@ model Source {
   statusInfo   Json?
   sourceTypeId String
   fields       SourceField[]
+  dataFiles    DataFile[]
 }
 
 model SourceType {
@@ -273,4 +279,148 @@ model Task {
   status    TaskStatus @default(PENDING)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+}
+
+model Configuration {
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId String
+  type      String
+  settings  Json?
+
+  @@id([projectId, type])
+}
+
+enum DataFileDestination {
+  ML
+  HEADWORK
+  MANUAL
+}
+
+model DataFile {
+  id          String              @id @default(cuid())
+  source      Source              @relation(fields: [sourceId], references: [id])
+  sourceId    String
+  name        String
+  type        String
+  metadata    Json?
+  filePath    String              @unique
+  previewPath String?
+  destination DataFileDestination @default(ML)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  annotations Annotation[]
+  questions   Question[]
+}
+
+enum ClassTypeStatus {
+  ACTIVE
+  INACTIVE
+  DEPRECATED
+}
+
+model ClassType {
+  id              String           @id @default(cuid())
+  project         Project          @relation(fields: [projectId], references: [id])
+  projectId       String
+  name            String
+  status          ClassTypeStatus  @default(ACTIVE)
+  relatedId       String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  annotationTypes AnnotationType[]
+}
+
+model AreaOfInterest {
+  id          String       @id @default(cuid())
+  area        Json
+  annotations Annotation[]
+}
+
+enum AuthorType {
+  USER
+  ML
+  HEADWORK
+}
+
+model Annotation {
+  id                 String           @id @default(cuid())
+  dataFile           DataFile         @relation(fields: [dataFileId], references: [id])
+  dataFileId         String
+  // Optional: an answer about the image as a whole - a global classification, an
+  // overall quality rating - is not about a region. While this was required, such an
+  // answer had nowhere to live and was silently dropped on save.
+  areaOfInterest     AreaOfInterest?  @relation(fields: [areaOfInterestId], references: [id])
+  areaOfInterestId   String?
+  parentAnnotationId String?
+  quality            String?
+  author             AuthorType
+  userId             String?
+  confidence         Float?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  annotationTypes    AnnotationType[]
+}
+
+model AnnotationType {
+  annotation   Annotation @relation(fields: [annotationId], references: [id])
+  annotationId String
+  classType    ClassType  @relation(fields: [classTypeId], references: [id])
+  classTypeId  String
+  rank         Int
+
+  @@id([annotationId, classTypeId, rank])
+}
+
+enum QuestionStatus {
+  PENDING
+  ASKED
+  ANSWERING
+  ANSWERED
+  CLOSED
+  INVALID
+}
+
+model Question {
+  id                String             @id @default(cuid())
+  parentQuestion    Question?          @relation("QuestionToSubQuestion", fields: [parentQuestionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentQuestionId  String?
+  subQuestions      Question[]         @relation("QuestionToSubQuestion")
+  project           Project            @relation(fields: [projectId], references: [id])
+  projectId         String
+  dataFile          DataFile           @relation(fields: [dataFileId], references: [id])
+  dataFileId        String
+  payload           Json
+  answers           Json?
+  status            QuestionStatus     @default(PENDING)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  expertAssignments ExpertAssignment[]
+}
+
+model Expert {
+  id          String             @id @default(cuid())
+  name        String
+  email       String             @unique
+  accuracy    Float?
+  pace        Float?
+  assignments ExpertAssignment[]
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  COMPLETED
+  CLOSED
+}
+
+model ExpertAssignment {
+  expert     Expert           @relation(fields: [expertId], references: [id])
+  expertId   String
+  question   Question         @relation(fields: [questionId], references: [id])
+  questionId String
+  opinion    String?
+  status     AssignmentStatus @default(ASSIGNED)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@id([expertId, questionId])
 }

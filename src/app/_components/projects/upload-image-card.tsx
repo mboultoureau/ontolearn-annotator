@@ -7,26 +7,27 @@ import { UploadImageForm } from "./upload-image-form";
 type Props = {
     project: {
         id: string;
-        image: string;
-    }
+        icon: string;
+    },
+    readOnly?: boolean;
 }
 
-export default function UploadImageCard({ project }: Props) {
-    const t = useTranslations("Project.Image");
+export default function UploadImageCard({ project, readOnly = true }: Props) {
+    const t = useTranslations("Project.Icon");
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{t('imageUpload')}</CardTitle>
+                <CardTitle>{t('iconUpload')}</CardTitle>
             </CardHeader>
             <CardContent>
-                {project.image && (
+                {project.icon && (
                     <div className="flex flex-col items-center justify-center">
                         <Image
-                            src={`/img/projects/${project.image}`}
+                            src={`/img/projects/${project.icon}`}
                             width="150"
                             height="150"
-                            alt="Current image"
+                            alt="Current icon"
                             className="overflow-hidden rounded-md object-cover transition-all hover:scale-105 aspect-square mb-4"
                         />
                         <div className="space-y-1 text-sm mb-4">
@@ -37,7 +38,7 @@ export default function UploadImageCard({ project }: Props) {
                 <UploadImageForm formId="upload-image" projectId={project.id} />
             </CardContent>
             <CardFooter className="border-t px-6 py-4 flex justify-end">
-                <Button form="upload-image" type="submit">{t('submit')}</Button>
+                <Button form="upload-image" type="submit" disabled={readOnly}>{t('submit')}</Button>
             </CardFooter>
         </Card>
     )

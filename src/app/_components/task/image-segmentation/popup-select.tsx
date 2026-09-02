@@ -33,7 +33,6 @@ export default function PopupSelect({
   const t = useTranslations("Task.ImageSegmentation");
 
   const getLabel = (value: string | undefined): string => {
-    console.log(value)
     if (value !== undefined) {
       return isTranslatable ? t(value) : value;
     }

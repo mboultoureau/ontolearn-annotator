@@ -11,8 +11,6 @@ import { AuthError } from "next-auth";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { getCsrfToken } from "next-auth/react";
-import { cookies } from "next/headers";
 import { FormItem, FormLabel } from "../_components/ui/form";
 import { Input } from "../_components/ui/input";
 import EmailLoginForm from "../_components/account/email-login-form";
@@ -29,7 +27,6 @@ export default async function LoginForm() {
   const SIGNIN_ERROR_URL = "/api/auth/error";
   const t = await getTranslations("Account.Login");
   const session = await auth();
-  const csrfToken = cookies().get("authjs.csrf-token")?.value.split("|")[0];
 
   if (session) {
     redirect("/projects");
@@ -90,7 +87,34 @@ export default async function LoginForm() {
                 {provider.type === "email" && (
                   <>
                     <hr />
-                    <EmailLoginForm csrfToken={csrfToken} />
+                    <EmailLoginForm
+                      key={provider.id}
+                      action={async (formData: FormData) => {
+                        "use server";
+                        const email = String(formData.get("email") ?? "");
+
+                        try {
+                          // redirect: false makes signIn *return* its redirect URL
+                          // instead of throwing it. @auth/core hardcodes that URL to
+                          // /api/auth/verify-request (see send-token.js) and ignores
+                          // pages.verifyRequest, so we send the user to our own page.
+                          // The email is still sent and the token still created.
+                          await signIn(provider.id, { email, redirect: false });
+                        } catch (error) {
+                          if (error instanceof AuthError) {
+                            return redirect(
+                              `${SIGNIN_ERROR_URL}?error=${error.type}`
+                            );
+                          }
+
+                          throw error;
+                        }
+
+                        redirect(
+                          `/login/verify-request?email=${encodeURIComponent(email)}`
+                        );
+                      }}
+                    />
                   </>
                 )}
               </>

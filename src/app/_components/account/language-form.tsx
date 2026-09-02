@@ -34,7 +34,7 @@ export type Props = {
 
 export function LanguageForm({ locale = "ENGLISH" }: Props) {
   const t = useTranslations("Account.Settings");
-  const { mutate, error, isPending } = api.account.updateLocale.useMutation();
+  const { mutateAsync, error, isPending } = api.account.updateLocale.useMutation();
 
   const languages = [
     { label: t("english"), value: "ENGLISH" },
@@ -50,8 +50,17 @@ export function LanguageForm({ locale = "ENGLISH" }: Props) {
   });
 
   const onSubmit = async (values: z.infer<typeof updateLocaleInputSchema>) => {
-    await mutate(values);
-    if (error) return;
+    // mutateAsync, not mutate: the cookie must only change once the preference is
+    // actually stored. Signing in re-applies User.locale from the database, so a
+    // cookie that ran ahead of a failed write is silently reverted at the next login
+    // — the UI switches language, then flips back days later.
+    // (`error` from useMutation is a render behind, so it cannot gate this.)
+    try {
+      await mutateAsync(values);
+    } catch {
+      // The destructive Alert above renders from `error`.
+      return;
+    }
 
     switch (values.locale) {
         case "ENGLISH":

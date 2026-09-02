@@ -19,7 +19,7 @@ type Props = {
 }
 
 export function UploadImageForm({ formId, projectId }: Props) {
-  const t = useTranslations("Project.Image");
+  const t = useTranslations("Project.Icon");
 
   const { toast } = useToast();
   const form = useForm<z.infer<typeof uploadImageInputSchema>>({
@@ -30,14 +30,14 @@ export function UploadImageForm({ formId, projectId }: Props) {
     onSuccess: () => {
       form.reset();
       toast({
-        title: "Image uploaded",
+        title: "Icon uploaded",
       })
     }
   })
 
   const onSubmit = form.handleSubmit(async (data) => {
     const formData = new FormData();
-    formData.append("image", data.image);
+    formData.append("icon", data.icon);
     formData.append("projectId", projectId)
     execute(formData);
   })
@@ -55,14 +55,18 @@ export function UploadImageForm({ formId, projectId }: Props) {
           </Alert>
         )}
         <FormField
-          name="image"
-          render={({ field }) => (
+          control={form.control}
+          /* Was name="image", which matches no schema field — so useFormField
+             looked up errors under a key that never has any, and validation
+             messages for `icon` never rendered. */
+          name="icon"
+          render={() => (
             <FormItem>
-              <FormLabel>{t('image')}</FormLabel>
+              <FormLabel>{t('icon')}</FormLabel>
               <FormControl>
-                <Input type="file" {...form.register('image')} />
+                <Input type="file" {...form.register('icon')} />
               </FormControl>
-              <FormDescription>{t('imageDescription')}</FormDescription>
+              <FormDescription>{t('iconDescription')}</FormDescription>
               <FormMessage />
             </FormItem>
           )}

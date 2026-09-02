@@ -1,0 +1,264 @@
+# Node coverage test workflow
+#
+# Exercises every node type the engine implements, in one runnable pass:
+#
+#   1. task          intro_form, wrap_up, detail_note (loop step)
+#   2. choice        pick_severity, review_choice, detail_class (loop step)
+#   3. branch        severity_branch
+#   4. multi_choice  pick_tags
+#   5. yes_no        ask_details (yesTarget/noTarget form), confirm_finish (transitions form)
+#   6. area_select   select_zone, detail_zone (loop step)
+#   7. loop          detail_loop (repeatWhile)
+#   8. final         session_complete
+#
+# Also covers: the three static dataSource shapes (string array, {id,label} objects,
+# object with a ${imageUrl} template), a fetch dataSource, guards using
+# == / != / && / ||, both imageSource template forms, and nested storeAs paths.
+#
+# Both class-bearing choices (pick_tags, detail_class) read the project's class types,
+# because /api/workflow/save only links a value it can resolve to a ClassType row.
+#
+# Answer "yes" at ask_details to walk the loop; the branch only routes to
+# area_select when severity is medium or high.
+
+metadata:
+  id: node_coverage_test_v1
+  version: 1.0.0
+  name: Node Coverage Test
+  description: Runs through every state type, guard operator and data source kind supported by the workflow engine.
+  author: Engine coverage test
+
+dataSources:
+  # static, referenced through the ${dataSources...} template form
+  images:
+    type: static
+    data:
+      - id: img1
+        url: ${imageUrl}
+        name: Data file under annotation
+
+  # static, plain string array -> {value: s, label: s}
+  severity_levels:
+    type: static
+    data:
+      - low
+      - medium
+      - high
+
+  # static, {id,label} objects -> id becomes the stored value
+  review_actions:
+    type: static
+    data:
+      - id: accept
+        label: Accept annotation
+      - id: rework
+        label: Send back for rework
+
+  # fetch, resolved by DataSourceLoader before the machine starts
+  class_types:
+    type: fetch
+    endpoint: /api/projects/{slug}/classes
+
+workflow:
+  entry: intro_form
+
+  states:
+    # ---------------------------------------------------------------- 1. task
+    - id: intro_form
+      type: task
+      name: Annotator details
+      description: NODE task - form with every field type the UI renders
+      instructions: The UI renders text, email, number and textarea fields.
+      fields:
+        - id: annotator_name
+          type: text
+          label: Annotator name
+          placeholder: Jane Doe
+          required: true
+          storeAs: qa.annotator.name
+
+        - id: annotator_email
+          type: email
+          label: Contact email
+          placeholder: jane@example.org
+          storeAs: qa.annotator.email
+
+        - id: confidence
+          type: number
+          label: Confidence (0-100)
+          placeholder: "80"
+          storeAs: qa.annotator.confidence
+
+        - id: context_note
+          type: textarea
+          label: Context note
+          placeholder: Anything worth knowing before starting
+          storeAs: qa.annotator.note
+
+      transitions:
+        - target: pick_severity
+
+    # -------------------------------------------------------------- 2. choice
+    - id: pick_severity
+      type: choice
+      name: Severity
+      description: NODE choice - options from a static string array
+      prompt: How severe is what you see?
+      options:
+        source: severity_levels
+      storeAs: qa.severity
+      transitions:
+        - target: severity_branch
+
+    # -------------------------------------------------------------- 3. branch
+    - id: severity_branch
+      type: branch
+      name: Route by severity
+      description: NODE branch - auto-transitions, no user input
+      transitions:
+        - target: select_zone
+          when: data.qa.severity == "high" || data.qa.severity == "medium"
+
+        - target: pick_tags
+          when: data.qa.severity != "high" && data.qa.severity != "medium"
+
+        # fallback when no guard matches
+        - target: pick_tags
+
+    # --------------------------------------------------------- 4. area_select
+    - id: select_zone
+      type: area_select
+      name: Select the affected zone
+      description: NODE area_select - imageSource through the ${dataSources...} form
+      imageSource: ${dataSources.images.data[0].url}
+      toolType: rectangle
+      allowMultiple: false
+      instructions: Draw one rectangle around the area of interest.
+      storeAs: qa.zone
+      transitions:
+        - target: pick_tags
+
+    # -------------------------------------------------------- 5. multi_choice
+    - id: pick_tags
+      type: multi_choice
+      name: Class types
+      description: NODE multi_choice - ranked selection, options from the fetch source
+      prompt: Select every class that applies, in order of relevance
+      options:
+        source: class_types
+      storeAs: qa.tags
+      transitions:
+        - target: ask_details
+
+    # -------------------------------------------- 6a. yes_no (target form)
+    - id: ask_details
+      type: yes_no
+      name: Detailed pass
+      description: NODE yes_no - yesTarget / noTarget form
+      question: Do you want to add detailed sub-annotations?
+      yesLabel: Yes, add details
+      noLabel: No, skip to review
+      storeAs: qa.wantsDetails
+      yesTarget: detail_loop
+      noTarget: review_choice
+
+    # ---------------------------------------------------------------- 7. loop
+    - id: detail_loop
+      type: loop
+      name: Detail loop
+      description: NODE loop - repeatWhile; steps auto-chain, then ask to repeat
+      as: detail
+      repeatWhile:
+        type: yes_no
+        question: Add another detail?
+      steps:
+        # area_select inside a loop, using the ${imageUrl} form
+        - id: detail_zone
+          type: area_select
+          name: Detail zone
+          imageSource: ${imageUrl}
+          toolType: both
+          allowMultiple: false
+          storeAs: detail.zone
+
+        # choice inside a loop, fed by the project's own class types.
+        #
+        # This must use `source: class_types` rather than inline values: /api/workflow/save
+        # only links a value to an AnnotationType when the project declares it as a
+        # ClassType, so inline demo values would leave every sub-section at "0 classes".
+        # To exercise the inline form instead, swap in:
+        #   options:
+        #     values:
+        #       - value: primary
+        #         label: Primary feature
+        - id: detail_class
+          type: choice
+          name: Detail class
+          prompt: Classify this detail
+          options:
+            source: class_types
+          storeAs: detail.class
+
+        # task inside a loop
+        - id: detail_note
+          type: task
+          name: Detail note
+          fields:
+            - id: detail_comment
+              type: textarea
+              label: Comment on this detail
+              storeAs: detail.comment
+
+      storeAs: qa.details
+      transitions:
+        - target: review_choice
+
+    # ------------------------------------- choice fed by {id,label} objects
+    - id: review_choice
+      type: choice
+      name: Review decision
+      description: NODE choice - {id,label} objects, the id is what gets stored
+      prompt: What should happen to this annotation?
+      options:
+        source: review_actions
+      storeAs: qa.review
+      transitions:
+        - target: confirm_finish
+
+    # --------------------------------------- 6b. yes_no (transitions form)
+    - id: confirm_finish
+      type: yes_no
+      name: Confirm
+      description: NODE yes_no - transitions form; YES takes transitions[0] (guarded), NO takes transitions[1]
+      question: Finish this annotation session?
+      storeAs: qa.confirmed
+      transitions:
+        - target: wrap_up
+          when: data.qa.review == "accept" || data.qa.review == "rework"
+
+        # NO restarts the whole session
+        - target: intro_form
+
+    - id: wrap_up
+      type: task
+      name: Wrap up
+      description: NODE task - single textarea before finishing
+      fields:
+        - id: session_summary
+          type: textarea
+          label: Session summary
+          storeAs: qa.summary
+
+      transitions:
+        - target: session_complete
+
+    # --------------------------------------------------------------- 8. final
+    - id: session_complete
+      type: final
+      name: Done
+      description: NODE final - terminal state
+      message: Every node type was exercised.
+      summary:
+        - qa.severity
+        - qa.tags
+        - qa.review

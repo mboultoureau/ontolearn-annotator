@@ -2,8 +2,8 @@ import { Button } from "@/app/_components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/app/_components/ui/sheet";
 import { Project } from "@/lib/definitions";
 import { Brain, Menu } from "lucide-react";
-import { SessionProvider } from "next-auth/react";
 import { getTranslations } from "next-intl/server";
+import { checkPermission } from "@/lib/abac-client";
 import Link from "next/link";
 import DropdownUser from "./dropdown-user";
 import HeaderLink from "./header-link";
@@ -11,6 +11,11 @@ import HeaderLink from "./header-link";
 export default async function HeaderMenu({ project }: { project?: Project }) {
 
   const t = await getTranslations("Project.Header");
+  
+  // Check permissions server-side
+  const canReadData = project ? await checkPermission(project.id, "data:read") : false;
+  const canWritePlayground = project ? await checkPermission(project.id, "playground:write") : false;
+  const canReadTask = project ? await checkPermission(project.id, "task:read") : false;
 
   return (
     <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-10">
@@ -25,9 +30,16 @@ export default async function HeaderMenu({ project }: { project?: Project }) {
         {project && (
           <>
             <HeaderLink href={`/projects/${project.slug}`}>{t('dashboard')}</HeaderLink>
-            <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
-            <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
-            <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
+            {canReadData && (
+              <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
+            )}
+            {canWritePlayground && (
+              <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
+            )}
+            {canReadTask && (
+              <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
+            )}
+            <HeaderLink href={`/projects/${project.slug}/annotations`}>{t('annotations')}</HeaderLink>
             <HeaderLink href={`/projects/${project.slug}/settings`}>{t('settings')}</HeaderLink>
           </>
         )}
@@ -54,10 +66,19 @@ export default async function HeaderMenu({ project }: { project?: Project }) {
             </Link>
             {project && (
               <>
+                {/* Same gating as the desktop nav above: it hid these three, the mobile
+                    sheet showed them to everyone. */}
                 <HeaderLink href={`/projects/${project.slug}`}>{t('dashboard')}</HeaderLink>
-                <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
-                <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
-                <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
+                {canReadData && (
+                  <HeaderLink href={`/projects/${project.slug}/data`}>{t('data')}</HeaderLink>
+                )}
+                {canWritePlayground && (
+                  <HeaderLink href={`/projects/${project.slug}/playground`}>{t('playground')}</HeaderLink>
+                )}
+                {canReadTask && (
+                  <HeaderLink href={`/projects/${project.slug}/tasks`}>{t('tasks')}</HeaderLink>
+                )}
+                <HeaderLink href={`/projects/${project.slug}/annotations`}>{t('annotations')}</HeaderLink>
                 <HeaderLink href={`/projects/${project.slug}/settings`}>{t('settings')}</HeaderLink>
               </>
             )}
@@ -65,9 +86,7 @@ export default async function HeaderMenu({ project }: { project?: Project }) {
         </SheetContent>
       </Sheet>
       <div className="flex w-full justify-end items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <SessionProvider>
-          <DropdownUser />
-        </SessionProvider>
+        <DropdownUser />
       </div>
     </header>
   )

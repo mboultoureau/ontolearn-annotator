@@ -18,6 +18,12 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const project = await fetchProject({ slug: params.slug });
 
+  if (!project) {
+    return {
+      title: "Project not found",
+    };
+  }
+
   return {
     title: project.name,
     description: project.description,
@@ -25,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function DashboardPage({ params }: Props) {
-  const t = await getTranslations("Project.Dashboard");
+  const t = await getTranslations("Project.Header.dashboard");
 
   const project = await fetchProject({ slug: params.slug });
   if (!project) {

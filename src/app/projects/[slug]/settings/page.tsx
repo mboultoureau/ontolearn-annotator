@@ -3,6 +3,7 @@ import UploadImageCard from "@/app/_components/projects/upload-image-card"
 import { fetchProject } from "@/services/projects"
 import { getTranslations } from "next-intl/server"
 import { notFound } from "next/navigation"
+import { checkPermission } from "@/lib/abac-client";
 
 type Props = {
   params: {
@@ -18,10 +19,17 @@ export default async function DashboardPage({ params }: Props) {
     notFound();
   }
 
+  const canRead = await checkPermission(project.id, "settings:read");
+  const readOnly = !(await checkPermission(project.id, "settings:write"));
+
+  if (!canRead) {
+    return <div>{t('noAccess', { settings: t('general') })}</div>;
+  }
+
   return (
     <>
-      <ProjectCard project={project} />
-      <UploadImageCard project={project} />
+      <ProjectCard project={project} readOnly={readOnly} />
+      <UploadImageCard project={project} readOnly={readOnly} />
     </>
   )
 }

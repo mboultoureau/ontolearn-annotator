@@ -38,10 +38,6 @@ export default function TaskNode({ id, type, data }: TaskNodeProps) {
   //   const t = useTranslations(`Task.${name}`);
   const edges = useEdges();
 
-  const onChange = useCallback((evt: any) => {
-    console.log(evt.target.value);
-  }, []);
-
   return (
     <div className="task-node bg-card rounded-sm">
       <div className="bg-muted p-2 rounded-t-sm">

@@ -20,11 +20,13 @@ import { useTranslations } from "next-intl"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  readOnly?: boolean
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  readOnly = false,
 }: DataTableProps<TData, TValue>) {
   const t = useTranslations("User.Table")
 

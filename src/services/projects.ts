@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/server/auth";
+import { checkPermission } from "@/lib/abac-client";
 import { Prisma } from "@prisma/client";
 
 const categoriesWithProjects = Prisma.validator<Prisma.CategoryDefaultArgs>()({
@@ -12,25 +13,31 @@ export const fetchProjectsAndCategoriesByUser = async (): Promise<CategoriesWith
     const session = await auth();
 
     if (!session?.user?.id) {
-        return Promise.reject("User not authenticated");
+        return Promise.reject(new Error("User not authenticated"));
     }
 
-    console.log("Fetching projects and categories by user", session.user.id)
+    // Get all projects user is a member of
+    const projectMembers = await prisma.projectMember.findMany({
+        where: { userId: session.user.id },
+        select: { projectId: true }
+    });
 
+    const projectIds = projectMembers.map(pm => pm.projectId);
+    
+    // Filter projects by checking read permission
+    const accessibleProjectIds: string[] = [];
+    for (const projectId of projectIds) {
+        const hasAccess = await checkPermission(projectId, "project:read");
+        if (hasAccess) {
+            accessibleProjectIds.push(projectId);
+        }
+    }
+    
     return prisma.category.findMany({
         where: {
             projects: {
                 some: {
-                    OR: [
-                        { visibility: "PUBLIC" },
-                        {
-                            members: {
-                                some: {
-                                    userId: session.user.id
-                                }
-                            }
-                        }
-                    ]
+                    id: {in: accessibleProjectIds}
                 }
             }
         },
@@ -40,10 +47,7 @@ export const fetchProjectsAndCategoriesByUser = async (): Promise<CategoriesWith
                     name: "asc"
                 },
                 where: {
-                    OR: [
-                        { visibility: "PUBLIC" },
-                        { members: { some: { userId: session.user.id } } }
-                    ]
+                    id: { in: accessibleProjectIds }
                 }
             }
         },
@@ -57,26 +61,29 @@ export const fetchProject = async ({ slug, args }: { slug: string, args?: any })
     const session = await auth();
 
     if (!session?.user?.id) {
-        return Promise.reject("User not authenticated");
+        return Promise.reject(new Error("User not authenticated"));
     }
 
-    return prisma.project.findFirst({
+    // First find the project by slug
+    const project = await prisma.project.findUnique({
         include: {
             categories: true
         },
         where: {
-            AND: [
-                {
-                    slug: slug,
-                },
-                {
-                    OR: [
-                        { visibility: "PUBLIC" },
-                        { members: { some: { userId: session.user.id } } }
-                    ]
-                }
-            ]
+            slug: slug,
         },
         ...args
     });
+
+    if (!project) {
+        return null;
+    }
+
+    // Check permission to read the project
+    const hasAccess = await checkPermission(project.id, "project:read");
+    if (!hasAccess) {
+        return null;
+    }
+
+    return project;
 }

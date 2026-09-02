@@ -1,8 +1,10 @@
+import { z } from "zod";
 import {
   createProjectInputSchema,
   updateUseHeadworkInputSchema,
 } from "@/lib/validation-schemas/project";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { requireRead, requireWrite } from "@/lib/abac-guards";
 
 export const projectRouter = createTRPCRouter({
   create: protectedProcedure
@@ -47,6 +49,9 @@ export const projectRouter = createTRPCRouter({
   updateUseHeadwork: protectedProcedure
     .input(updateUseHeadworkInputSchema)
     .mutation(async ({ ctx, input }) => {
+      // Check write permission for settings
+      await requireWrite(input.id, "settings");
+
       // Check if the project exists
       const project = await ctx.db.project.findUnique({
         where: {
@@ -66,5 +71,30 @@ export const projectRouter = createTRPCRouter({
           useHeadwork: input.useHeadwork,
         },
       });
+    }),
+
+  // Get classification types for a project
+  getClassTypes: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // projectId comes straight from the client, so a session is not enough: this
+      // returned any project's vocabulary to any logged-in user.
+      await requireRead(input.projectId, "task");
+
+      const classTypes = await ctx.db.classType.findMany({
+        where: {
+          projectId: input.projectId,
+          status: 'ACTIVE',
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      // Return in format expected by workflow: array of { value, label }
+      return classTypes.map((ct: any) => ({
+        value: ct.name,
+        label: ct.name,
+      }));
     }),
 });

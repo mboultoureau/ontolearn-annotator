@@ -29,6 +29,13 @@
       "themeUpdated": "Thème mis à jour !",
       "themeUpdatedDescription": "Le thème a été mis à jour vers : {theme}",
       "title": "Paramètres du compte"
+    },
+    "VerifyRequest": {
+      "backToLogin": "Retour à la connexion",
+      "description": "Un lien de connexion a été envoyé à {email}.",
+      "descriptionNoEmail": "Un lien de connexion a été envoyé à votre adresse e-mail.",
+      "spam": "Le lien est valable 24 heures et ne peut être utilisé qu'une seule fois. Si vous ne le voyez pas, vérifiez vos courriers indésirables.",
+      "title": "Consultez votre boîte mail"
     }
   },
   "App": {
@@ -159,14 +166,15 @@
       "playground": "Terrain de jeu",
       "settings": "Paramètres",
       "tasks": "Tâches",
+      "annotations": "Annotations",
       "title": "OntoLearn Annotator",
       "toggleNavigation": "Afficher/Masquer la navigation"
     },
-    "Image": {
-      "current": "Image actuelle",
-      "image": "Image",
-      "imageDescription": "L'image actuelle sera supprimée.",
-      "imageUpload": "Téléverser une image",
+    "Icon": {
+      "current": "Icône actuelle",
+      "icon": "Icône",
+      "iconDescription": "L'icône actuelle sera supprimée.",
+      "iconUpload": "Téléverser une icône",
       "submit": "Enregistrer"
     },
     "List": {
@@ -192,7 +200,78 @@
       "tasks": "Tâches",
       "title": "Paramètres du projet",
       "useHeadwork": "Utiliser Headwork",
-      "users": "Utilisateurs"
+      "users": "Utilisateurs",
+      "annotations": "Annotations",
+      "classTypes": "Types de classes",
+      "noAccess": "Vous n'avez pas accès à ces paramètres : {settings}."
+    },
+    "ClassTypes": {
+      "title": "Types de classes",
+      "subtitle": "Gérer les types de classes d'annotation pour ce projet",
+      "addNew": "Ajouter un type",
+      "search": "Rechercher des types de classes...",
+      "statusFilter": "Statut",
+      "allStatuses": "Tous les statuts",
+      "loading": "Chargement",
+      "table": {
+        "name": "Nom",
+        "status": "Statut",
+        "created": "Créé",
+        "usage": "Utilisation",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif"
+      },
+      "usage": "{count, plural, =0 {Non utilisé} one {# annotation} other {# annotations}}",
+      "empty": "Aucun type de classe trouvé",
+      "emptyDescription": "Commencez par créer votre premier type de classe.",
+      "dialog": {
+        "add": {
+          "title": "Ajouter un type de classe",
+          "description": "Créer un nouveau type de classification pour les annotations",
+          "submit": "Créer"
+        },
+        "edit": {
+          "title": "Modifier le type de classe",
+          "description": "Mettre à jour le nom du type de classe",
+          "submit": "Enregistrer"
+        },
+        "delete": {
+          "title": "Supprimer le type de classe",
+          "description": "Êtes-vous sûr de vouloir supprimer ce type de classe ?",
+          "inUse": "Ce type de classe est utilisé dans {count, plural, one {# annotation} other {# annotations}}. Il sera marqué comme inactif au lieu d'être supprimé.",
+          "notInUse": "Ce type de classe n'est pas utilisé et sera supprimé définitivement.",
+          "cancel": "Annuler",
+          "confirm": "Supprimer"
+        }
+      },
+      "form": {
+        "name": "Nom du type de classe",
+        "namePlaceholder": "ex : Singulier, Hexagone, Dendrite",
+        "nameRequired": "Le nom est requis"
+      },
+      "actions": {
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "activate": "Activer",
+        "deactivate": "Désactiver"
+      },
+      "success": {
+        "created": "Type de classe créé avec succès",
+        "updated": "Type de classe mis à jour avec succès",
+        "deleted": "Type de classe supprimé avec succès",
+        "activated": "Type de classe activé",
+        "deactivated": "Type de classe désactivé"
+      },
+      "errors": {
+        "load": "Échec du chargement des types de classes",
+        "create": "Échec de la création du type de classe",
+        "update": "Échec de la mise à jour du type de classe",
+        "delete": "Échec de la suppression du type de classe",
+        "duplicate": "Un type de classe avec ce nom existe déjà"
+      }
     },
     "Statistics": {
       "accuracy": "Précision",
@@ -291,6 +370,132 @@
       "email": "Adresse e-mail",
       "fullName": "Nom complet",
       "role": "Rôle"
+    }
+  },
+  "Annotations": {
+    "title": "Annotations du Projet",
+    "subtitle": "Gérer et examiner les annotations d'images pour {projectName}",
+    "stats": {
+      "totalFiles": "Fichiers Totaux",
+      "annotated": "Annotés",
+      "pending": "En Attente",
+      "totalAnnotations": "Annotations Totales"
+    },
+    "search": {
+      "placeholder": "Rechercher par nom de fichier...",
+      "noResults": "Aucun fichier correspondant à vos filtres.",
+      "clearSearch": "Effacer la recherche"
+    },
+    "filters": {
+      "all": "Tous",
+      "annotatedBtn": "Annotés",
+      "pendingBtn": "En Attente"
+    },
+    "table": {
+      "filename": "Nom du Fichier",
+      "type": "Type",
+      "status": "Statut",
+      "annotations": "Annotations",
+      "lastAnnotated": "Dernière Annotation",
+      "annotators": "Annotateurs",
+      "actions": "Actions",
+      "added": "Ajouté le {date}",
+      "noAnnotator": "—"
+    },
+    "status": {
+      "complete": "Terminé",
+      "pending": "En Attente"
+    },
+    "actions": {
+      "annotate": "Annoter",
+      "view": "Voir"
+    },
+    "modal": {
+      "title": "Aperçu de l'Annotation",
+      "close": "Fermer",
+      "tabs": {
+        "overview": "Aperçu",
+        "details": "Détails",
+        "classes": "Classes"
+      },
+      "info": {
+        "annotations": "{count} annotations",
+        "aois": "{count} ZDI",
+        "author": "Auteur:",
+        "date": "Date:",
+        "confidence": "Confiance:",
+        "quality": "Qualité:",
+        "classifications": "Classifications:"
+      },
+      "aoi": {
+        "title": "Zones d'Intérêt",
+        "noDetails": "Aucun détail d'annotation disponible.",
+        "noClasses": "Aucune classification trouvée"
+      }
+    }
+  },
+  "Workflow": {
+    "loading": "Chargement du flux de travail...",
+    "navigation": {
+      "previousStep": "Étape Précédente",
+      "currentStep": "Étape Actuelle",
+      "stopWorkflow": "Arrêter le Flux",
+      "stepsCompleted": "{count, plural, =0 {Aucune étape complétée} one {# étape complétée} other {# étapes complétées}}",
+      "noStepsYet": "Aucune étape complétée"
+    },
+    "history": {
+      "stepLabel": "Étape {number}",
+      "stepLabelWithName": "Étape {number}: {name}"
+    },
+    "loops": {
+      "loop": "Boucle",
+      "iteration": "Itération {{number}}"
+    },
+    "actions": {
+      "yes": "Oui",
+      "no": "Non",
+      "continue": "Continuer",
+      "next": "Suivant",
+      "nextDefault": "Suivant (Par défaut)",
+      "save": "Enregistrer",
+      "saveAnnotations": "Enregistrer les Annotations",
+      "add": "Ajouter",
+      "remove": "Supprimer"
+    },
+    "placeholders": {
+      "chooseOption": "Choisir une option...",
+      "allSelected": "Toutes les options sélectionnées"
+    },
+    "choice": {
+      "selectLabel": "Sélectionner une option"
+    },
+    "multiChoice": {
+      "addLabel": "Ajouter une classe",
+      "selectedLabel": "Classes sélectionnées (ordonnées par rang)",
+      "instructions": "Sélectionnez et ordonnez les classes par ordre de priorité (1 = plus proche)"
+    },
+    "final": {
+      "title": "Flux de Travail Terminé",
+      "message": "Vous avez terminé toutes les étapes du flux de travail."
+    },
+    "areaSelect": {
+      "toolLabel": "Outil:",
+      "tools": {
+        "polygon": "Polygone",
+        "rectangle": "Rectangle",
+        "mouse": "Souris"
+      },
+      "mouseHint": "Pour confirmer les modifications, cliquez ailleurs pour désélectionner la zone",
+      "multipleAllowed": "Zones multiples autorisées",
+      "selected": "{count, plural, one {# sélectionnée} other {# sélectionnées}}",
+      "confirmSingle": "Confirmer la Sélection de Zone",
+      "confirmMultiple": "{count, plural, one {Confirmer # Zone} other {Confirmer # Zones}}",
+      "clear": "Effacer"
+    },
+    "errors": {
+      "noMetadata": "Aucune métadonnée trouvée pour l'état:",
+      "unsupportedType": "Type d'état non pris en charge:",
+      "networkError": "Erreur réseau: {{message}}"
     }
   }
 }

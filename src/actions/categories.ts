@@ -1,5 +1,6 @@
 "use server"
 
+import prisma from "@/lib/prisma";
 import { categorySchema } from "@/lib/zod";
 import { auth } from "@/server/auth";
 import { revalidatePath } from "next/cache";

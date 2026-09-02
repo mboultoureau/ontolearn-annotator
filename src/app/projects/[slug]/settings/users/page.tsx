@@ -1,14 +1,9 @@
 
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle
-} from "@/app/_components/ui/card"
 import { fetchProject } from "@/services/projects"
 import { getTranslations } from "next-intl/server"
-import { columns } from "./columns"
-import { DataTable } from "./data-table"
+import { checkPermission } from "@/lib/abac-client"
+import { notFound } from "next/navigation"
+import { UserTableWrapper } from "./user-table-wrapper"
 
 type Props = {
     params: {
@@ -32,16 +27,20 @@ export default async function UserSettingPage({ params }: Props) {
         }
     });
 
+    if (!project) {
+        notFound();
+    }
+
+    const canRead = await checkPermission(project.id, "settings:read");
+    const readOnly = !(await checkPermission(project.id, "settings:write"));
+
+    if (!canRead) {
+        return <div>{t('noAccess', { settings: t('users') })}</div>;
+    }
+
     return (
         <>
-            <Card x-chunk="dashboard-04-chunk-1">
-                <CardHeader>
-                    <CardTitle>{t('users')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <DataTable columns={columns} data={project.members} />
-                </CardContent>
-            </Card>
+            <UserTableWrapper members={project.members} readOnly={readOnly} />
         </>
     )
 }

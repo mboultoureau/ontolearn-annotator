@@ -19,7 +19,6 @@ export const projectSchema = z.object({
     .string({ required_error: "Description is required" })
     .min(10, "Description must be at least 10 characters")
     .max(10000, "Description must be less than 10000 characters"),
-  visibility: z.enum(["PUBLIC", "PRIVATE"], { required_error: "Visibility is required" }),
   categories: z.array(z.string()).min(1)
 });
 
