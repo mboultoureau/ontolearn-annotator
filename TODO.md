@@ -145,11 +145,6 @@ services plus two databases, not one.
   "access denied" screen.
 - **Scratch pages ship and are routable**: `/workflow-poc` (459 lines),
   `/workflow-demo`, `/workflow-test`. Delete or move behind a dev-only flag.
-- **The class-types settings page shows its buttons to a `USER`.** The API refuses
-  create/update/delete with a 403, but the page is a single client
-  component with no permission gating, so a `USER` sees Add / Edit / Delete and only
-  finds out on click. The pattern to follow is already in the codebase: the users and
-  integrations pages resolve `settings:write` server-side and pass a `readOnly` prop.
 
 ### 10. Project members can only be viewed, not managed
 
@@ -281,11 +276,13 @@ easy to lose and two of them were caused by upstream behaviour, not by our code.
   value is now treated as a class when the project declares it as a ClassType — which
   also means a class-bearing `choice` must read `source: <class types>` rather than
   inline demo values, or it silently links nothing.
-- **A `USER` could redefine the project's class vocabulary.** The three writing
+- **A `USER` could redefine the project's class vocabulary, and the page offered it.** The three writing
   class-types routes only checked for a session, so any member could create, rename or
   delete a class type. They now go through `requireWrite(projectId, "settings")`, which
   the policy grants to `ADMIN` only — verified: `USER` gets 403 on POST/PATCH/DELETE and
-  200 on GET, `ADMIN` gets 201.
+  200 on GET, `ADMIN` gets 201. The settings page was also split into a server wrapper
+  that resolves `settings:write` and a client component that greys out Add / Edit /
+  Delete and the status badge, the same shape as the users and integrations pages.
 - **A project description longer than 191 characters returned a raw 500.**
   `createProjectInputSchema` allows 10 000 while the column was Prisma's default
   `VARCHAR(191)`. Now `@db.Text` (migration `20260902082659_project_description_text`).
