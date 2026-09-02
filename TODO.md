@@ -36,7 +36,7 @@ Its `validate` sibling route is fine and works (returns
 
 ### 3. Uploaded files are served publicly with no access control
 
-Covered under [File storage](#6-real-file-storage) below — listed here because the
+Covered under [File storage](#7-real-file-storage) below — listed here because the
 access-control half is a security bug, not an architecture preference.
 
 ---
@@ -102,7 +102,7 @@ about the image as a whole.
 
 ## Feature work
 
-### 6. Real file storage
+### 7. Real file storage
 
 Today: synchronous `writeFileSync` into the Next.js `public/` directory, in three places
 — `src/actions/data.ts:91`, `src/actions/projects.ts:41`,
@@ -120,7 +120,7 @@ Target: object storage (S3 or MinIO) behind either signed short-lived URLs or an
 `/api/files/[id]` route that goes through ABAC (`data:read`). Needs a migration path for
 existing `filePath` values, which are currently `/uploads/...` public paths.
 
-### 7. Deployment
+### 8. Deployment
 
 The multi-stage Dockerfile builds a Next standalone image and is broadly correct. Two
 hard blockers:
@@ -136,7 +136,7 @@ and a reverse proxy (`docker-compose.yml` maps both 80 and 443 to the same plain
 3000). And ABAC_NII is a runtime dependency — the deployment story has to cover two
 services plus two databases, not one.
 
-### 8. UX / navigation
+### 9. UX / navigation
 
 - **An ABAC denial renders as a 404.** `fetchProjectBySlug`
   (`src/services/projects.ts:83`) returns `null` on a failed `project:read`, and the page
@@ -145,8 +145,32 @@ services plus two databases, not one.
   "access denied" screen.
 - **Scratch pages ship and are routable**: `/workflow-poc` (459 lines),
   `/workflow-demo`, `/workflow-test`. Delete or move behind a dev-only flag.
+- **The class-types settings page shows its buttons to a `USER`.** The API refuses
+  create/update/delete with a 403, but the page is a single client
+  component with no permission gating, so a `USER` sees Add / Edit / Delete and only
+  finds out on click. The pattern to follow is already in the codebase: the users and
+  integrations pages resolve `settings:write` server-side and pass a `readOnly` prop.
 
-### 9. Node-based workflow editor instead of YAML
+### 10. Project members can only be viewed, not managed
+
+`/projects/{slug}/settings/users` lists the members and nothing else. There is no way to
+invite someone, change a role or remove a member — so a project is stuck with whoever
+created it, and the only way to add people today is an `INSERT` into `ProjectMember`
+(whose `id` has no database default, so raw SQL has to supply a cuid).
+
+Everything underneath is ready and unused: the `Role` enum is `ADMIN | USER`, the policy
+distinguishes them (ADMIN may do anything, USER may read/list plus write on `task` and
+`playground`), and `user:invite`, `user:delete` and `user:edit` already exist in
+`abac-action-categories.ts` with no code behind them.
+
+What is missing: the mutations themselves, guarded with `requireWrite(projectId, "user")`
+or the matching action, plus an invitation path for someone who has no account yet — the
+email provider is already wired, so a magic-link invite is the natural fit.
+
+Related, and worth deciding at the same time: nothing stops the last ADMIN from
+demoting or removing themselves.
+
+### 11. Node-based workflow editor instead of YAML
 
 Current state of the two halves:
 
@@ -176,7 +200,7 @@ Two engine gaps to close first, or the editor will offer nodes that do not work:
   `number`, `textarea`). `select`, `slider`, `yes_no` and `area_select` fields validate
   but render as a bare label.
 
-### 10. Headwork integration
+### 12. Headwork integration
 
 Effectively unstarted. What exists: the `DataFileDestination.HEADWORK` and
 `AuthorType.HEADWORK` enum values, a few validation schemas, and `amqplib` as a
@@ -197,6 +221,12 @@ format, annotation mapping in both directions, and whether we push or Headwork p
   publishes MariaDB on **3307**. It also defaults `ABAC_SERVER_URL` to port 4000 while
   `inheritance_service` listens on **5004**. Following the README verbatim fails at the
   migrate step.
+- **`prisma migrate dev` cannot work as the stack ships.** The compose file grants the
+  `app` user rights on the `app` database only, so Prisma cannot create its shadow
+  database (`P3014`/`P1010`). Generate the SQL with `prisma migrate diff
+  --from-schema-datasource --to-schema-datamodel --script`, drop it in a migration
+  folder, and apply with `migrate deploy` — which is what `start-local.sh` uses. Or grant
+  the `app` user database-creation rights in `docker-compose.dev.yml`.
 - **`tsc --noEmit` reports 119 errors**, every one of them in a test file
   (`loop-edge-cases.test.ts` alone accounts for 49, mostly `Date` where a `string` is
   expected and a `metadata` key the context type does not declare). The count is
@@ -204,7 +234,7 @@ format, annotation mapping in both directions, and whether we push or Headwork p
   regression — but Vitest passes only because it transpiles without typechecking, so a
   CI typecheck step would be red on day one. Several of the offending files are the
   duplicated suites above, so the two items overlap.
-- `amqplib` is an unused dependency — remove it, or use it for Headwork (item 10).
+- `amqplib` is an unused dependency — remove it, or use it for Headwork (item 12).
 - `src/lib/workflow-engine/README.md` references a `REFACTORING.md` that does not exist,
   and claims "87 tests passing" — the suite is 152 across 15 files.
 - `ABAC_NII` is not a git repository. Its `opa/policy.rego` was rewritten on 2026-08-31
@@ -251,6 +281,17 @@ easy to lose and two of them were caused by upstream behaviour, not by our code.
   value is now treated as a class when the project declares it as a ClassType — which
   also means a class-bearing `choice` must read `source: <class types>` rather than
   inline demo values, or it silently links nothing.
+- **A `USER` could redefine the project's class vocabulary.** The three writing
+  class-types routes only checked for a session, so any member could create, rename or
+  delete a class type. They now go through `requireWrite(projectId, "settings")`, which
+  the policy grants to `ADMIN` only — verified: `USER` gets 403 on POST/PATCH/DELETE and
+  200 on GET, `ADMIN` gets 201.
+- **A project description longer than 191 characters returned a raw 500.**
+  `createProjectInputSchema` allows 10 000 while the column was Prisma's default
+  `VARCHAR(191)`. Now `@db.Text` (migration `20260902082659_project_description_text`).
+- **`visibility` was accepted then dropped**, so every project came out `PRIVATE`
+  whatever the user picked. `project.create` now maps `"public"`/`"private"` onto the
+  enum.
 - **The landing page had no way in.** The "Get Started" button's `href` was commented out
   in favour of `href="#"` plus an onClick, and the `isLogged` prop was unused. There is
   now a Login/Projects button in the header and a real `href`.
