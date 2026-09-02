@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { auth } from "@/server/auth";
+import { PermissionDeniedError, requireRead } from "@/lib/abac-guards";
 import { parseWorkflowDefinitionSafe } from "@/lib/workflow-engine/parser";
 import { compileWorkflowToMachine } from "@/lib/workflow-engine/compiler";
 
@@ -25,6 +27,22 @@ export async function POST(
 
     if (!project) {
       return NextResponse.json({ valid: false, errors: [{ path: "project", message: "Project not found", code: "not_found" }] }, { status: 404 });
+    }
+
+    // This route had no authentication at all: it ran the YAML parser and the whole
+    // compiler on anonymous input. Gated like the GET/POST handlers one directory up.
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ valid: false, errors: [{ path: "root", message: "Unauthorized", code: "unauthorized" }] }, { status: 401 });
+    }
+
+    try {
+      await requireRead(project.id, "settings");
+    } catch (error) {
+      if (error instanceof PermissionDeniedError) {
+        return NextResponse.json({ valid: false, errors: [{ path: "root", message: "Forbidden", code: "forbidden" }] }, { status: 403 });
+      }
+      throw error;
     }
 
     // Validate YAML against schema
